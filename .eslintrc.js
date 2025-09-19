@@ -51,6 +51,7 @@ module.exports = {
 		},
 		{
 			files: ['./nodes/**/*.ts'],
+			excludedFiles: ['./nodes/**/config/**/*.ts', './nodes/**/utils/**/*.ts', './nodes/**/types/**/*.ts'],
 			plugins: ['eslint-plugin-n8n-nodes-base'],
 			extends: ['plugin:n8n-nodes-base/nodes'],
 			rules: {

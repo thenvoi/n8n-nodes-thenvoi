@@ -90,13 +90,12 @@ export abstract class BaseEventHandler<
 		const insertedAt = parseDateString(rawData.inserted_at, 'inserted_at', context.logger);
 		const updatedAt = parseDateString(rawData.updated_at, 'updated_at', context.logger);
 
-		// Return the parsed base data with proper types
-		return {
-			id: rawData.id,
-			chat_room_id: rawData.chat_room_id,
-			inserted_at: insertedAt,
-			updated_at: updatedAt,
-		} as TData;
+		const parsedData: TData = Object.assign({}, rawData) as unknown as TData;
+
+		parsedData.inserted_at = insertedAt;
+		parsedData.updated_at = updatedAt;
+
+		return parsedData;
 	}
 
 	/**

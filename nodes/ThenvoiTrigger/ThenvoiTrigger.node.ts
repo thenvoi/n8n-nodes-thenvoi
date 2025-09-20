@@ -1,9 +1,9 @@
-import { ITriggerResponse, ITriggerFunctions, NodeOperationError } from 'n8n-workflow';
-
-import { createSocket, disconnectSocket } from './utils/socketUtils';
-import { setupChannelEvents } from './utils/eventUtils';
-import { TriggerConfig, ThenvoiCredentials, SupportedEvent } from './types/types';
+import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
+import { eventHandlerRegistry } from './handlers/EventHandlerRegistry';
+import { BaseTriggerConfig, ThenvoiCredentials } from './types/types';
+import { setupChannelEvents } from './utils/eventUtils';
+import { createSocket, disconnectSocket } from './utils/socketUtils';
 
 export class ThenvoiTrigger {
 	description = nodeDescription;
@@ -17,10 +17,6 @@ export class ThenvoiTrigger {
 			validateConfig(config, this);
 
 			const serverUrl = credentials.serverUrl;
-			this.logger.info('Thenvoi Trigger: Starting trigger setup', {
-				...config,
-				serverUrl: serverUrl.replace(/\/socket$/, ''), // Log without sensitive path
-			});
 
 			const socket = createSocket(
 				{
@@ -31,11 +27,9 @@ export class ThenvoiTrigger {
 			);
 
 			await setupChannelEvents(socket, config, this);
-			this.logger.info('Thenvoi Trigger: Successfully initialized');
 
 			return {
 				closeFunction: async () => {
-					this.logger.info('Thenvoi Trigger: Closing connection');
 					disconnectSocket(socket, this.logger);
 				},
 			};
@@ -53,17 +47,31 @@ export class ThenvoiTrigger {
 	}
 }
 
+// Helper functions
 /**
  * Gets the trigger configuration from node parameters
  */
-function getTriggerConfig(triggerContext: ITriggerFunctions): TriggerConfig {
-	return {
+function getTriggerConfig(triggerContext: ITriggerFunctions): BaseTriggerConfig {
+	const eventType = triggerContext.getNodeParameter('event') as string;
+
+	// Get base configuration
+	const baseConfig: BaseTriggerConfig = {
 		chatRoomId: triggerContext.getNodeParameter('chatRoomId') as string,
-		event: triggerContext.getNodeParameter('event') as SupportedEvent,
-		mentionedUser: triggerContext.getNodeParameter('mentionedUser') as string,
-		caseSensitive: triggerContext.getNodeParameter('caseSensitive') as boolean,
-		enableDebugLogging: triggerContext.getNodeParameter('enableDebugLogging') as boolean,
+		event: eventType,
 	};
+
+	// Get event-specific parameters
+	const eventSpecificParams = eventHandlerRegistry.getEventSpecificParameters(eventType);
+	const eventConfig: any = { ...baseConfig };
+
+	// Add event-specific parameters to config
+	eventSpecificParams.forEach((param) => {
+		if (param.name && typeof param.name === 'string') {
+			eventConfig[param.name] = triggerContext.getNodeParameter(param.name);
+		}
+	});
+
+	return eventConfig;
 }
 
 /**
@@ -84,19 +92,18 @@ function validateCredentials(
 }
 
 /**
- * Validates the trigger configuration
+ * Validates the trigger configuration using the appropriate event handler
  */
-function validateConfig(config: TriggerConfig, triggerContext: ITriggerFunctions): void {
-	if (!config.chatRoomId) {
-		triggerContext.logger.error('Thenvoi Trigger: Missing chat room ID');
-		throw new NodeOperationError(triggerContext.getNode(), 'Chat Room ID is required');
-	}
-
-	if (config.event === 'message_created' && !config.mentionedUser) {
-		triggerContext.logger.error('Thenvoi Trigger: Missing mentioned user');
+function validateConfig(config: BaseTriggerConfig, triggerContext: ITriggerFunctions): void {
+	try {
+		eventHandlerRegistry.validateConfig(config.event, config, triggerContext);
+	} catch (error) {
+		triggerContext.logger.error('Thenvoi Trigger: Configuration validation failed', {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		throw new NodeOperationError(
 			triggerContext.getNode(),
-			'Mentioned User is required for message_created events',
+			error instanceof Error ? error.message : 'Configuration validation failed',
 		);
 	}
 }

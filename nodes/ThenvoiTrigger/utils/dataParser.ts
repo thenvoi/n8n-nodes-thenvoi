@@ -1,35 +1,13 @@
-import { Logger, MessageData, RawMessageData, SenderType } from '../types/types';
-
-/**
- * Parses raw message data from the socket into properly typed MessageData
- */
-export function parseMessageData(rawData: unknown, logger?: Logger): MessageData {
-	if (!rawData || typeof rawData !== 'object') {
-		throw new Error('Invalid raw data: expected object');
-	}
-
-	const data = rawData as RawMessageData;
-
-	// Parse date strings to Date objects
-	const insertedAt = parseDateString(data.inserted_at, 'inserted_at', logger);
-	const updatedAt = parseDateString(data.updated_at, 'updated_at', logger);
-
-	// Return the parsed data with proper types
-	return {
-		...data,
-		sender_type:
-			data.sender_type === 'User' || data.sender_type === 'Agent'
-				? data.sender_type
-				: ('User' as SenderType),
-		inserted_at: insertedAt,
-		updated_at: updatedAt,
-	};
-}
+import { Logger } from '../types/types';
 
 /**
  * Parses a date string into a Date object
+ * @param dateString The date string to parse
+ * @param fieldName The name of the field being parsed (for logging)
+ * @param logger Logger instance for error reporting
+ * @returns Parsed Date object or current date if parsing fails
  */
-function parseDateString(dateString: string, fieldName: string, logger?: Logger): Date {
+export function parseDateString(dateString: string, fieldName: string, logger: Logger): Date {
 	if (!dateString) {
 		logger?.warn(`Date parsing: Empty ${fieldName} string`);
 		return new Date();

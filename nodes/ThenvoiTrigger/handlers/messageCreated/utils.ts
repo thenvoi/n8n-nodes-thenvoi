@@ -1,17 +1,5 @@
-import { Logger, MessageData, N8NMessageResponse, MessageMention } from '../types/types';
-
-/**
- * Helper function to check if a mention matches the target username
- */
-function mentionMatches(
-	mention: MessageMention,
-	targetUsername: string,
-	caseSensitive: boolean,
-): boolean {
-	const mentionUsername = caseSensitive ? mention.username : mention.username.toLowerCase();
-	const target = caseSensitive ? targetUsername : targetUsername.toLowerCase();
-	return mentionUsername === target;
-}
+import { Logger } from '../../types/types';
+import { MessageData, N8NMessageResponse, MessageMention } from './types';
 
 /**
  * Checks if a message contains a mention to the specified user using metadata
@@ -87,35 +75,12 @@ export function removeMentionsFromContent(
 }
 
 /**
- * Extracts message text from MessageData structure
- */
-export function extractMessageText(data: MessageData, logger?: Logger): string {
-	if (!data || !data.content) {
-		logger?.debug('MentionFilter: Invalid data for message extraction', {
-			hasData: !!data,
-			hasContent: !!data?.content,
-		});
-		return '';
-	}
-
-	const messageText = data.content;
-
-	logger?.debug('MentionFilter: Extracted message text', {
-		originalData: data,
-		extractedText: messageText,
-	});
-
-	return messageText;
-}
-
-/**
  * Creates simplified message data for n8n workflow
  */
-export function createEnrichedMessageData(
+export function createMessageResponse(
 	data: MessageData,
 	mentionedUser: string,
 	caseSensitive: boolean,
-	messageText: string,
 ): N8NMessageResponse {
 	// Remove mentions from content
 	const contentWithoutMention = removeMentionsFromContent(
@@ -135,4 +100,17 @@ export function createEnrichedMessageData(
 		},
 		chat_room_id: data.chat_room_id,
 	};
+}
+
+/**
+ * Helper function to check if a mention matches the target username
+ */
+function mentionMatches(
+	mention: MessageMention,
+	targetUsername: string,
+	caseSensitive: boolean,
+): boolean {
+	const mentionUsername = caseSensitive ? mention.username : mention.username.toLowerCase();
+	const target = caseSensitive ? targetUsername : targetUsername.toLowerCase();
+	return mentionUsername === target;
 }

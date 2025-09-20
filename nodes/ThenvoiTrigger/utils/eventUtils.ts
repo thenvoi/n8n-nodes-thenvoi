@@ -1,5 +1,5 @@
 import { ITriggerFunctions } from 'n8n-workflow';
-import { Socket } from 'phoenix';
+import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/EventHandlerRegistry';
 import { BaseTriggerConfig, ChannelJoinResponse, Logger } from '../types/types';
 
@@ -16,7 +16,7 @@ export async function setupChannelEvents(
 	socket: Socket,
 	config: BaseTriggerConfig,
 	triggerContext: ITriggerFunctions,
-): Promise<void> {
+): Promise<Channel> {
 	const channelName = `chat_room:${config.chatRoomId}`;
 
 	const channel = socket.channel(channelName, {});
@@ -36,7 +36,11 @@ export async function setupChannelEvents(
 /**
  * Joins a Phoenix channel and handles the response
  */
-async function joinChannel(channel: any, channelName: string, logger: Logger): Promise<void> {
+async function joinChannel(
+	channel: Channel,
+	channelName: string,
+	logger: Logger,
+): Promise<Channel> {
 	return new Promise((resolve, reject) => {
 		const timeout = setTimeout(() => {
 			logger.warn('EventHandler: Channel join timeout', { channelName });
@@ -47,7 +51,7 @@ async function joinChannel(channel: any, channelName: string, logger: Logger): P
 			.join()
 			.receive('ok', (resp: ChannelJoinResponse) => {
 				clearTimeout(timeout);
-				resolve();
+				resolve(channel);
 			})
 			.receive('error', (resp: ChannelJoinResponse) => {
 				clearTimeout(timeout);

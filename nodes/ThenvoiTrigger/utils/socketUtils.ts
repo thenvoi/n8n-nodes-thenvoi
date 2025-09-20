@@ -1,4 +1,4 @@
-import { Socket } from 'phoenix';
+import { Channel, Socket } from 'phoenix';
 import { WebSocket } from 'ws';
 import { SocketConfig, Logger } from '../types/types';
 
@@ -31,8 +31,9 @@ export function createSocket(config: SocketConfig, logger: Logger): Socket {
 /**
  * Disconnects a socket safely
  */
-export function disconnectSocket(socket: Socket, logger: Logger): void {
+export function disconnectSocket(socket: Socket, channel: Channel, logger: Logger): void {
 	try {
+		channel.leave();
 		socket.disconnect();
 	} catch (error) {
 		logger.error('SocketManager: Error during socket disconnection', {

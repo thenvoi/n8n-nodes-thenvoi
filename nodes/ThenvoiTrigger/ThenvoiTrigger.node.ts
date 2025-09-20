@@ -26,11 +26,11 @@ export class ThenvoiTrigger {
 				this.logger,
 			);
 
-			await setupChannelEvents(socket, config, this);
+			const channel = await setupChannelEvents(socket, config, this);
 
 			return {
 				closeFunction: async () => {
-					disconnectSocket(socket, this.logger);
+					disconnectSocket(socket, channel, this.logger);
 				},
 			};
 		} catch (error) {

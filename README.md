@@ -1,12 +1,56 @@
 ![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
 
-# n8n-nodes-starter
+# Thenvoi n8n Nodes
 
-This repo contains example nodes to help you get started building your own custom integrations for [n8n](https://n8n.io). It includes the node linter and other dependencies.
+Custom n8n nodes for integrating with Thenvoi platform, including real-time event triggers.
 
-To make your custom node available to the community, you must create it as an npm package, and [submit it to the npm registry](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry).
+## Overview
 
-If you would like your node to be available on n8n cloud you can also [submit your node for verification](https://docs.n8n.io/integrations/creating-nodes/deploy/submit-community-nodes/).
+This package provides n8n nodes for connecting to Thenvoi's real-time communication platform. It includes:
+
+- **Thenvoi Trigger**: A trigger node that listens to real-time events from Thenvoi chat rooms
+- **Thenvoi API Credentials**: Secure credential management for Thenvoi API authentication
+
+## Features
+
+- Real-time event listening via WebSocket connections
+- Configurable event filtering
+- Secure API key authentication
+- Extensible event handler system
+- TypeScript support with full type definitions
+
+## Usage
+
+### Setting up Credentials
+
+1. In your n8n workflow, add a "Thenvoi Trigger" node
+2. Configure the Thenvoi API credentials:
+   - **API Key**: Your Thenvoi API key
+   - **Server URL**: The WebSocket URL of your Thenvoi server (default: `wss://staging.thenvoi.com/api/v2/socket`)
+
+### Using the Thenvoi Trigger
+
+The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi chat rooms:
+
+1. **Event Type**: Select the type of event you want to listen for (currently supports "Message Created")
+2. **Chat Room ID**: Specify the ID of the chat room you want to monitor
+3. **Additional Filters**: Configure event-specific parameters for filtering
+
+### Supported Events
+
+- **Message Created**: Triggers when a new message is posted in the specified chat room
+  - Additional filters available for message content, user mentions, etc.
+
+### Example Workflow
+
+1. Add a "Thenvoi Trigger" node to your workflow
+2. Configure it to listen for "Message Created" events in a specific chat room
+3. Connect it to other n8n nodes to process the incoming messages
+4. Set up actions like sending notifications, updating databases, or triggering other automations
+
+---
+
+# Development
 
 ## Prerequisites
 
@@ -20,29 +64,110 @@ You need the following installed on your development machine:
   ```
 * Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
 
-## Using this starter
+## Setup
 
-These are the basic steps for working with the starter. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
-
-1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
-2. Clone your new repo:
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/thenvoi/thenvoi-n8n-nodes.git
+   cd thenvoi-n8n-nodes
    ```
-   git clone https://github.com/<your organization>/<your-repo-name>.git
+
+2. Install dependencies:
+   ```bash
+   npm install
    ```
-3. Run `npm i` to install dependencies.
-4. Open the project in your editor.
-5. Browse the examples in `/nodes` and `/credentials`. Modify the examples, or replace them with your own nodes.
-6. Update the `package.json` to match your details.
-7. Run `npm run lint` to check for errors or `npm run lintfix` to automatically fix errors when possible.
-8. Test your node locally. Refer to [Run your node locally](https://docs.n8n.io/integrations/creating-nodes/test/run-node-locally/) for guidance.
-9. Replace this README with documentation for your node. Use the [README_TEMPLATE](README_TEMPLATE.md) to get started.
-10. Update the LICENSE file to use your details.
-11. [Publish](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry) your package to npm.
 
-## More information
+3. Build the project:
+   ```bash
+   npm run build
+   ```
 
-Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/creating-nodes/) for detailed information on building your own nodes.
+4. Link the project:
+   ```bash
+   npm link
+   ```
 
-## License
+## Connecting to local n8n instance
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+### First time setup
+
+1. Create `custom` folder in n8n data directory:
+   ```bash
+   mkdir -p ~/.n8n/custom
+   ```
+
+2. Navigate to the `nodes` directory:
+   ```bash
+   cd ~/.n8n/nodes
+   ```
+
+3. Link the thenvoi-n8n-nodes project to your n8n instance:
+   ```bash
+   n8n link thenvoi-n8n-nodes
+   ```
+
+   **Note**: Once linked, the project will automatically update when you make changes. You don't need to run the link command again.
+
+### Running the n8n instance
+
+1. Run the n8n instance:
+   ```bash
+   n8n start
+   ```
+
+	 Or, use the hot reload mode to automatically apply changes from the project to your n8n instance:
+	 ```bash
+	 N8N_DEV_RELOAD=true n8n start
+	 ```
+
+2. Open the n8n web interface at `http://localhost:5678`
+
+### Running the project
+
+1. Run the project:
+   ```bash
+   npm run dev
+   ```
+
+## Available Scripts
+
+- `npm run build` - Compile TypeScript and build the project
+- `npm run dev` - Watch mode for development
+- `npm run lint` - Check for linting errors
+- `npm run lintfix` - Automatically fix linting errors
+- `npm run format` - Format code with Prettier
+
+## Project Structure
+
+```
+├── nodes/
+│   └── ThenvoiTrigger/          # Main trigger node
+│       ├── config/             # Node configuration
+│       ├── handlers/           # Event handlers
+│       ├── utils/              # Utility functions
+│       └── types/               # TypeScript type definitions
+├── credentials/
+│   └── ThenvoiApi.credentials.ts # API credential configuration
+└── dist/                       # Compiled output
+```
+
+## Adding New Event Types
+
+To add support for new event types:
+
+1. Create a new handler in `nodes/ThenvoiTrigger/handlers/`
+2. Implement the `IEventHandler` interface
+3. Register the handler `config/nodeConfig.ts`
+
+## Configuration
+
+- No additional environment variables are required. All configuration is done through the n8n interface.
+- Requires valid Thenvoi API key.
+- WebSocket connection capability is required.
+
+## Troubleshooting
+
+Common issues:
+1. **Connection Failed**: Verify your API key and server URL are correct
+2. **No Events Triggered**: Check that the chat room ID is valid and you have access
+3. **Authentication Errors**: Ensure your API key has the necessary permissions

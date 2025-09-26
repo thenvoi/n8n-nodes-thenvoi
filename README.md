@@ -171,3 +171,42 @@ Common issues:
 1. **Connection Failed**: Verify your API key and server URL are correct
 2. **No Events Triggered**: Check that the chat room ID is valid and you have access
 3. **Authentication Errors**: Ensure your API key has the necessary permissions
+
+## Important: Package Naming Requirements
+
+**⚠️ Critical**: n8n custom node packages must follow a specific naming convention to work properly. The package name in `package.json` must follow the template `n8n-nodes-X` where `X` is your service or company name.
+
+### Common Issues
+
+If your custom node package doesn't work or isn't recognized by n8n, check:
+
+1. **Package Name**: Ensure your `package.json` has the correct name format:
+   ```json
+   {
+     "name": "n8n-nodes-your-service-name"
+   }
+   ```
+
+2. **Keywords**: Include the required keyword:
+   ```json
+   {
+     "keywords": ["n8n-community-node-package"]
+   }
+   ```
+
+3. **n8n Configuration**: Make sure your `package.json` includes the proper n8n configuration:
+   ```json
+   {
+     "n8n": {
+       "n8nNodesApiVersion": 1,
+       "credentials": ["dist/credentials/YourCredentials.credentials.js"],
+       "nodes": ["dist/nodes/YourNode/YourNode.node.js"]
+     }
+   }
+   ```
+
+### Why This Matters
+
+n8n uses the package name to identify and load custom nodes. Without the correct naming convention, n8n won't recognize your package as a valid node package, and your nodes won't appear in the n8n interface.
+
+If you encounter issues with your custom nodes not appearing in n8n, the package naming is often the first thing to check.

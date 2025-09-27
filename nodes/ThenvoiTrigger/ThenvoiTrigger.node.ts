@@ -1,7 +1,8 @@
 import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
+import { extractConditionalParameters } from './config/parameterConfig';
 import { eventHandlerRegistry } from './handlers/EventHandlerRegistry';
-import { BaseTriggerConfig, ThenvoiCredentials } from './types/types';
+import { BaseTriggerConfig, RoomMode, RoomModeType, ThenvoiCredentials } from './types';
 import { setupChannelEvents } from './utils/eventUtils';
 import { createSocket, disconnectSocket } from './utils/socketUtils';
 
@@ -16,9 +17,17 @@ export class ThenvoiTrigger {
 			validateCredentials(credentials, this);
 			validateConfig(config, this);
 
+			// Only for now, we only support single room mode
+			if (config.roomMode !== RoomMode.SINGLE) {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Only single room mode is supported in Phase 1. Multi-room support coming soon!',
+				);
+			}
+
 			const serverUrl = credentials.serverUrl;
 
-			const socket = createSocket(
+			const socket = await createSocket(
 				{
 					serverUrl,
 					apiKey: credentials.apiKey,
@@ -53,11 +62,16 @@ export class ThenvoiTrigger {
  */
 function getTriggerConfig(triggerContext: ITriggerFunctions): BaseTriggerConfig {
 	const eventType = triggerContext.getNodeParameter('event') as string;
+	const roomMode = triggerContext.getNodeParameter('roomMode') as RoomModeType;
+
+	// Get conditional parameters based on room mode
+	const conditionalParams = extractConditionalParameters({ roomMode }, triggerContext);
 
 	// Get base configuration
 	const baseConfig: BaseTriggerConfig = {
-		chatRoomId: triggerContext.getNodeParameter('chatRoomId') as string,
+		roomMode,
 		event: eventType,
+		...conditionalParams,
 	};
 
 	// Get event-specific parameters
@@ -93,8 +107,11 @@ function validateCredentials(
 
 /**
  * Validates the trigger configuration using the appropriate event handler
+ * Note: Basic parameter validation is handled by n8n based on node configuration
+ * This function focuses on business logic validation
  */
 function validateConfig(config: BaseTriggerConfig, triggerContext: ITriggerFunctions): void {
+	// Validate event handler configuration (business logic validation)
 	try {
 		eventHandlerRegistry.validateConfig(config.event, config, triggerContext);
 	} catch (error) {

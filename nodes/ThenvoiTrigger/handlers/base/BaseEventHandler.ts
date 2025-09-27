@@ -1,5 +1,5 @@
 import { IDataObject, INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { BaseEventData, BaseTriggerConfig, RawBaseEventData } from '../../types/types';
+import { BaseEventData, BaseTriggerConfig, RawBaseEventData } from '../../types';
 import { parseDateString } from '../../utils/dataParser';
 import { IEventHandler } from './IEventHandler';
 

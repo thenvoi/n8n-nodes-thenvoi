@@ -1,6 +1,8 @@
 import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 import { eventHandlerRegistry } from '../handlers/EventHandlerRegistry';
 import { MessageCreatedHandler } from '../handlers/messageCreated/handler';
+import { roomModeParameters } from './baseParameters';
+import { generateConditionalUIParameters } from './parameterConfig';
 
 // Register event handlers
 eventHandlerRegistry.register(new MessageCreatedHandler());
@@ -11,7 +13,7 @@ export const nodeDescription: INodeTypeDescription = {
 	icon: 'file:assets/thenvoi.svg',
 	group: ['trigger'],
 	version: 1,
-	subtitle: '={{$parameter["event"]}}',
+	subtitle: '={{$parameter["event"]}} - {{$parameter["roomMode"]}}',
 	description: 'Listen to Thenvoi channel events with configurable filtering',
 	defaults: {
 		name: 'Thenvoi Trigger',
@@ -24,5 +26,12 @@ export const nodeDescription: INodeTypeDescription = {
 			required: true,
 		},
 	],
-	properties: eventHandlerRegistry.getAllNodeParameters(),
+	properties: [
+		// Room mode specific parameters
+		...roomModeParameters,
+		// Generated conditional UI parameters from centralized configuration
+		...generateConditionalUIParameters(),
+		// All other parameters (Event, Event-specific) come from registry
+		...eventHandlerRegistry.getAllNodeParameters(),
+	],
 };

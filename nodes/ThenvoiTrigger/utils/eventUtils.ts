@@ -1,7 +1,8 @@
 import { ITriggerFunctions } from 'n8n-workflow';
 import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/EventHandlerRegistry';
-import { BaseTriggerConfig, ChannelJoinResponse, Logger } from '../types/types';
+import { BaseTriggerConfig } from '../types';
+import { Logger } from 'n8n-workflow';
 
 /**
  * Channel join timeout in milliseconds
@@ -49,11 +50,12 @@ async function joinChannel(
 
 		channel
 			.join()
-			.receive('ok', (resp: ChannelJoinResponse) => {
+			.receive('ok', (resp?: any) => {
+				logger.info('EventHandler: Joined channel', { resp });
 				clearTimeout(timeout);
 				resolve(channel);
 			})
-			.receive('error', (resp: ChannelJoinResponse) => {
+			.receive('error', (resp?: any) => {
 				clearTimeout(timeout);
 				logger.error('EventHandler: Failed to join channel', {
 					channelName,

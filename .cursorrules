@@ -1,0 +1,64 @@
+# Code Style Preferences
+
+## General Principles
+
+- Prefer functional approach over OOP when possible
+- Use TypeScript best practices, not Java-style patterns
+- Keep functions small and focused (Single Responsibility Principle)
+- Avoid over-engineering - don't create classes for single functions
+- Use domain-based file organization
+- Prefer composition over inheritance
+- Use type safety with keyof and mapped types
+- Extract complex logic to utility functions
+- Use single source of truth for configuration
+- Prefer explicit over implicit
+- Keep related functionality together
+- Use meaningful names and clear documentation
+- Avoid deep nesting and complex conditionals
+- **Question interfaces that don't match actual usage patterns**
+- **Remove unused or incorrect type definitions promptly**
+
+## Configuration Management
+
+- Use centralized configuration objects for related parameters
+- Create generic functions that work with any condition type
+- Generate UI parameters from configuration to ensure single source of truth
+- Use explicit condition matching for parameter visibility
+- Support future extensibility through generic condition system
+
+## Function Design
+
+- Extract conditional logic to utility functions
+- Use hybrid approaches when combining old and new functionality
+- Preserve original functionality when refactoring
+- Keep event handling with proper timeout and error management
+- Use proper logging and error context
+
+## File Organization
+
+- Domain-based structure (services/room/, config/, utils/)
+- Separate concerns into focused files
+- Use index.ts files for clean imports
+- Keep related types together in focused files
+- Avoid mixing different concerns in single files
+
+## TypeScript Best Practices
+
+- Use const assertions for configuration objects
+- Leverage keyof and mapped types for type safety
+- Use generic functions for extensibility
+- Prefer interfaces over classes for data structures
+- Use proper type guards and assertions
+- **Always verify external library types before creating custom interfaces**
+- **Don't create interfaces that don't match the actual API structure**
+- **Use library-provided types over custom abstractions when available**
+
+## Async/Promise Patterns
+
+- Prefer `Promise.race()` over manual timeout handling for racing promises
+- Use specific callback types (resolve/reject) instead of generic callbacks
+- Separate promise creation from promise resolution logic
+- Avoid mixing timeout logic with connection logic in the same function
+- Use proper promise racing instead of `.catch()` chains for timeouts
+- Keep async functions focused - don't mix sync and async concerns
+- Extract complex async logic into focused utility functions

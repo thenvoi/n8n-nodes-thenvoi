@@ -1,11 +1,11 @@
-import { Logger } from '../../types/types';
-import { MessageData, N8NMessageResponse, MessageMention } from './types';
+import { Logger } from 'n8n-workflow';
+import { ChatMessage, N8NMessageResponse, ChatMessageMention } from '../../types/chatMessage';
 
 /**
  * Checks if a message contains a mention to the specified user using metadata
  */
 export function containsMention(
-	data: MessageData,
+	data: ChatMessage,
 	username: string,
 	caseSensitive: boolean,
 	logger?: Logger,
@@ -47,7 +47,7 @@ export function containsMention(
  */
 export function removeMentionsFromContent(
 	content: string,
-	data: MessageData,
+	data: ChatMessage,
 	mentionedUser: string,
 	caseSensitive: boolean,
 ): string {
@@ -78,7 +78,7 @@ export function removeMentionsFromContent(
  * Creates simplified message data for n8n workflow
  */
 export function createMessageResponse(
-	data: MessageData,
+	data: ChatMessage,
 	mentionedUser: string,
 	caseSensitive: boolean,
 ): N8NMessageResponse {
@@ -106,7 +106,7 @@ export function createMessageResponse(
  * Helper function to check if a mention matches the target username
  */
 function mentionMatches(
-	mention: MessageMention,
+	mention: ChatMessageMention,
 	targetUsername: string,
 	caseSensitive: boolean,
 ): boolean {

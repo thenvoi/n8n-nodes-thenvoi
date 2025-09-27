@@ -1,6 +1,7 @@
 import { Channel, Socket } from 'phoenix';
 import { WebSocket } from 'ws';
-import { SocketConfig, Logger } from '../types/types';
+import { SocketConfig } from '../types';
+import { Logger } from 'n8n-workflow';
 
 /**
  * Default reconnection strategy: 5 minutes for all attempts

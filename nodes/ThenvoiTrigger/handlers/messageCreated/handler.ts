@@ -1,6 +1,7 @@
 import { INodeProperties, ITriggerFunctions } from 'n8n-workflow';
 import { BaseEventHandler } from '../base/BaseEventHandler';
-import { MessageCreatedConfig, MessageData, N8NMessageResponse, RawMessageData } from './types';
+import { ChatMessage, N8NMessageResponse, RawChatMessage } from '../../types/chatMessage';
+import { MessageCreatedConfig } from '../../types/config';
 import { containsMention, createMessageResponse } from './utils';
 
 /**
@@ -8,8 +9,8 @@ import { containsMention, createMessageResponse } from './utils';
  */
 export class MessageCreatedHandler extends BaseEventHandler<
 	MessageCreatedConfig,
-	RawMessageData,
-	MessageData
+	RawChatMessage,
+	ChatMessage
 > {
 	readonly eventType = 'message_created';
 	readonly displayName = 'Message Created';
@@ -21,7 +22,7 @@ export class MessageCreatedHandler extends BaseEventHandler<
 	 * Message type validation is handled by the base class
 	 */
 	shouldTriggerWorkflow(
-		data: MessageData,
+		data: ChatMessage,
 		config: MessageCreatedConfig,
 		context: ITriggerFunctions,
 	): boolean {
@@ -33,7 +34,7 @@ export class MessageCreatedHandler extends BaseEventHandler<
 	 * Builds enriched data payload for the workflow
 	 */
 	buildWorkflowPayload(
-		data: MessageData,
+		data: ChatMessage,
 		config: MessageCreatedConfig,
 		context: ITriggerFunctions,
 	): N8NMessageResponse {

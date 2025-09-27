@@ -1,4 +1,4 @@
-import { Logger } from '../types/types';
+import { Logger } from 'n8n-workflow';
 
 /**
  * Parses a date string into a Date object

@@ -24,8 +24,15 @@ export class ThenvoiApi implements ICredentialType {
 			displayName: 'Server URL',
 			name: 'serverUrl',
 			type: 'string',
-			default: 'wss://staging.thenvoi.com/api/v2/socket',
-			description: 'WebSocket URL of the Thenvoi server',
+			default: 'staging.thenvoi.com/api/v2',
+			description: 'Base URL of the Thenvoi server (without protocol)',
+		},
+		{
+			displayName: 'Use HTTPS',
+			name: 'useHttps',
+			type: 'boolean',
+			default: true,
+			description: 'Use HTTPS for HTTP requests (WebSocket will always use WSS)',
 		},
 	];
 
@@ -42,8 +49,7 @@ export class ThenvoiApi implements ICredentialType {
 	// Test the connection to the Thenvoi server
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL:
-				'={{$credentials?.serverUrl?.replace("ws://", "http://").replace("wss://", "https://").replace("/socket", "")}}',
+			baseURL: '={{$credentials?.useHttps ? "https://" : "http://"}}{{$credentials?.serverUrl}}',
 			url: '/health',
 			method: 'GET',
 		},

@@ -17,7 +17,7 @@ export async function fetchRoomsPage(
 		per_page: perPage.toString(),
 	};
 
-	const response = await httpClient.get<{ data: RoomInfo[] }>('/api/v2/me/chats', params);
+	const response = await httpClient.get<{ data: RoomInfo[] }>('/me/chats', params);
 	return response.data || [];
 }
 

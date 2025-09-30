@@ -5,4 +5,5 @@ export interface ThenvoiCredentials {
 	serverUrl: string;
 	apiKey: string;
 	useHttps: boolean;
+	userId: string;
 }

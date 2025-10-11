@@ -1,7 +1,7 @@
 import { INodeProperties } from 'n8n-workflow';
 import { IEventHandler } from './base/IEventHandler';
-import { baseParameters } from '../config/baseParameters';
-import { createEventParameter } from '../utils/eventParameterUtils';
+import { baseParameters } from '../../config/baseParameters';
+import { createEventParameter } from '../../utils/events/eventParameterUtils';
 
 /**
  * Registry for managing event handlers

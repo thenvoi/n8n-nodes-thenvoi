@@ -1,10 +1,11 @@
 import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
-import { extractConditionalParameters } from './config/parameterConfig';
-import { eventHandlerRegistry } from './handlers/EventHandlerRegistry';
-import { BaseTriggerConfig, RoomMode, RoomModeType, ThenvoiCredentials } from './types';
-import { setupChannelEvents } from './utils/eventUtils';
-import { createSocket, disconnectSocket } from './utils/socketUtils';
+import { handleRoomMode } from './handlers/roomModes/roomModeController';
+import { ThenvoiCredentials } from './types';
+import { getTriggerConfig } from './utils/configFactory';
+import { getSafeErrorMessage, logError } from './utils/errorUtils';
+import { createSocket } from './utils/socket/socketUtils';
+import { validateConfig, validateCredentials } from './utils/validation';
 
 export class ThenvoiTrigger {
 	description = nodeDescription;
@@ -17,110 +18,16 @@ export class ThenvoiTrigger {
 			validateCredentials(credentials, this);
 			validateConfig(config, this);
 
-			// Only for now, we only support single room mode
-			if (config.roomMode !== RoomMode.SINGLE) {
-				throw new NodeOperationError(
-					this.getNode(),
-					'Only single room mode is supported in Phase 1. Multi-room support coming soon!',
-				);
-			}
+			const socket = await createSocket(credentials, this.logger);
 
-			const serverUrl = credentials.serverUrl;
-
-			const socket = await createSocket(
-				{
-					serverUrl,
-					apiKey: credentials.apiKey,
-				},
-				this.logger,
-			);
-
-			const channel = await setupChannelEvents(socket, config, this);
-
-			return {
-				closeFunction: async () => {
-					disconnectSocket(socket, channel, this.logger);
-				},
-			};
+			return await handleRoomMode(socket, config, credentials, this);
 		} catch (error) {
-			this.logger.error('Thenvoi Trigger: Failed to initialize', {
-				error: error instanceof Error ? error.message : String(error),
-			});
+			logError(this.logger, 'Thenvoi Trigger: Failed to initialize', error);
+
 			throw new NodeOperationError(
 				this.getNode(),
-				`Failed to initialize Thenvoi trigger: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
+				`Failed to initialize Thenvoi trigger: ${getSafeErrorMessage(error)}`,
 			);
 		}
-	}
-}
-
-// Helper functions
-/**
- * Gets the trigger configuration from node parameters
- */
-function getTriggerConfig(triggerContext: ITriggerFunctions): BaseTriggerConfig {
-	const eventType = triggerContext.getNodeParameter('event') as string;
-	const roomMode = triggerContext.getNodeParameter('roomMode') as RoomModeType;
-
-	// Get conditional parameters based on room mode
-	const conditionalParams = extractConditionalParameters({ roomMode }, triggerContext);
-
-	// Get base configuration
-	const baseConfig: BaseTriggerConfig = {
-		roomMode,
-		event: eventType,
-		...conditionalParams,
-	};
-
-	// Get event-specific parameters
-	const eventSpecificParams = eventHandlerRegistry.getEventSpecificParameters(eventType);
-	const eventConfig: any = { ...baseConfig };
-
-	// Add event-specific parameters to config
-	eventSpecificParams.forEach((param) => {
-		if (param.name && typeof param.name === 'string') {
-			eventConfig[param.name] = triggerContext.getNodeParameter(param.name);
-		}
-	});
-
-	return eventConfig;
-}
-
-/**
- * Validates the provided credentials
- */
-function validateCredentials(
-	credentials: ThenvoiCredentials,
-	triggerContext: ITriggerFunctions,
-): void {
-	if (!credentials?.apiKey) {
-		triggerContext.logger.error('Thenvoi Trigger: Missing API key');
-		throw new NodeOperationError(triggerContext.getNode(), 'Thenvoi API key is required');
-	}
-	if (!credentials?.serverUrl) {
-		triggerContext.logger.error('Thenvoi Trigger: Missing server URL');
-		throw new NodeOperationError(triggerContext.getNode(), 'Thenvoi server URL is required');
-	}
-}
-
-/**
- * Validates the trigger configuration using the appropriate event handler
- * Note: Basic parameter validation is handled by n8n based on node configuration
- * This function focuses on business logic validation
- */
-function validateConfig(config: BaseTriggerConfig, triggerContext: ITriggerFunctions): void {
-	// Validate event handler configuration (business logic validation)
-	try {
-		eventHandlerRegistry.validateConfig(config.event, config, triggerContext);
-	} catch (error) {
-		triggerContext.logger.error('Thenvoi Trigger: Configuration validation failed', {
-			error: error instanceof Error ? error.message : String(error),
-		});
-		throw new NodeOperationError(
-			triggerContext.getNode(),
-			error instanceof Error ? error.message : 'Configuration validation failed',
-		);
 	}
 }

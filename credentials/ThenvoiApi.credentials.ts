@@ -15,6 +15,7 @@ export class ThenvoiApi implements ICredentialType {
 			name: 'apiKey',
 			type: 'string',
 			default: '',
+			required: true,
 			typeOptions: {
 				password: true,
 			},
@@ -25,6 +26,7 @@ export class ThenvoiApi implements ICredentialType {
 			name: 'serverUrl',
 			type: 'string',
 			default: 'staging.thenvoi.com/api/v2',
+			required: true,
 			description: 'Base URL of the Thenvoi server (without protocol)',
 		},
 		{
@@ -34,6 +36,14 @@ export class ThenvoiApi implements ICredentialType {
 			default: true,
 			description: 'Use HTTPS for HTTP requests (WebSocket will always use WSS)',
 		},
+		{
+			displayName: 'User ID',
+			name: 'userId',
+			type: 'string',
+			default: '',
+			required: true,
+			description: 'User ID for personalized channel subscriptions',
+		},
 	];
 
 	// This allows the credential to be used by other parts of n8n
@@ -41,7 +51,7 @@ export class ThenvoiApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				Authorization: '={{"Bearer " + $credentials.apiKey}}',
+				'X-API-Key': '={{$credentials.apiKey}}',
 			},
 		},
 	};

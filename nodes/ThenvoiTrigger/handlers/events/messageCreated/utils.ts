@@ -1,5 +1,5 @@
 import { Logger } from 'n8n-workflow';
-import { ChatMessage, N8NMessageResponse, ChatMessageMention } from '../../types/chatMessage';
+import { ChatMessage, N8NMessageResponse, ChatMessageMention } from '../../../types/chatMessage';
 
 /**
  * Checks if a message contains a mention to the specified user using metadata

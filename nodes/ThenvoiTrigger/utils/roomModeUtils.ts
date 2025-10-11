@@ -1,5 +1,6 @@
 import { Logger } from 'n8n-workflow';
-import { RoomApiService } from '../services/room/RoomApiService';
+import { HttpClient } from '../services/http/HttpClient';
+import { fetchAllRooms } from '../services/room/roomApiUtils';
 import { RoomInfo, RoomMode, RoomModeType } from '../types';
 
 /**
@@ -15,11 +16,11 @@ export const AUTO_SUBSCRIBE_SUPPORTED_MODES = [RoomMode.ALL, RoomMode.FILTERED] 
  * Fetches rooms with optional filtering
  */
 export async function fetchRooms(
-	roomApiService: RoomApiService,
+	httpClient: HttpClient,
 	logger: Logger,
 	filterPattern?: string,
 ): Promise<RoomInfo[]> {
-	const allRooms = await roomApiService.fetchAllRooms(logger);
+	const allRooms = await fetchAllRooms(httpClient, logger);
 	return filterPattern ? filterRoomsByPattern(allRooms, filterPattern) : allRooms;
 }
 

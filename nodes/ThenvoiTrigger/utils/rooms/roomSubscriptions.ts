@@ -66,22 +66,65 @@ export async function subscribeToRooms(
 }
 
 /**
- * Setup auto-subscribe for new rooms
+ * Handle room_added event
+ */
+async function handleRoomAdded(
+	room_id: string,
+	onRoomAdded: (roomId: string) => Promise<void>,
+	logger: Logger,
+): Promise<void> {
+	try {
+		logger.info(`New room detected: ${room_id}`);
+		await onRoomAdded(room_id);
+	} catch (error) {
+		logError(logger, `Failed to auto-subscribe to room: ${room_id}`, error);
+	}
+}
+
+/**
+ * Handle room_removed event
+ */
+async function handleRoomRemoved(
+	room_id: string,
+	onRoomRemoved: (roomId: string) => Promise<void>,
+	logger: Logger,
+): Promise<void> {
+	try {
+		logger.info(`Room removed: ${room_id}`);
+		await onRoomRemoved(room_id);
+	} catch (error) {
+		logError(logger, `Failed to unsubscribe from room: ${room_id}`, error);
+	}
+}
+
+/**
+ * Setup auto-subscribe for new rooms and auto-unsubscribe for removed rooms
  */
 export function setupAutoSubscribe(
 	socket: Socket,
 	userId: string,
 	logger: Logger,
-	onRoomAdded: (roomId: string) => void,
+	onRoomAdded: (roomId: string) => Promise<void>,
+	onRoomRemoved: (roomId: string) => Promise<void>,
 ): void {
 	const userChannel = socket.channel(`user_rooms:${userId}`, {});
 
-	userChannel.on('room_added', (data: { room_id: string }) => {
-		logger.info(`New room detected: ${data.room_id}`);
-		onRoomAdded(data.room_id);
-	});
+	userChannel.on('room_added', (data: { room_id: string }) =>
+		handleRoomAdded(data.room_id, onRoomAdded, logger),
+	);
 
-	userChannel.join();
+	userChannel.on('room_removed', (data: { room_id: string }) =>
+		handleRoomRemoved(data.room_id, onRoomRemoved, logger),
+	);
+
+	userChannel
+		.join()
+		.receive('ok', () => {
+			logger.info('Auto-subscribe channel joined successfully');
+		})
+		.receive('error', (resp) => {
+			logError(logger, 'Failed to join auto-subscribe channel', resp);
+		});
 }
 
 /**

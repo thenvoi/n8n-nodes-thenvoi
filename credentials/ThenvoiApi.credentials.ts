@@ -51,7 +51,7 @@ export class ThenvoiApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				Authorization: '={{"Bearer " + $credentials.apiKey}}',
+				'X-API-Key': '={{$credentials.apiKey}}',
 			},
 		},
 	};

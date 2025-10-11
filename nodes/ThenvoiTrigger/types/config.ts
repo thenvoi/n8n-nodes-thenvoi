@@ -36,13 +36,13 @@ export type FilteredRoomsConfig = BaseConfigProperties & {
  * Discriminated union for room mode specific configurations
  * This ensures type safety - only relevant properties are available based on roomMode
  */
-export type BaseTriggerConfig = SingleRoomConfig | AllRoomsConfig | FilteredRoomsConfig;
+export type TriggerConfig = SingleRoomConfig | AllRoomsConfig | FilteredRoomsConfig;
 
 /**
  * Configuration specific to message created events
  * Uses intersection types to combine room mode config with event-specific properties
  */
-export type MessageCreatedConfig = BaseTriggerConfig & {
+export type MessageCreatedConfig = TriggerConfig & {
 	event: 'message_created';
 	mentionedUser: string;
 	caseSensitive: boolean;

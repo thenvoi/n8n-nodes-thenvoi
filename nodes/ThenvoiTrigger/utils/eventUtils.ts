@@ -1,7 +1,7 @@
 import { ITriggerFunctions } from 'n8n-workflow';
 import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
-import { BaseTriggerConfig, SingleRoomConfig } from '../types';
+import { TriggerConfig, SingleRoomConfig } from '../types';
 import { logError } from './errorUtils';
 import { createAndJoinChannel } from './socket';
 
@@ -11,7 +11,7 @@ import { createAndJoinChannel } from './socket';
  */
 function handleEvent(
 	rawData: unknown,
-	config: BaseTriggerConfig,
+	config: TriggerConfig,
 	triggerContext: ITriggerFunctions,
 ): void {
 	try {

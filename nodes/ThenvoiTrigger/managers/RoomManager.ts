@@ -59,13 +59,19 @@ export class RoomManager {
 		if (supportsAutoSubscribe(this.config.roomMode)) {
 			const config = this.config as FilteredRoomsConfig;
 			if (config.autoSubscribe) {
-				setupAutoSubscribe(this.socket, this.userId, this.logger, this.subscribeToNewRoom);
+				setupAutoSubscribe(
+					this.socket,
+					this.userId,
+					this.logger,
+					this.subscribeToNewRoom,
+					this.unsubscribeFromRoom,
+				);
 			}
 		}
 	}
 
-	private subscribeToNewRoom(roomId: string): void {
-		subscribeToRoom(
+	private async subscribeToNewRoom(roomId: string): Promise<void> {
+		await subscribeToRoom(
 			this.socket,
 			roomId,
 			this.config,
@@ -73,6 +79,20 @@ export class RoomManager {
 			(roomId: string, rawData: unknown) => this.handleRoomEvent(roomId, rawData),
 			this.logger,
 		);
+	}
+
+	private async unsubscribeFromRoom(roomId: string): Promise<void> {
+		const subscription = this.subscriptions.get(roomId);
+
+		if (subscription) {
+			try {
+				subscription.channel.leave();
+				this.subscriptions.delete(roomId);
+				this.logger.info(`Unsubscribed from removed room: ${roomId}`);
+			} catch (error) {
+				logError(this.logger, `Failed to unsubscribe from room: ${roomId}`, error);
+			}
+		}
 	}
 
 	private handleRoomEvent(roomId: string, rawData: unknown): void {

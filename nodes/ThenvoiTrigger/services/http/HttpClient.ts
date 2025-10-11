@@ -1,6 +1,7 @@
 import { ThenvoiCredentials } from '../../types';
 import { Logger } from 'n8n-workflow';
 import { getHttpUrl } from '../../utils/urlUtils';
+import { logError } from '../../utils/errorUtils';
 
 /**
  * HTTP client for making API requests to Thenvoi
@@ -35,10 +36,7 @@ export class HttpClient {
 
 			return (await response.json()) as T;
 		} catch (error) {
-			this.logger.error('HTTP request failed', {
-				endpoint,
-				error: error instanceof Error ? error.message : String(error),
-			});
+			logError(this.logger, 'HTTP request failed', error, { endpoint });
 			throw error;
 		}
 	}

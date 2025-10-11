@@ -2,6 +2,7 @@ import { IDataObject, INodeProperties, ITriggerFunctions } from 'n8n-workflow';
 import { BaseEventData, BaseTriggerConfig, RawBaseEventData } from '../../types';
 import { parseDateString } from '../../utils/dataParser';
 import { IEventHandler } from './IEventHandler';
+import { logError } from '../../utils/errorUtils';
 
 /**
  * Abstract base class for event handlers providing common functionality
@@ -72,9 +73,8 @@ export abstract class BaseEventHandler<
 				this.triggerWorkflow(data, config, context);
 			}
 		} catch (error) {
-			context.logger.error('Event Handler: Failed to process event', {
+			logError(context.logger, 'Event Handler: Failed to process event', error, {
 				eventType: this.eventType,
-				error: error instanceof Error ? error.message : String(error),
 				rawData,
 			});
 		}

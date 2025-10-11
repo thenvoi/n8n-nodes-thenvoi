@@ -1,7 +1,7 @@
 import { INodeProperties, ITriggerFunctions } from 'n8n-workflow';
 import { BaseEventHandler } from '../base/BaseEventHandler';
-import { ChatMessage, N8NMessageResponse, RawChatMessage } from '../../types/chatMessage';
-import { MessageCreatedConfig } from '../../types/config';
+import { ChatMessage, N8NMessageResponse, RawChatMessage } from '../../../types/chatMessage';
+import { MessageCreatedConfig } from '../../../types/config';
 import { containsMention, createMessageResponse } from './utils';
 
 /**

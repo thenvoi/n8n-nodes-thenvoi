@@ -1,5 +1,5 @@
 import { INodeProperties } from 'n8n-workflow';
-import { IEventHandler } from '../handlers/base/IEventHandler';
+import { IEventHandler } from '../handlers/events/base/IEventHandler';
 
 /**
  * Creates the event parameter with dynamically populated options

@@ -1,8 +1,8 @@
 import { IDataObject, INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { BaseEventData, BaseTriggerConfig, RawBaseEventData } from '../../types';
-import { parseDateString } from '../../utils/dataParser';
+import { BaseEventData, BaseTriggerConfig, RawBaseEventData } from '../../../types';
+import { parseDateString } from '../../../utils/dataParser';
 import { IEventHandler } from './IEventHandler';
-import { logError } from '../../utils/errorUtils';
+import { logError } from '../../../utils/errorUtils';
 
 /**
  * Abstract base class for event handlers providing common functionality

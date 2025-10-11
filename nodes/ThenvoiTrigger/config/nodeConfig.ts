@@ -1,6 +1,6 @@
 import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
-import { eventHandlerRegistry } from '../handlers/EventHandlerRegistry';
-import { MessageCreatedHandler } from '../handlers/messageCreated/handler';
+import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
+import { MessageCreatedHandler } from '../handlers/events/messageCreated/handler';
 import { roomModeParameters } from './baseParameters';
 import { generateConditionalUIParameters } from './parameterConfig';
 

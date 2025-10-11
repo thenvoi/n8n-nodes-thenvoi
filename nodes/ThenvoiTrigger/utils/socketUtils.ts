@@ -1,8 +1,14 @@
-import { Channel, Socket } from 'phoenix';
+import { Logger } from 'n8n-workflow';
+import { Socket } from 'phoenix';
 import { WebSocket } from 'ws';
 import { SocketConfig } from '../types';
-import { Logger } from 'n8n-workflow';
+import { getErrorMessage, logError } from './errorUtils';
+import { createCancelableTimeout } from './timeoutUtils';
 import { getSocketUrl } from './urlUtils';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
 /**
  * Default reconnection strategy: 5 minutes for all attempts
@@ -14,26 +20,41 @@ const DEFAULT_RECONNECT_STRATEGY = (): number => 1000 * 60 * 5;
  */
 const CONNECTION_TIMEOUT = 10000;
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
 /**
- * Creates a Phoenix socket with the given configuration and waits for connection
+ * Creates a socket logger function that formats Phoenix socket messages
  */
-export async function createSocket(config: SocketConfig, logger: Logger): Promise<Socket> {
-	const socketUrl = getSocketUrl(config.serverUrl);
-	const socket = new Socket(socketUrl, {
+function createSocketLogger(logger: Logger) {
+	return (kind: string, msg: string, data?: unknown) => {
+		const formattedMessage = typeof msg === 'object' ? JSON.stringify(msg) : msg;
+		logger.info(`Socket ${kind}: ${formattedMessage}`, { data });
+	};
+}
+
+/**
+ * Creates socket options for Phoenix socket configuration
+ */
+function createSocketOptions(config: SocketConfig, logger: Logger) {
+	return {
 		params: {
 			api_key: config.apiKey,
 		},
-		logger: (kind: string, msg: string, data?: unknown) => {
-			logger.info(`Socket ${kind}: ${msg}`, { data });
-		},
+		logger: createSocketLogger(logger),
 		reconnectAfterMs: config.reconnectAfterMs || DEFAULT_RECONNECT_STRATEGY,
 		transport: WebSocket,
+	};
+}
+
+/**
+ * Sets up socket event listeners for connection monitoring
+ */
+function setupSocketEventListeners(socket: Socket, logger: Logger): void {
+	socket.onClose(() => {
+		logger.info('SocketManager: Socket connection closed');
 	});
-
-	setupSocketEventListeners(socket, logger);
-
-	// Wait for connection to be established
-	return waitForConnection(socket, logger);
 }
 
 /**
@@ -51,31 +72,28 @@ function setupConnectionHandlers(
 	});
 
 	socket.onError((error: string | number | Event) => {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		logger.error('SocketManager: WebSocket connection error', {
-			error:
-				error instanceof Error
-					? {
-							message: error.message,
-							name: error.name,
-							stack: error.stack,
-						}
-					: error,
-		});
+		const errorMessage = getErrorMessage(error);
+		logError(logger, 'SocketManager: WebSocket connection error', error);
 		reject(new Error(`Socket connection failed: ${errorMessage}`));
 	});
 }
 
+// ============================================================================
+// PUBLIC API
+// ============================================================================
+
 /**
- * Creates a timeout promise that rejects after the specified duration
+ * Creates a Phoenix socket with the given configuration and waits for connection
  */
-function createConnectionTimeout(duration: number, logger: Logger): Promise<never> {
-	return new Promise((_, reject) => {
-		setTimeout(() => {
-			logger.error('SocketManager: Connection timeout');
-			reject(new Error('Socket connection timeout'));
-		}, duration);
-	});
+export async function createSocket(config: SocketConfig, logger: Logger): Promise<Socket> {
+	const socketUrl = getSocketUrl(config.serverUrl);
+	const socketOptions = createSocketOptions(config, logger);
+	const socket = new Socket(socketUrl, socketOptions);
+
+	setupSocketEventListeners(socket, logger);
+
+	// Wait for connection to be established
+	return waitForConnection(socket, logger);
 }
 
 /**
@@ -87,31 +105,20 @@ export async function waitForConnection(socket: Socket, logger: Logger): Promise
 		socket.connect();
 	});
 
-	const timeoutPromise = createConnectionTimeout(CONNECTION_TIMEOUT, logger);
+	const { promise: timeoutPromise, cancel: cancelTimeout } = createCancelableTimeout(
+		CONNECTION_TIMEOUT,
+		new Error('Socket connection timeout'),
+	);
 
 	// Race between connection and timeout
-	return Promise.race([connectionPromise, timeoutPromise]);
-}
-
-/**
- * Disconnects a socket safely
- */
-export function disconnectSocket(socket: Socket, channel: Channel, logger: Logger): void {
 	try {
-		channel.leave();
-		socket.disconnect();
+		const result = await Promise.race([connectionPromise, timeoutPromise]);
+		// If we get here, the connection succeeded, so cancel the timeout
+		cancelTimeout();
+		return result;
 	} catch (error) {
-		logger.error('SocketManager: Error during socket disconnection', {
-			error: error instanceof Error ? error.message : String(error),
-		});
+		// If we get here, either connection failed or timeout occurred
+		cancelTimeout();
+		throw error;
 	}
-}
-
-/**
- * Sets up socket event listeners for connection monitoring
- */
-function setupSocketEventListeners(socket: Socket, logger: Logger): void {
-	socket.onClose(() => {
-		logger.info('SocketManager: Socket connection closed');
-	});
 }

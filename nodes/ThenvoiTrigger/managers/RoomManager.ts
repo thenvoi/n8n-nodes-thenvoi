@@ -2,8 +2,16 @@ import { ITriggerFunctions, Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
 import { HttpClient } from '../services/http/HttpClient';
-import { FilteredRoomsConfig, RoomSubscription, ThenvoiCredentials, TriggerConfig } from '../types';
+import {
+	FilteredRoomsConfig,
+	RoomInfo,
+	RoomMode,
+	RoomSubscription,
+	ThenvoiCredentials,
+	TriggerConfig,
+} from '../types';
 import { logError } from '../utils/errorUtils';
+import { roomMatchesFilters } from '../utils/rooms/roomFilterUtils';
 import { getRoomIdsForMode, supportsAutoSubscribe } from '../utils/rooms/roomModeUtils';
 import {
 	cleanupSubscriptions,
@@ -70,15 +78,31 @@ export class RoomManager {
 		}
 	}
 
-	private async subscribeToNewRoom(roomId: string): Promise<void> {
+	private async subscribeToNewRoom(room: RoomInfo): Promise<void> {
+		// For filtered mode, check if the new room matches the filter criteria
+		if (this.config.roomMode === RoomMode.FILTERED) {
+			const filteredConfig = this.config as FilteredRoomsConfig;
+			const shouldSubscribe = this.shouldSubscribeToRoom(room, filteredConfig);
+			if (!shouldSubscribe) {
+				this.logger.debug(
+					`Room ${room.id} does not match filter criteria, skipping auto-subscribe`,
+				);
+				return;
+			}
+		}
+
 		await subscribeToRoom(
 			this.socket,
-			roomId,
+			room.id,
 			this.config,
 			this.subscriptions,
 			(roomId: string, rawData: unknown) => this.handleRoomEvent(roomId, rawData),
 			this.logger,
 		);
+	}
+
+	private shouldSubscribeToRoom(room: RoomInfo, config: FilteredRoomsConfig): boolean {
+		return roomMatchesFilters(room, config.roomFilter, config.roomTypes);
 	}
 
 	private async unsubscribeFromRoom(roomId: string): Promise<void> {

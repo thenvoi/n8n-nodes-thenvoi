@@ -1,5 +1,5 @@
-import { INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { RoomMode, RoomModeType } from '../types';
+import { INodeProperties, ITriggerFunctions, NodePropertyTypes } from 'n8n-workflow';
+import { RoomMode, RoomModeType, RoomType } from '../types';
 
 /**
  * Type for all possible conditions that can be used to determine parameter visibility
@@ -17,11 +17,12 @@ export interface ParameterConditions {
  */
 export interface ParameterConfig {
 	conditions: Record<string, string[]>;
-	type: 'string' | 'boolean' | 'number';
+	type: NodePropertyTypes;
 	displayName: string;
 	description: string;
 	required?: boolean;
-	default?: string | boolean | number;
+	default?: string | boolean | number | string[];
+	options?: Array<{ name: string; value: string }>;
 }
 
 /**
@@ -32,16 +33,28 @@ export const OPTIONAL_PARAMETER_CONFIG: Record<string, ParameterConfig> = {
 	// Room mode related parameters
 	chatRoomId: {
 		conditions: { roomMode: [RoomMode.SINGLE] },
-		type: 'string' as const,
+		type: 'string',
 		displayName: 'Chat Room ID',
 		description: 'The ID of the chat room to listen to',
 		required: true,
 	},
 	roomFilter: {
 		conditions: { roomMode: [RoomMode.FILTERED] },
-		type: 'string' as const,
-		displayName: 'Room Filter Pattern',
-		description: 'Filter rooms by name pattern (e.g., "support-*")',
+		type: 'string',
+		displayName: 'Room Title Filter (Regex)',
+		description:
+			'Filter rooms by title using regex pattern (case-insensitive). Examples: "^support" for titles starting with "support", "team$" for titles ending with "team", or "bug|issue" for titles containing either word',
+	},
+	roomTypes: {
+		conditions: { roomMode: [RoomMode.FILTERED] },
+		type: 'multiOptions',
+		displayName: 'Room Types',
+		description: 'Filter by room types (leave empty for all types)',
+		options: Object.values(RoomType).map((type) => ({
+			name: type.charAt(0).toUpperCase() + type.slice(1),
+			value: type,
+		})),
+		default: [],
 	},
 	autoSubscribe: {
 		conditions: { roomMode: [RoomMode.ALL, RoomMode.FILTERED] },
@@ -52,23 +65,49 @@ export const OPTIONAL_PARAMETER_CONFIG: Record<string, ParameterConfig> = {
 	},
 } as const;
 
+function getParameterDefaultValue(config: ParameterConfig): string | boolean | number | string[] {
+	return config.default ?? (config.type === 'multiOptions' ? [] : '');
+}
+
+function getParameterShowConditions(config: ParameterConfig): Record<string, string[]> {
+	return Object.entries(config.conditions).reduce(
+		(acc, [conditionKey, conditionValues]) => {
+			acc[conditionKey] = conditionValues;
+			return acc;
+		},
+		{} as Record<string, string[]>,
+	);
+}
+
+function addMissingFields(param: INodeProperties, config: ParameterConfig): INodeProperties {
+	if (config.type === 'multiOptions' && config.options) {
+		param.options = config.options;
+	}
+
+	return param;
+}
+
 /**
  * Generates conditional UI parameters from the configuration
  */
 export function generateConditionalUIParameters(): INodeProperties[] {
-	return Object.entries(OPTIONAL_PARAMETER_CONFIG).map(([name, config]) => ({
-		displayName: config.displayName,
-		name,
-		type: config.type,
-		default: config.default || '',
-		required: config.required || false,
-		description: config.description,
-		displayOptions: {
-			show: {
-				roomMode: config.conditions.roomMode,
+	return Object.entries(OPTIONAL_PARAMETER_CONFIG).map(([name, config]) => {
+		const param: INodeProperties = {
+			displayName: config.displayName,
+			name,
+			type: config.type,
+			default: getParameterDefaultValue(config),
+			required: config.required || false,
+			description: config.description,
+			displayOptions: {
+				show: getParameterShowConditions(config),
 			},
-		},
-	}));
+		};
+
+		addMissingFields(param, config);
+
+		return param;
+	});
 }
 
 /**

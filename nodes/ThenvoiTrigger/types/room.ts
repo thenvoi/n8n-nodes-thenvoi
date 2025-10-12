@@ -14,11 +14,16 @@ export type RoomModeType = (typeof RoomMode)[keyof typeof RoomMode];
 /**
  * Room management types
  */
+
+export const RoomType = ['direct', 'group', 'task'];
+
+export type RoomType = (typeof RoomType)[number];
+
 export interface RoomInfo {
 	id: string;
 	title: string;
 	status: 'active' | 'archived' | 'closed';
-	type: 'direct' | 'group' | 'task';
+	type: RoomType;
 	inserted_at: string;
 	updated_at: string;
 }

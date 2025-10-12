@@ -4,6 +4,22 @@ import { TriggerConfig, ThenvoiCredentials } from '../types';
 import { logError, getSafeErrorMessage } from './errorUtils';
 
 /**
+ * Validates a regex pattern string
+ * @param pattern - The regex pattern to validate
+ * @returns true if valid, throws error if invalid
+ */
+export function validateRegexPattern(pattern: string): boolean {
+	try {
+		new RegExp(pattern, 'i');
+		return true;
+	} catch (error) {
+		throw new Error(
+			`Invalid regex pattern: ${pattern}. ${error instanceof Error ? error.message : 'Unknown error'}`,
+		);
+	}
+}
+
+/**
  * Validates the provided credentials
  * Basic required field validation is handled by n8n's credential system
  * This method can be extended for more sophisticated validation if needed

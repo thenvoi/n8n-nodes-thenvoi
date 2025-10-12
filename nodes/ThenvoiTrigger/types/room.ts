@@ -1,4 +1,5 @@
 import { Channel } from 'phoenix';
+import { SenderType } from './chatMessage';
 
 /**
  * Room Mode constants for type safety
@@ -14,11 +15,18 @@ export type RoomModeType = (typeof RoomMode)[keyof typeof RoomMode];
 /**
  * Room management types
  */
+
+export const RoomType = ['direct', 'group', 'task'];
+
+export type RoomType = (typeof RoomType)[number];
+
+export type RoomStatus = 'active' | 'archived' | 'closed';
+
 export interface RoomInfo {
 	id: string;
 	title: string;
-	status: 'active' | 'archived' | 'closed';
-	type: 'direct' | 'group' | 'task';
+	status: RoomStatus;
+	type: RoomType;
 	inserted_at: string;
 	updated_at: string;
 }
@@ -41,3 +49,17 @@ export interface RoomsApiResponse {
 		total_count: number;
 	};
 }
+
+/**
+ * Room event types
+ */
+export interface RoomAddedEvent extends Omit<RoomInfo, 'updated_at'> {
+	owner: {
+		id: string;
+		name: string;
+		type: SenderType;
+	};
+	participant_role: string;
+}
+
+export interface RoomLeaveEvent extends Omit<RoomInfo, 'updated_at'> {}

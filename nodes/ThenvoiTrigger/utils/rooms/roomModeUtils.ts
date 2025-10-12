@@ -2,22 +2,27 @@ import { Logger } from 'n8n-workflow';
 import { HttpClient } from '../../services/http/HttpClient';
 import { fetchAllRooms } from '../../services/room/roomApiUtils';
 import {
+	FilteredRoomsConfig,
 	RoomInfo,
 	RoomMode,
 	RoomModeType,
-	TriggerConfig,
 	SingleRoomConfig,
-	FilteredRoomsConfig,
+	TriggerConfig,
 } from '../../types';
+import { filterRooms } from './roomFilterUtils';
 
 /**
  * Room mode utilities for different subscription strategies
  */
 
+// ===== CONSTANTS =====
+
 /**
  * Room modes that support auto-subscription
  */
 export const AUTO_SUBSCRIBE_SUPPORTED_MODES = [RoomMode.ALL, RoomMode.FILTERED] as RoomModeType[];
+
+// ===== PUBLIC API =====
 
 /**
  * Fetches rooms with optional filtering
@@ -26,26 +31,20 @@ export async function fetchRooms(
 	httpClient: HttpClient,
 	logger: Logger,
 	filterPattern?: string,
+	roomTypes?: string[],
 ): Promise<RoomInfo[]> {
-	const allRooms = await fetchAllRooms(httpClient, logger);
-	return filterPattern ? filterRoomsByPattern(allRooms, filterPattern) : allRooms;
-}
+	const rooms = await fetchAllRooms(httpClient, logger);
 
-/**
- * Filters rooms by pattern matching
- */
-export function filterRoomsByPattern(rooms: RoomInfo[], filterPattern: string): RoomInfo[] {
-	if (!filterPattern) return rooms;
-
-	// Simple pattern matching - can be enhanced later
-	return rooms.filter((room) => room.title.toLowerCase().includes(filterPattern.toLowerCase()));
+	return filterRooms(rooms, filterPattern, roomTypes);
 }
 
 /**
  * Check if a room mode supports auto-subscription
  */
-export function supportsAutoSubscribe(roomMode: string): boolean {
-	return AUTO_SUBSCRIBE_SUPPORTED_MODES.includes(roomMode as any);
+export function supportsAutoSubscribe(
+	config: TriggerConfig,
+): config is TriggerConfig & { autoSubscribe?: boolean } {
+	return AUTO_SUBSCRIBE_SUPPORTED_MODES.includes(config.roomMode);
 }
 
 /**
@@ -67,7 +66,12 @@ export async function getRoomIdsForMode(
 		},
 		[RoomMode.FILTERED]: async () => {
 			const filteredConfig = config as FilteredRoomsConfig;
-			const rooms = await fetchRooms(httpClient, logger, filteredConfig.roomFilter);
+			const rooms = await fetchRooms(
+				httpClient,
+				logger,
+				filteredConfig.roomFilter,
+				filteredConfig.roomTypes,
+			);
 			return rooms.map((room) => room.id);
 		},
 	};

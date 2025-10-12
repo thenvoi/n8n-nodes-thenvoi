@@ -3,6 +3,7 @@ import { BaseEventData, TriggerConfig, RawBaseEventData } from '../../../types';
 import { parseDateString } from '../../../utils/dataParser';
 import { IEventHandler } from './IEventHandler';
 import { logError } from '../../../utils/errorUtils';
+import { validateRegexPattern } from '../../../utils/validation';
 
 /**
  * Abstract base class for event handlers providing common functionality
@@ -100,11 +101,26 @@ export abstract class BaseEventHandler<
 
 	/**
 	 * Override this method to add custom validation logic for specific properties
-	 * Default implementation does nothing - n8n parameters handle basic validation
+	 * Default implementation validates regex patterns for filtered room configurations
 	 */
 	protected validateCustomConfig(config: TConfig, context: ITriggerFunctions): void {
-		// Default: no custom validation needed
-		// Subclasses can override for custom business logic validation
+		// Validate regex pattern for filtered room configurations
+		if (this.isFilteredRoomsConfig(config) && config.roomFilter) {
+			try {
+				validateRegexPattern(config.roomFilter);
+			} catch (error) {
+				throw new Error(
+					`Room filter validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				);
+			}
+		}
+	}
+
+	/**
+	 * Type guard to check if config has roomFilter property
+	 */
+	private isFilteredRoomsConfig(config: TConfig): config is TConfig & { roomFilter?: string } {
+		return 'roomFilter' in config;
 	}
 
 	// Private methods - internal implementation

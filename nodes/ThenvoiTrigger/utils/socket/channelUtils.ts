@@ -1,5 +1,6 @@
 import { Logger } from 'n8n-workflow';
 import { Channel, Socket } from 'phoenix';
+import { raceWithTimeout } from '../timeoutUtils';
 
 // Constants
 const CHANNEL_JOIN_TIMEOUT = 10000;
@@ -14,21 +15,6 @@ export interface ChannelConfig {
 }
 
 // Utility Functions
-/**
- * Creates a timeout promise for channel joining
- */
-function createJoinTimeoutPromise(
-	timeoutMs: number,
-	channelName: string,
-	logger: Logger,
-): Promise<never> {
-	return new Promise((_, reject) => {
-		setTimeout(() => {
-			logger.warn('ChannelManager: Channel join timeout', { channelName });
-			reject(new Error('Channel join timeout'));
-		}, timeoutMs);
-	});
-}
 
 /**
  * Handles successful channel join
@@ -92,10 +78,9 @@ async function joinChannelWithTimeout(
 	timeoutMs?: number,
 ): Promise<Channel> {
 	const timeoutTime = timeoutMs ?? CHANNEL_JOIN_TIMEOUT;
-	const timeoutPromise = createJoinTimeoutPromise(timeoutTime, channelName, logger);
 	const joinPromise = createJoinPromise(channel, channelName, logger);
 
-	return Promise.race([joinPromise, timeoutPromise]);
+	return raceWithTimeout(joinPromise, timeoutTime, new Error('Channel join timeout'));
 }
 
 // Public API

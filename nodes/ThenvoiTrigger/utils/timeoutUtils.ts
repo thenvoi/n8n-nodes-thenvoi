@@ -22,3 +22,29 @@ export function createCancelableTimeout<T>(
 
 	return { promise, cancel };
 }
+
+/**
+ * Races a promise against a timeout, with proper cleanup
+ */
+export async function raceWithTimeout<T>(
+	operationPromise: Promise<T>,
+	timeoutMs: number,
+	timeoutError: Error,
+): Promise<T> {
+	const { promise: timeoutPromise, cancel: cancelTimeout } = createCancelableTimeout(
+		timeoutMs,
+		timeoutError,
+	);
+
+	// Race between operation and timeout
+	try {
+		const result = await Promise.race([operationPromise, timeoutPromise]);
+		// If we get here, the operation succeeded, so cancel the timeout
+		cancelTimeout();
+		return result;
+	} catch (error) {
+		// If we get here, either operation failed or timeout occurred
+		cancelTimeout();
+		throw error;
+	}
+}

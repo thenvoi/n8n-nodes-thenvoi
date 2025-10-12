@@ -3,7 +3,7 @@ import { Socket } from 'phoenix';
 import { WebSocket } from 'ws';
 import { SocketConfig } from '../../types';
 import { getErrorMessage, logError } from '../errorUtils';
-import { createCancelableTimeout } from '../timeoutUtils';
+import { raceWithTimeout } from '../timeoutUtils';
 import { getSocketUrl } from '../urlUtils';
 
 // ============================================================================
@@ -105,20 +105,9 @@ export async function waitForConnection(socket: Socket, logger: Logger): Promise
 		socket.connect();
 	});
 
-	const { promise: timeoutPromise, cancel: cancelTimeout } = createCancelableTimeout(
+	return raceWithTimeout(
+		connectionPromise,
 		CONNECTION_TIMEOUT,
 		new Error('Socket connection timeout'),
 	);
-
-	// Race between connection and timeout
-	try {
-		const result = await Promise.race([connectionPromise, timeoutPromise]);
-		// If we get here, the connection succeeded, so cancel the timeout
-		cancelTimeout();
-		return result;
-	} catch (error) {
-		// If we get here, either connection failed or timeout occurred
-		cancelTimeout();
-		throw error;
-	}
 }

@@ -36,6 +36,9 @@ export class RoomManager {
 		this.triggerContext = triggerContext;
 		this.httpClient = new HttpClient(credentials, this.logger);
 		this.userId = credentials.userId;
+
+		this.subscribeToNewRoom = this.subscribeToNewRoom.bind(this);
+		this.unsubscribeFromRoom = this.unsubscribeFromRoom.bind(this);
 	}
 
 	async initialize(): Promise<void> {
@@ -56,17 +59,14 @@ export class RoomManager {
 	}
 
 	private initializeAutoSubscribe(): void {
-		if (supportsAutoSubscribe(this.config.roomMode)) {
-			const config = this.config as FilteredRoomsConfig;
-			if (config.autoSubscribe) {
-				setupAutoSubscribe(
-					this.socket,
-					this.userId,
-					this.logger,
-					this.subscribeToNewRoom,
-					this.unsubscribeFromRoom,
-				);
-			}
+		if (supportsAutoSubscribe(this.config) && this.config.autoSubscribe) {
+			setupAutoSubscribe(
+				this.socket,
+				this.userId,
+				this.logger,
+				this.subscribeToNewRoom,
+				this.unsubscribeFromRoom,
+			);
 		}
 	}
 

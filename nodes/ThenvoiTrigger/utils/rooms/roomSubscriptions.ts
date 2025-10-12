@@ -1,6 +1,12 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { RoomSubscription, TriggerConfig } from '../../types';
+import {
+	RoomAddedEvent,
+	RoomInfo,
+	RoomLeaveEvent,
+	RoomSubscription,
+	TriggerConfig,
+} from '../../types';
 import { createAndJoinChannel } from '../socket';
 import { logError } from '../errorUtils';
 
@@ -69,15 +75,22 @@ export async function subscribeToRooms(
  * Handle room_added event
  */
 async function handleRoomAdded(
-	room_id: string,
-	onRoomAdded: (roomId: string) => Promise<void>,
+	room: RoomAddedEvent,
+	onRoomAdded: (room: RoomInfo) => Promise<void>,
 	logger: Logger,
 ): Promise<void> {
 	try {
-		logger.info(`New room detected: ${room_id}`);
-		await onRoomAdded(room_id);
+		logger.info(`New room detected: ${room.id}`);
+		await onRoomAdded({
+			...room,
+			updated_at: new Date().toISOString(),
+		});
 	} catch (error) {
-		logError(logger, `Failed to auto-subscribe to room: ${room_id}`, error);
+		logError(
+			logger,
+			`Failed to auto-subscribe to room: ${room.id} ${error instanceof Error ? error.stack : error}`,
+			error,
+		);
 	}
 }
 
@@ -85,15 +98,15 @@ async function handleRoomAdded(
  * Handle room_removed event
  */
 async function handleRoomRemoved(
-	room_id: string,
+	room: RoomLeaveEvent,
 	onRoomRemoved: (roomId: string) => Promise<void>,
 	logger: Logger,
 ): Promise<void> {
 	try {
-		logger.info(`Room removed: ${room_id}`);
-		await onRoomRemoved(room_id);
+		logger.info(`Room removed: ${room.id}`);
+		await onRoomRemoved(room.id);
 	} catch (error) {
-		logError(logger, `Failed to unsubscribe from room: ${room_id}`, error);
+		logError(logger, `Failed to unsubscribe from room: ${room.id}`, error);
 	}
 }
 
@@ -104,18 +117,18 @@ export function setupAutoSubscribe(
 	socket: Socket,
 	userId: string,
 	logger: Logger,
-	onRoomAdded: (roomId: string) => Promise<void>,
+	onRoomAdded: (room: RoomInfo) => Promise<void>,
 	onRoomRemoved: (roomId: string) => Promise<void>,
 ): void {
 	const userChannel = socket.channel(`user_rooms:${userId}`, {});
 
-	userChannel.on('room_added', (data: { room_id: string }) =>
-		handleRoomAdded(data.room_id, onRoomAdded, logger),
-	);
+	userChannel.on('room_added', (data: RoomAddedEvent) => {
+		handleRoomAdded(data, onRoomAdded, logger);
+	});
 
-	userChannel.on('room_removed', (data: { room_id: string }) =>
-		handleRoomRemoved(data.room_id, onRoomRemoved, logger),
-	);
+	userChannel.on('room_removed', (data: RoomLeaveEvent) => {
+		handleRoomRemoved(data, onRoomRemoved, logger);
+	});
 
 	userChannel
 		.join()

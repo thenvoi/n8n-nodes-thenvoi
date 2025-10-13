@@ -1,16 +1,10 @@
 import { ITriggerFunctions, Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
-import { HttpClient } from '../services/http/HttpClient';
-import {
-	FilteredRoomsConfig,
-	RoomInfo,
-	RoomMode,
-	RoomSubscription,
-	ThenvoiCredentials,
-	TriggerConfig,
-} from '../types';
-import { logError } from '../utils/errorUtils';
+import { HttpClient } from '@lib/http';
+import { RoomInfo, RoomSubscription, ThenvoiCredentials } from '@lib/types';
+import { FilteredRoomsConfig, RoomMode, TriggerConfig } from '../types';
+import { logError } from '@lib/utils';
 import { roomMatchesFilters } from '../utils/rooms/roomFilterUtils';
 import { getRoomIdsForMode, supportsAutoSubscribe } from '../utils/rooms/roomModeUtils';
 import {

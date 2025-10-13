@@ -1,7 +1,7 @@
-import { ThenvoiCredentials } from '../../types';
 import { Logger } from 'n8n-workflow';
-import { getHttpUrl } from '../../utils/urlUtils';
-import { logError } from '../../utils/errorUtils';
+import { ThenvoiCredentials } from '../types';
+import { logError } from '../utils/errors';
+import { getHttpUrl } from '../utils/urls';
 
 /**
  * HTTP client for making API requests to Thenvoi

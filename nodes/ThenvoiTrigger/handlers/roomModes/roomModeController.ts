@@ -1,6 +1,7 @@
 import { ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { TriggerConfig, ThenvoiCredentials } from '../../types';
+import { TriggerConfig } from '../../types';
+import { ThenvoiCredentials } from '@lib/types';
 import { RoomManager } from '../../managers/RoomManager';
 
 /**

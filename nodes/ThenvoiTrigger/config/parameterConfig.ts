@@ -1,5 +1,6 @@
 import { INodeProperties, ITriggerFunctions, NodePropertyTypes } from 'n8n-workflow';
-import { RoomMode, RoomModeType, RoomType } from '../types';
+import { RoomMode, RoomModeType } from '../types';
+import { RoomType } from '@lib/types';
 
 /**
  * Type for all possible conditions that can be used to determine parameter visibility

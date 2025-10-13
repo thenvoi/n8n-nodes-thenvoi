@@ -1,9 +1,9 @@
 import { Logger } from 'n8n-workflow';
-import { HttpClient } from '../../services/http/HttpClient';
-import { fetchAllRooms } from '../../services/room/roomApiUtils';
+import { HttpClient } from '@lib/http';
+import { fetchAllRooms } from '@lib/api';
+import { RoomInfo } from '@lib/types';
 import {
 	FilteredRoomsConfig,
-	RoomInfo,
 	RoomMode,
 	RoomModeType,
 	SingleRoomConfig,

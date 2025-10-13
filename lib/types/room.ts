@@ -16,9 +16,9 @@ export type RoomModeType = (typeof RoomMode)[keyof typeof RoomMode];
  * Room management types
  */
 
-export const RoomType = ['direct', 'group', 'task'];
+export const RoomType = ['direct', 'group', 'task'] as const;
 
-export type RoomType = (typeof RoomType)[number];
+export type RoomTypeValue = (typeof RoomType)[number];
 
 export type RoomStatus = 'active' | 'archived' | 'closed';
 
@@ -26,7 +26,7 @@ export interface RoomInfo {
 	id: string;
 	title: string;
 	status: RoomStatus;
-	type: RoomType;
+	type: RoomTypeValue;
 	inserted_at: string;
 	updated_at: string;
 }

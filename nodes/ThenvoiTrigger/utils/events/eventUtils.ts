@@ -2,8 +2,8 @@ import { ITriggerFunctions } from 'n8n-workflow';
 import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../../handlers/events/EventHandlerRegistry';
 import { TriggerConfig, SingleRoomConfig } from '../../types';
-import { logError } from '../errorUtils';
-import { createAndJoinChannel } from '../socket';
+import { logError } from '@lib/utils';
+import { createAndJoinChannel } from '@lib/socket';
 
 // Utility Functions
 /**

@@ -17,7 +17,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "npx rimraf dist && tsc && gulp build:icons",
+    "build": "npx rimraf dist && tsc && tsc-alias && gulp build:icons",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",
@@ -44,13 +44,19 @@
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^5.0.0",
     "prettier": "^3.5.3",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.8.2"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
   },
   "dependencies": {
+    "module-alias": "^2.2.3",
     "phoenix": "^1.8.1",
     "ws": "^8.18.3"
+  },
+  "_moduleAliases": {
+    "@lib": "dist/lib",
+    "@credentials": "dist/credentials"
   }
 }

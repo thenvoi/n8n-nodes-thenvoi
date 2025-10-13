@@ -1,6 +1,6 @@
 import { Logger } from 'n8n-workflow';
 import { Channel, Socket } from 'phoenix';
-import { raceWithTimeout } from '../timeoutUtils';
+import { raceWithTimeout } from '../utils/timeout';
 
 // Constants
 const CHANNEL_JOIN_TIMEOUT = 10000;

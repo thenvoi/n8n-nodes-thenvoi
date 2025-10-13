@@ -1,10 +1,10 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
 import { WebSocket } from 'ws';
-import { SocketConfig } from '../../types';
-import { getErrorMessage, logError } from '../errorUtils';
-import { raceWithTimeout } from '../timeoutUtils';
-import { getSocketUrl } from '../urlUtils';
+import { SocketConfig } from '../types';
+import { getErrorMessage, logError } from '../utils/errors';
+import { raceWithTimeout } from '../utils/timeout';
+import { getSocketUrl } from '../utils/urls';
 
 // ============================================================================
 // CONSTANTS

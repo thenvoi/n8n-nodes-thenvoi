@@ -1,6 +1,6 @@
-import { RoomInfo } from '../../types';
+import { RoomInfo } from '../types';
 import { Logger } from 'n8n-workflow';
-import { HttpClient } from '../http/HttpClient';
+import { HttpClient } from '../http/client';
 
 /**
  * Fetches a single page of rooms

@@ -1,5 +1,5 @@
 import { ITriggerFunctions } from 'n8n-workflow';
-import { ChatMessage, N8NMessageResponse, RawChatMessage } from '../../../types/chatMessage';
+import { ChatMessage, N8NMessageResponse, RawChatMessage } from '@lib/types';
 import { MessageCreatedConfig } from '../../../types/config';
 import { BaseEventHandler } from '../base/BaseEventHandler';
 import { containsMention, createMessageResponse } from './utils';

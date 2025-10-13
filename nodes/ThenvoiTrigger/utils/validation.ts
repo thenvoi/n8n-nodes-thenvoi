@@ -1,7 +1,8 @@
 import { ITriggerFunctions, NodeOperationError } from 'n8n-workflow';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
-import { TriggerConfig, ThenvoiCredentials } from '../types';
-import { logError, getSafeErrorMessage } from './errorUtils';
+import { TriggerConfig } from '../types';
+import { ThenvoiCredentials } from '@lib/types';
+import { logError, getSafeErrorMessage } from '@lib/utils';
 
 /**
  * Validates a regex pattern string

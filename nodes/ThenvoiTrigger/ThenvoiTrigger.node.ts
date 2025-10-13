@@ -2,10 +2,10 @@ import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-wor
 import { nodeDescription } from './config/nodeConfig';
 import { EventHandlerRegistry } from './handlers/events/EventHandlerRegistry';
 import { handleRoomMode } from './handlers/roomModes/roomModeController';
-import { ThenvoiCredentials } from './types';
+import { ThenvoiCredentials } from '@lib/types';
 import { getTriggerConfig } from './utils/configFactory';
-import { getSafeErrorMessage, logError } from './utils/errorUtils';
-import { createSocket } from './utils/socket/socketUtils';
+import { getSafeErrorMessage, logError } from '@lib/utils';
+import { createSocket } from '@lib/socket';
 import { validateConfig, validateCredentials } from './utils/validation';
 
 export class ThenvoiTrigger {

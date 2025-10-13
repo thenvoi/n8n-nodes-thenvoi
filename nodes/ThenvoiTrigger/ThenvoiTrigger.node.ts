@@ -1,5 +1,6 @@
 import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
+import { EventHandlerRegistry } from './handlers/events/EventHandlerRegistry';
 import { handleRoomMode } from './handlers/roomModes/roomModeController';
 import { ThenvoiCredentials } from './types';
 import { getTriggerConfig } from './utils/configFactory';
@@ -17,6 +18,9 @@ export class ThenvoiTrigger {
 
 			validateCredentials(credentials, this);
 			validateConfig(config, this);
+
+			// Initialize the event handler
+			EventHandlerRegistry.initializeEventHandler(config.event, credentials.userId);
 
 			const socket = await createSocket(credentials, this.logger);
 

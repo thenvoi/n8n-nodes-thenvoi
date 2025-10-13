@@ -1,7 +1,7 @@
-import { INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { BaseEventHandler } from '../base/BaseEventHandler';
+import { ITriggerFunctions } from 'n8n-workflow';
 import { ChatMessage, N8NMessageResponse, RawChatMessage } from '../../../types/chatMessage';
 import { MessageCreatedConfig } from '../../../types/config';
+import { BaseEventHandler } from '../base/BaseEventHandler';
 import { containsMention, createMessageResponse } from './utils';
 
 /**
@@ -27,7 +27,11 @@ export class MessageCreatedHandler extends BaseEventHandler<
 		context: ITriggerFunctions,
 	): boolean {
 		// Check for mentions - message type validation is handled by base class
-		return containsMention(data, config.mentionedUser, config.caseSensitive, context.logger);
+		if (!this.config?.userId) {
+			context.logger.error('MessageCreatedHandler: userId not initialized');
+			return false;
+		}
+		return containsMention(data, this.config.userId, context.logger);
 	}
 
 	/**
@@ -38,39 +42,10 @@ export class MessageCreatedHandler extends BaseEventHandler<
 		config: MessageCreatedConfig,
 		context: ITriggerFunctions,
 	): N8NMessageResponse {
-		return createMessageResponse(data, config.mentionedUser, config.caseSensitive);
-	}
-
-	/**
-	 * Returns event-specific node parameters
-	 */
-	getEventSpecificParameters(): INodeProperties[] {
-		return [
-			{
-				displayName: 'Mentioned User',
-				name: 'mentionedUser',
-				type: 'string',
-				default: '',
-				required: true,
-				description: 'The username to filter for mentions (e.g., "john" for @john mentions)',
-				displayOptions: {
-					show: {
-						event: ['message_created'],
-					},
-				},
-			},
-			{
-				displayName: 'Case Sensitive',
-				name: 'caseSensitive',
-				type: 'boolean',
-				default: false,
-				description: 'Whether the mention matching should be case sensitive',
-				displayOptions: {
-					show: {
-						event: ['message_created'],
-					},
-				},
-			},
-		];
+		if (!this.config?.userId) {
+			context.logger.error('MessageCreatedHandler: userId not initialized');
+			throw new Error('MessageCreatedHandler: userId not initialized');
+		}
+		return createMessageResponse(data, this.config.userId);
 	}
 }

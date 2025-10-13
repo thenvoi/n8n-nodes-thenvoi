@@ -1,9 +1,9 @@
 import { IDataObject, INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { BaseEventData, TriggerConfig, RawBaseEventData } from '../../../types';
+import { BaseEventData, EventHandlerConfig, RawBaseEventData, TriggerConfig } from '../../../types';
 import { parseDateString } from '../../../utils/dataParser';
-import { IEventHandler } from './IEventHandler';
 import { logError } from '../../../utils/errorUtils';
 import { validateRegexPattern } from '../../../utils/validation';
+import { IEventHandler } from './IEventHandler';
 
 /**
  * Abstract base class for event handlers providing common functionality
@@ -26,6 +26,19 @@ export abstract class BaseEventHandler<
 	 */
 	protected acceptedMessageTypes?: string[];
 
+	/**
+	 * Event handler configuration - set during initialization
+	 */
+	protected config?: EventHandlerConfig;
+
+	// Public interface methods
+	/**
+	 * Initialize the handler with configuration
+	 */
+	initialize(config: EventHandlerConfig): void {
+		this.config = config;
+	}
+
 	// Abstract methods - must be implemented by subclasses
 	/**
 	 * Abstract method that subclasses must implement to determine if workflow should trigger
@@ -38,9 +51,12 @@ export abstract class BaseEventHandler<
 	abstract buildWorkflowPayload(data: TData, config: TConfig, context: ITriggerFunctions): any;
 
 	/**
-	 * Abstract method that subclasses must implement to provide event-specific parameters
+	 * Optional method that subclasses can implement to provide event-specific parameters
+	 * Default implementation returns empty array
 	 */
-	abstract getEventSpecificParameters(): INodeProperties[];
+	getEventSpecificParameters(): INodeProperties[] {
+		return [];
+	}
 
 	// Public interface methods
 	/**

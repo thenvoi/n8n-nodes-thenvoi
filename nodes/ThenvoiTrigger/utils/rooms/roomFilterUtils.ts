@@ -1,4 +1,4 @@
-import { RoomInfo } from '../../types';
+import { RoomInfo } from '@lib/types';
 
 /**
  * Room filtering utilities for pattern and type-based filtering

@@ -1,7 +1,6 @@
-export * from './chatMessage';
 export * from './config';
-export * from './credentials';
-export * from './errors';
 export * from './events';
-export * from './room';
-export * from './socket';
+
+// Re-export lib types for convenience
+export { RoomMode, RoomModeType, RoomType, type RoomTypeValue } from '@lib/types';
+export type { EventHandlerConfig } from '@lib/types';

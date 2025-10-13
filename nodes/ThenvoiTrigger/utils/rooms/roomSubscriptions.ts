@@ -1,14 +1,9 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import {
-	RoomAddedEvent,
-	RoomInfo,
-	RoomLeaveEvent,
-	RoomSubscription,
-	TriggerConfig,
-} from '../../types';
-import { createAndJoinChannel } from '../socket';
-import { logError } from '../errorUtils';
+import { RoomAddedEvent, RoomInfo, RoomLeaveEvent, RoomSubscription } from '@lib/types';
+import { TriggerConfig } from '../../types';
+import { createAndJoinChannel } from '@lib/socket';
+import { logError } from '@lib/utils';
 
 /**
  * Subscribe to a single room

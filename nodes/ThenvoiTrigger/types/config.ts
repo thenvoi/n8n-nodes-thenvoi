@@ -1,4 +1,4 @@
-import { RoomMode } from './room';
+import { RoomMode } from '@lib/types';
 
 /**
  * Base configuration properties shared across all room modes

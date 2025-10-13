@@ -1,4 +1,4 @@
-import { EventData, RawBaseEventData } from '.';
+import { EventData, RawBaseEventData } from './events';
 
 // Type definitions for message handling
 export type SenderType = 'User' | 'Agent';

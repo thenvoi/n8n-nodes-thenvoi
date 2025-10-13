@@ -1,20 +1,15 @@
 import { Logger } from 'n8n-workflow';
-import { ChatMessage, N8NMessageResponse, ChatMessageMention } from '../../../types/chatMessage';
+import { ChatMessage, N8NMessageResponse } from '../../../types/chatMessage';
 
 /**
  * Checks if a message contains a mention to the specified user using metadata
  */
-export function containsMention(
-	data: ChatMessage,
-	username: string,
-	caseSensitive: boolean,
-	logger?: Logger,
-): boolean {
-	if (!data || !data.metadata || !username) {
-		logger?.debug('MentionFilter: Invalid data or username', {
+export function containsMention(data: ChatMessage, userId: string, logger?: Logger): boolean {
+	if (!data || !data.metadata || !userId) {
+		logger?.debug('MentionFilter: Invalid data or userId', {
 			hasData: !!data,
 			hasMetadata: !!data?.metadata,
-			hasUsername: !!username,
+			hasUserId: !!userId,
 		});
 		return false;
 	}
@@ -27,14 +22,11 @@ export function containsMention(
 		return false;
 	}
 
-	// Check if the specified username is in the mentions array
-	const hasMention = data.metadata.mentions.some((mention) =>
-		mentionMatches(mention, username, caseSensitive),
-	);
+	// Check if the specified userId is in the mentions array
+	const hasMention = data.metadata.mentions.some((mention) => mention.id === userId);
 
 	logger?.debug('MentionFilter: Checking mention using metadata', {
-		username,
-		caseSensitive,
+		userId,
 		mentions: data.metadata.mentions,
 		hasMention,
 	});
@@ -48,17 +40,14 @@ export function containsMention(
 export function removeMentionsFromContent(
 	content: string,
 	data: ChatMessage,
-	mentionedUser: string,
-	caseSensitive: boolean,
+	userId: string,
 ): string {
-	if (!content || !data?.metadata?.mentions || !mentionedUser) {
+	if (!content || !data?.metadata?.mentions || !userId) {
 		return content;
 	}
 
 	// Find the mention in metadata to get the exact username format
-	const mention = data.metadata.mentions.find((m) =>
-		mentionMatches(m, mentionedUser, caseSensitive),
-	);
+	const mention = data.metadata.mentions.find((m) => m.id === userId);
 
 	if (!mention) {
 		return content;
@@ -77,18 +66,9 @@ export function removeMentionsFromContent(
 /**
  * Creates simplified message data for n8n workflow
  */
-export function createMessageResponse(
-	data: ChatMessage,
-	mentionedUser: string,
-	caseSensitive: boolean,
-): N8NMessageResponse {
+export function createMessageResponse(data: ChatMessage, userId: string): N8NMessageResponse {
 	// Remove mentions from content
-	const contentWithoutMention = removeMentionsFromContent(
-		data.content,
-		data,
-		mentionedUser,
-		caseSensitive,
-	);
+	const contentWithoutMention = removeMentionsFromContent(data.content, data, userId);
 
 	return {
 		id: data.id,
@@ -100,17 +80,4 @@ export function createMessageResponse(
 		},
 		chat_room_id: data.chat_room_id,
 	};
-}
-
-/**
- * Helper function to check if a mention matches the target username
- */
-function mentionMatches(
-	mention: ChatMessageMention,
-	targetUsername: string,
-	caseSensitive: boolean,
-): boolean {
-	const mentionUsername = caseSensitive ? mention.username : mention.username.toLowerCase();
-	const target = caseSensitive ? targetUsername : targetUsername.toLowerCase();
-	return mentionUsername === target;
 }

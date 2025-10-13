@@ -45,6 +45,4 @@ export type TriggerConfig = SingleRoomConfig | AllRoomsConfig | FilteredRoomsCon
  */
 export type MessageCreatedConfig = TriggerConfig & {
 	event: 'message_created';
-	mentionedUser: string;
-	caseSensitive: boolean;
 };

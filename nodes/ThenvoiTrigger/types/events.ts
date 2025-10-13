@@ -14,3 +14,10 @@ export interface RawBaseEventData {
 }
 
 export type EventData<T extends RawBaseEventData> = Omit<T, keyof RawBaseEventData> & BaseEventData;
+
+/**
+ * Configuration object for initializing event handlers
+ */
+export interface EventHandlerConfig {
+	userId: string;
+}

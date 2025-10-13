@@ -13,11 +13,14 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 
 ## Features
 
-- Real-time event listening via WebSocket connections
-- Configurable event filtering
-- Secure API key authentication
-- Extensible event handler system
-- TypeScript support with full type definitions
+- **Real-time event listening** via WebSocket connections
+- **Multi-room support** - Listen to single, multiple, or all chat rooms
+- **Secure API key authentication**
+- **Extensible event handler system**
+- **TypeScript support** with full type definitions
+- **Auto-subscribe** - Automatically subscribe to new rooms and unsubscribe from removed rooms
+- **Regex filtering** - Powerful regex-based filtering for room titles with graceful fallback
+- **Room type filtering** - Filter by room types (direct, group, task)
 
 ## Usage
 
@@ -32,9 +35,32 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 
 The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi chat rooms:
 
+#### Room Mode Options
+
+1. **Single Room** - Listen to one specific chat room
+   - Configure the Chat Room ID
+
+2. **All Rooms** - Listen to all available chat rooms
+   - Filter by room types (direct, group, task) - optional
+   - Enable auto-subscribe for new rooms - optional
+
+3. **Filtered Rooms** - Listen to rooms matching a filter pattern
+   - Configure regex pattern for room titles (e.g., `^support`, `team$`, `bug|issue`)
+   - Filter by room types (direct, group, task) - optional
+   - Enable auto-subscribe for new rooms - optional
+
+**Regex Filter Examples:**
+
+- `^support` - Rooms starting with "support"
+- `team$` - Rooms ending with "team"
+- `bug|issue` - Rooms containing "bug" OR "issue"
+- `support.*team` - Rooms with "support" followed by "team"
+- `customer` - Simple substring match (fallback if regex invalid)
+
+#### Event Configuration
+
 1. **Event Type**: Select the type of event you want to listen for (currently supports "Message Created")
-2. **Chat Room ID**: Specify the ID of the chat room you want to monitor
-3. **Additional Filters**: Configure event-specific parameters for filtering
+2. **Additional Filters**: Configure event-specific parameters for filtering (e.g., mentioned user, case sensitivity)
 
 ### Supported Events
 

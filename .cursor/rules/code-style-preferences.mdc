@@ -3,207 +3,414 @@ alwaysApply: true
 ---
 # Code Style Preferences
 
-## General Principles
+## Core Principles
 
-- Prefer functional approach over OOP when possible
-- Use TypeScript best practices, not Java-style patterns
-- Keep functions small and focused (Single Responsibility Principle)
-- Avoid over-engineering - don't create classes for single functions
-- Use domain-based file organization
-- Prefer composition over inheritance
-- Use type safety with keyof and mapped types
-- Extract complex logic to utility functions
-- Use single source of truth for configuration
-- Prefer explicit over implicit
-- Keep related functionality together
-- Use meaningful names and clear documentation
+### Readability and Maintainability
+
+- Write code that is easy to read and understand
+- Prioritize clarity over cleverness
+- Use meaningful names that describe intent
+- Keep functions focused on a single responsibility
 - Avoid deep nesting and complex conditionals
-- **Question interfaces that don't match actual usage patterns**
-- **Remove unused or incorrect type definitions promptly**
-- **Search the codebase before creating new abstractions** - existing functionality may already exist
-- **Keep main/entry files minimal** - they should orchestrate, not implement (aim for ~30-50 lines)
+- Write self-documenting code with clear variable and function names
 
-## Configuration Management
+### Consistency
 
-- Use centralized configuration objects for related parameters
-- Create generic functions that work with any condition type
-- Generate UI parameters from configuration to ensure single source of truth
-- Use explicit condition matching for parameter visibility
-- Support future extensibility through generic condition system
+- Follow established patterns within the codebase
+- Use consistent naming conventions throughout the project
+- Maintain consistent file organization and structure
+- Apply consistent error handling patterns
+- Use consistent commenting and documentation styles
+
+### Simplicity
+
+- Prefer simple solutions over complex ones if they are more readable and maintainable
+- Avoid over-engineering
+- Question every abstraction: "Does this actually make the code better?"
+- Balance between one giant file and file explosion
+- Extract meaningful complexity, not simple operations
+
+## Code Organization
+
+### Project Structure
+
+- Use a clear, consistent project structure across all TypeScript projects
+- Organize by feature/domain rather than by file type
+- Keep related functionality together (components, types, utilities, tests)
+- Use barrel exports (`index.ts`) for clean public APIs
+- Separate configuration files from source code
+- Keep build artifacts and dependencies in standard locations
+- Use consistent naming for common directories (`src/`, `lib/`, `types/`, `utils/`, `tests/`)
+
+### Monorepo and Workspace Structure
+
+- Use consistent structure across all packages in a monorepo
+- Keep shared types in a dedicated `@types` or `@shared` package
+- Use workspace references for TypeScript project dependencies
+- Organize packages by domain/feature rather than by technology
+- Use consistent naming for packages (`@company/package-name`)
+- Keep package-specific configuration in each package directory
+- Use root-level configuration for shared tooling (ESLint, Prettier, etc.)
+- Use consistent `tsconfig.json` inheritance patterns
+- Keep build outputs in standard locations (`dist/`, `build/`, `out/`)
+- Use consistent import paths across all packages
+- Organize shared utilities in a dedicated utilities package
+- Keep documentation at the appropriate level (package vs workspace)
+
+### File Structure
+
+- Use domain-based organization (group related functionality together)
+- Separate concerns into focused files
+- Keep related types together in dedicated type files
+- Use index files for clean imports
+- Avoid mixing different concerns in single files
+- Organize file contents logically: imports → constants → utilities → public API
+
+### Naming Conventions
+
+- Use descriptive names that clearly indicate purpose
+- Prefer specific names over generic ones
+- Avoid confusing similar names
+- Use consistent naming patterns for similar concepts
+- Choose names that accurately describe functionality
+- Question names that don't clearly indicate purpose
+
+### File and Folder Naming
+
+- Use descriptive folder names that clearly indicate purpose
+- Prefer specific over generic file names
+- Use consistent naming patterns (e.g., *Utils.ts for utility files)
+- Group related utilities in focused files
+- Question file names that don't match their content
+- Reorganize files when content doesn't match their name or purpose
+
+### TypeScript-Specific Project Patterns
+
+- Use `types/` directory for shared type definitions
+- Keep `interfaces/` separate from `types/` when using both
+- Use `utils/` for pure utility functions
+- Use `services/` for business logic and external integrations
+- Use `constants/` for application-wide constants
+- Use `config/` for configuration objects and environment variables
+- Use `__tests__/` or `*.test.ts` for test files
+- Use `*.d.ts` for ambient type declarations
+- Use `*.config.ts` for TypeScript configuration files
+- Use `*.spec.ts` for specification/behavior tests
+- Use `*.types.ts` for complex type definitions
+- Use `*.constants.ts` for type-safe constants
+- Use `*.mocks.ts` for test mocks and fixtures
 
 ## Function Design
 
-- Extract conditional logic to utility functions
-- Use hybrid approaches when combining old and new functionality
-- Preserve original functionality when refactoring
-- Keep event handling with proper timeout and error management
-- Use proper logging and error context
-- **Create centralized utility functions for repetitive patterns (e.g., error handling)**
-- **Avoid duplicating error handling logic across multiple files**
-- **Use consistent error formatting and logging patterns throughout the codebase**
-- **Consolidate similar functions with optional parameters instead of creating multiple functions**
-- **Prefer single flexible functions over multiple similar functions (fetchRooms with optional filter vs fetchAllRooms + fetchAndFilterRooms)**
-- **Question function names that don't accurately describe what they do (orchestrator vs controller vs factory)**
-- **Balance function extraction - extract complex logic but avoid over-engineering simple one-liners**
-- **Question whether a function needs to be extracted - if it's just a simple operation, inline it**
-- **Extract functions when they have meaningful complexity, not just for the sake of extraction**
-- **Break down functions that do multiple things** - example: if a function extracts, transforms, AND validates, split it
-- **Each function should do ONE thing well** - example: parameter extraction, config creation, and validation are separate concerns
+### Function Principles
 
-## File Organization
+- Keep functions small and focused (Single Responsibility Principle)
+- Each function should do one thing well
+- Extract complex logic to utility functions
+- Break down functions that do multiple things
+- Balance function extraction - extract meaningful complexity, avoid over-engineering simple operations
+- Question whether a function needs to be extracted
 
-- Domain-based structure (services/room/, config/, utils/)
-- Separate concerns into focused files
-- Use index.ts files for clean imports
-- Keep related types together in focused files
-- Avoid mixing different concerns in single files
-- **Place utility functions in utils/ folder with descriptive names (e.g., errorUtils.ts)**
-- **Group related utility functions in the same file for better maintainability**
-- **Use consistent naming patterns for utility files (e.g., *Utils.ts suffix)**
-- **Avoid confusing file names - prefer specific over generic (roomModeController.ts vs roomModeHandler.ts)**
-- **Use descriptive folder names that clearly indicate purpose (handlers/events/ vs handlers/business/)**
-- **Separate event handling from business logic orchestration in different folders**
-- **Question file names that don't clearly describe their actual purpose**
-- **Group related utilities in subfolders (ex: utils/socket/ for socket-related utilities)**
-- **Question file names that don't match their actual content**
-- **Reorganize files when their content doesn't match their name or purpose**
-
-## File Structure and Readability
-
-- **Organize file contents in logical order: imports → constants → utilities → public API**
-- **Group related functions together within the same file**
-- **Place public API functions after their supporting utilities for better context**
-- **Keep constants and configuration at the top for easy reference**
-- **Extract complex inline logic to focused utility functions**
-- **Use consistent commenting patterns for different sections of code**
-- **Structure files to read naturally from top to bottom**
-
-## TypeScript Best Practices
-
-- Use const assertions for configuration objects
-- Leverage keyof and mapped types for type safety
-- Use generic functions for extensibility
-- Prefer interfaces over classes for data structures
-- Use proper type guards and assertions
-- **Always verify external library types before creating custom interfaces**
-- **Don't create interfaces that don't match the actual API structure**
-- **Use library-provided types over custom abstractions when available**
-- **Keep type definitions in dedicated types/ folder, not scattered in utility files**
-- **Create focused type files for related interfaces (e.g., types/error.ts for error-related types)**
-- **Avoid `any` types** - replace with proper TypeScript types; use unions, generics, or specific types
-- **Check for type duplication before creating new types** - search codebase for similar type definitions
-- **Derive types from existing config objects** - use `keyof typeof` instead of manually duplicating structure
-- **Single source of truth for types** - if config defines parameters, derive types from it rather than duplicating
-
-## Async/Promise Patterns
-
-- Prefer `Promise.race()` over manual timeout handling for racing promises
-- Use specific callback types (resolve/reject) instead of generic callbacks
-- Separate promise creation from promise resolution logic
-- Avoid mixing timeout logic with connection logic in the same function
-- Use proper promise racing instead of `.catch()` chains for timeouts
-- Keep async functions focused - don't mix sync and async concerns
-- Extract complex async logic into focused utility functions
-
-## Architecture and Design Patterns
-
-- **Question architectural decisions mid-implementation** - pause and reconsider when better approaches emerge
-- **Prefer explicit dependency injection over hidden singleton calls** - make dependencies visible in constructors
-- **Ensure complete cleanup flows** - verify that all resources are properly released in cleanup methods
-- **Separate concerns clearly** - each manager should handle its own cleanup responsibilities
-- **Orchestrate cleanup at the right level** - coordinate cleanup of multiple managers in the calling code
-- **Validate cleanup completeness** - ensure no orphaned connections, subscriptions, or resources remain
-
-## Error Handling Patterns
-
-- **Create centralized error handling utilities to avoid repetitive error instanceof Error patterns**
-- **Use consistent error message extraction (getErrorMessage) across the codebase**
-- **Implement structured error logging with context (logError function)**
-- **Separate error formatting from error logging for reusability**
-- **Use safe error message extraction for user-facing errors**
-- **Keep error types in dedicated type files (types/error.ts)**
-- **Prefer utility functions over inline error handling logic**
-- **Add line breaks before throw statements to separate logging from error throwing**
-- **Use consistent error handling patterns: log first, then throw with clear separation**
-
-## Naming and Clarity
-
-- **Use specific, descriptive names over generic ones (roomModeController vs roomModeHandler)**
-- **Question names that don't clearly indicate purpose (orchestrator, business, workflows)**
-- **Prefer domain-specific folder names over generic ones (handlers/roomModes/ vs handlers/business/)**
-- **Avoid confusing similar names (roomModeHandler vs roomModeHandlers)**
-- **Choose names that accurately describe the actual functionality (controller for lifecycle management, factory for object creation)**
-- **When consolidating similar functions, use descriptive names that indicate flexibility (fetchRooms vs fetchAllAvailableRooms)**
-
-## Control Flow Best Practices
-
-- **Never use switch statements** - prefer object/record patterns with handler maps
-- Use `const handlers = { [key]: handler }` pattern instead of switch cases
-- Extract handler logic to functions or inline arrow functions based on complexity
-- Keep handler lookups type-safe with proper key typing
-
-## Class Design Principles
-
-- **Keep classes lean** - aim for under 150 lines; if larger, extract logic
-- **Avoid huge classes** - a class doing everything violates Single Responsibility
-- When class grows beyond ~150 lines, question what logic should be extracted
-- Manager classes should coordinate, not contain implementation details
-
-## State Management
-
-- Utility functions should be pure and stateless - receive state, don't store it
-
-## Utility Function Best Practices
-
-- Utility functions should be **pure and stateless**
-- Receive all dependencies (including state) as parameters
-- Group related utilities in focused files (e.g., roomSubscriptions.ts)
-- Keep utilities in utils/ folder, not scattered throughout the codebase
-- **One focused utility file is better than many scattered files**
-- Extract to utilities when logic is complex, reusable, or stateful
-
-## When to Extract Functions
+### When to Extract Functions
 
 **Extract when:**
-- Function has meaningful complexity (error handling, state management, socket operations)
+
+- Function has meaningful complexity (error handling, state management, business logic)
 - Logic is reusable across multiple locations
 - Improves testability significantly
 - Separates concerns (orchestration vs implementation)
 
 **Don't extract when:**
+
 - It's a simple one-liner or trivial operation
 - It's only used once and tightly coupled to context
 - Extraction creates more complexity than it removes
 - The function is just a wrapper with no added value
 
+### Function Naming
+
+- Use descriptive names that indicate what the function does
+- Prefer single flexible functions over multiple similar functions
+- Use optional parameters instead of creating multiple functions
+- Question function names that don't accurately describe functionality
+- Consolidate similar functions with optional parameters
+
+## Type Safety
+
+### TypeScript Best Practices
+
+- Use proper type guards and assertions
+- Prefer interfaces over types for object shapes (better performance and extensibility)
+- Use const assertions for configuration objects
+- Leverage keyof and mapped types for type safety
+- Use generic functions for extensibility
+- Avoid `any` types - use proper TypeScript types instead
+- Use strict mode and enable all strict type checking options
+- Prefer `unknown` over `any` for truly unknown values
+- Use branded types for domain-specific values (e.g., `type UserId = string & { __brand: 'UserId' }`)
+- Leverage conditional types for complex type transformations
+- Use template literal types for string manipulation
+- Prefer union types over enums for simple value sets
+- Use const assertions with `as const` for literal types
+- Use `satisfies` operator to maintain type safety without widening
+
+### Type Organization
+
+- Keep type definitions in dedicated type files
+- Create focused type files for related interfaces
+- Check for type duplication before creating new types
+- Don't duplicate types when they can be derived from existing ones
+- Use single source of truth for types
+- Always verify external library types before creating custom interfaces
+- Export types alongside implementations when they're part of the public API
+- Group related types in the same file or adjacent files
+
+### Type Validation
+
+- Question interfaces that don't match actual usage patterns
+- Remove unused or incorrect type definitions promptly
+- Use library-provided types over custom abstractions when available
+- Don't create interfaces that don't match the actual API structure
+- Use type predicates for runtime type checking
+- Implement proper type narrowing in conditional blocks
+- Use discriminated unions for type-safe state management
+- Prefer composition over inheritance in type design
+
+## Error Handling
+
+### Error Handling Patterns
+
+- Create centralized error handling utilities to avoid repetitive patterns
+- Use consistent error message extraction across the codebase
+- Implement structured error logging with context
+- Separate error formatting from error logging for reusability
+- Use safe error message extraction for user-facing errors
+- Keep error types in dedicated type files
+
+### Error Handling Best Practices
+
+- Prefer utility functions over inline error handling logic
+- Add line breaks before throw statements to separate logging from error throwing
+- Use consistent error handling patterns: log first, then throw with clear separation
+- Avoid duplicating error handling logic across multiple files
+- Use consistent error formatting and logging patterns throughout the codebase
+
+## Common TypeScript Pitfalls
+
+### Anti-Patterns to Avoid
+
+- Don't use `any` as a quick fix - use proper types or `unknown`
+- Avoid `@ts-ignore` - fix the underlying type issue instead
+- Don't use `as` type assertions unless absolutely necessary - prefer type guards
+- Avoid complex nested generics that make code hard to understand
+- Don't create overly complex conditional types that hurt readability
+- Avoid using `object` type - use more specific types like `Record<string, unknown>`
+- Don't mix `interface` and `type` for the same concept - be consistent
+- Avoid using `Function` type - use specific function signatures instead
+
+### Type Safety Best Practices
+
+- Always handle the `null` and `undefined` cases explicitly
+- Use strict null checks to catch potential runtime errors
+- Prefer type guards over type assertions for runtime safety
+- Use discriminated unions for type-safe state management
+- Implement proper error handling with typed error objects
+- Use branded types to prevent mixing different domain values
+- Leverage TypeScript's control flow analysis for type narrowing
+
+## Modern TypeScript Features
+
+### Advanced Type Patterns
+
+- Use utility types (`Partial`, `Pick`, `Omit`, `Record`) for type transformations
+- Leverage mapped types for dynamic type generation
+- Use conditional types for type-level logic
+- Implement proper generic constraints with `extends`
+- Use template literal types for string-based APIs
+- Prefer `satisfies` operator over type assertions when possible
+- Use `infer` keyword for extracting types from complex structures
+- Leverage recursive types for nested data structures
+
+### Module and Import Patterns
+
+- Use named exports over default exports for better tree-shaking
+- Prefer `import type` for type-only imports
+- Use `export type` for type-only exports
+- Group imports logically: external libraries → internal modules → types
+- Use barrel exports (`index.ts`) for clean public APIs
+- Avoid circular dependencies between modules
+- Use dynamic imports for code splitting when appropriate
+
+### Performance and Optimization
+
+- Use `const` assertions to prevent unnecessary type widening
+- Leverage `readonly` modifiers for immutable data structures
+- Use `as const` for literal types and preventing mutations
+- Prefer `Object.freeze()` for runtime immutability when needed
+- Use proper generic variance (`in`, `out`, `in out`) for complex types
+- Avoid unnecessary type computations in hot paths
+- Use `satisfies` operator to maintain type safety without widening
+- Prefer `interface` over `type` for object shapes (better performance)
+- Use `keyof typeof` for deriving types from objects
+- Avoid complex conditional types in frequently used code paths
+- Use `branded types` for compile-time type safety without runtime overhead
+- Leverage `never` type for exhaustive checking and dead code elimination
+
+## Async/Promise Patterns
+
+### Promise Best Practices
+
+- Prefer `Promise.race()` over manual timeout handling for racing promises
+- Use specific callback types (resolve/reject) instead of generic callbacks
+- Separate promise creation from promise resolution logic
+- Use proper promise racing instead of `.catch()` chains for timeouts
+- Keep async functions focused - don't mix sync and async concerns
+- Use `Promise.allSettled()` when you need all results regardless of failures
+- Prefer `async/await` over `.then()/.catch()` chains for readability
+- Use `AbortController` for cancellable async operations
+
+### Async Function Design
+
+- Extract complex async logic into focused utility functions
+- Use proper promise racing instead of manual timeout handling
+- Separate concerns in async operations
+- Handle errors appropriately in async contexts
+- Use proper error boundaries for async operations
+- Implement retry logic with exponential backoff for transient failures
+- Use `Promise.all()` for parallel operations, `Promise.allSettled()` for independent operations
+
+## Architecture and Design
+
+### Design Principles
+
+- Prefer explicit dependency injection over hidden singleton calls
+- Ensure complete cleanup flows - verify all resources are properly released
+- Separate concerns clearly - each component should handle its own responsibilities
+- Orchestrate cleanup at the right level
+- Validate cleanup completeness - ensure no orphaned resources remain
+
+### Control Flow
+
+- Prefer object/record patterns over switch statements when appropriate
+- Use handler maps instead of switch cases
+- Extract handler logic to functions or inline arrow functions based on complexity
+- Keep handler lookups type-safe with proper key typing
+
+### Class Design
+
+- Keep classes focused and avoid excessive complexity
+- Use SOLID principles
+- When classes grow large, question what logic should be extracted
+- Use classes when they provide clear value over functional approaches
+
+## Configuration Management
+
+### Configuration Principles
+
+- Use centralized configuration objects for related parameters
+- Create generic functions that work with any condition type
+- Use explicit condition matching for parameter visibility
+- Support future extensibility through generic condition system
+
+### Configuration Organization
+
+- Keep configuration in dedicated files
+- Use const assertions for configuration objects
+- Maintain single source of truth for configuration
+
 ## Avoiding Duplication
 
-- **Before creating new files, search for existing functionality** - use grep/search to find similar code
-- **Before creating new types, check if they already exist** - look for similar interfaces/types in the codebase
-- **Question every new abstraction** - "Does this functionality already exist somewhere?"
-- **Type duplication is a code smell** - if types look similar, investigate if they're duplicating existing types
-- **DRY principle applies to types and configs, not just functions** - single source of truth everywhere
+### Duplication Prevention
+
+- Before creating new files, search for existing functionality
+- Before creating new types, check if they already exist
+- Question every new abstraction: "Does this functionality already exist somewhere?"
+- Type duplication is a code smell - investigate if types are duplicating existing ones
+- DRY principle applies to types and configs, not just functions
+- Single source of truth everywhere
+
+### Code Reuse
+
+- Extract common patterns into utility functions
+- Group related utilities in focused files
+- Use consistent patterns for similar functionality
+- Avoid duplicating error handling logic
+- Consolidate similar functions with optional parameters
+
+## Utility Functions
+
+### Utility Function Best Practices
+
+- Utility functions should be pure and stateless
+- Receive all dependencies (including state) as parameters
+- Group related utilities in focused files
+- Keep utilities in dedicated utils/ folder
+- One focused utility file is better than many scattered files, but don't write all the logic in one file
+- Extract to utilities when logic is complex, reusable, or stateful
+
+### Utility Organization
+
+- Use descriptive names for utility files
+- Group related utilities in subfolders when appropriate
+- Keep utility functions focused and reusable
+- Avoid scattering utilities throughout the codebase
 
 ## Refactoring Approach
 
-- **Start with the problem, not the pattern** - what makes the code hard to work with?
-- **Iterate and question** - first solution may not be the best; refactor your refactoring
-- **Balance is key** - between one giant file and file explosion
+### Refactoring Principles
+
+- Start with the problem, not the pattern - what makes the code hard to work with?
+- Iterate and question - first solution may not be the best
+- Balance is key - between one giant file and file explosion
 - Question each extraction: "Does this actually make the code better?"
-- **Listen to feedback** - if someone says "this is too complex", it probably is
-- **Large files (>100 lines) should be questioned** - what can be extracted to utils?
-- **Main/entry files should be lean** - extract validation, config creation, and complex logic
+- Listen to feedback - if someone says "this is too complex", it probably is
 
-## Continuous Improvement
+### Refactoring Guidelines
 
-- **When reviewing code changes or suggestions, analyze patterns and extract new best practices**
-- **If you identify issues or improvements not covered in these rules, add them to maintain comprehensive coding standards**
-- **Learn from code review feedback and incorporate insights into the rule set**
-- **Regularly update these rules based on real-world coding patterns and challenges encountered**
-- **Pause and reconsider when better architectural approaches emerge during implementation**
-- **Question over-engineering** - if a solution seems complex, ask "Is there a simpler way?"
-- **Learn from refactoring sessions** - document insights gained when eliminating unnecessary complexity
-- **Validate architectural decisions with real usage** - does the pattern actually solve the problem it was designed for?
-- **Question file organization when content doesn't match file names or purpose**
-- **Reorganize code when separation of concerns becomes unclear**
-- **Balance between over-engineering and under-engineering - extract meaningful complexity, inline simple operations**
+- Large files should be questioned - what can be extracted to utilities?
+- Main/entry files should be lean - extract validation, config creation, and complex logic
+- Question over-engineering - if a solution seems complex, ask "Is there a simpler way?"
+- Learn from refactoring sessions - document insights gained when eliminating unnecessary complexity
+- Validate architectural decisions with real usage
+
+## Documentation and Comments
+
+### Documentation Standards
+
+- Write self-documenting code with clear names
+- Add comments for complex business logic
+- Document public APIs and interfaces
+- Keep documentation up to date with code changes
+- Use consistent commenting patterns
+
+### Code Documentation
+
+- Document the "why" not just the "what"
+- Explain complex algorithms and business rules
+- Document configuration options and their effects
+- Keep comments concise and relevant
+- Remove outdated comments promptly
+
+## Testing and Quality Assurance
+
+### Testing Best Practices
+
+- Write tests that verify behavior, not implementation details
+- Use descriptive test names that explain the scenario and expected outcome
+- Follow the AAA pattern: Arrange, Act, Assert
+- Mock external dependencies and side effects
+- Test error conditions and edge cases
+- Use type-safe mocking with proper TypeScript types
+- Prefer integration tests over unit tests for complex workflows
+- Use test utilities and custom matchers for common patterns
+- Keep test files close to the code they test
+- Use `describe` blocks to group related tests logically
+
+### Type-Safe Testing
+
+- Use proper typing for test utilities and mocks
+- Leverage TypeScript's type system in test assertions
+- Use branded types for test data to prevent mixing with production data
+- Create type-safe test builders for complex objects
+- Use generic test utilities that work with any type
+- Prefer compile-time type checking over runtime assertions when possible

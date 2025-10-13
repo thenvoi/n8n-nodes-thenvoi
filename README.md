@@ -56,33 +56,39 @@ The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi c
 
 You need the following installed on your development machine:
 
-* [git](https://git-scm.com/downloads)
-* Node.js and npm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
+- [git](https://git-scm.com/downloads)
+- Node.js and npm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
+- Install n8n with:
+
   ```
   npm install n8n -g
   ```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+
+- Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
 
 ## Setup
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/thenvoi/thenvoi-n8n-nodes.git
    cd thenvoi-n8n-nodes
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Build the project:
+
    ```bash
    npm run build
    ```
 
 4. Link the project:
+
    ```bash
    npm link
    ```
@@ -92,16 +98,19 @@ You need the following installed on your development machine:
 ### First time setup
 
 1. Create `custom` folder in n8n data directory:
+
    ```bash
    mkdir -p ~/.n8n/custom
    ```
 
 2. Navigate to the `nodes` directory:
+
    ```bash
    cd ~/.n8n/nodes
    ```
 
 3. Link the thenvoi-n8n-nodes project to your n8n instance:
+
    ```bash
    n8n link thenvoi-n8n-nodes
    ```
@@ -111,20 +120,23 @@ You need the following installed on your development machine:
 ### Running the n8n instance
 
 1. Run the n8n instance:
+
    ```bash
    n8n start
    ```
 
-	 Or, use the hot reload mode to automatically apply changes from the project to your n8n instance:
-	 ```bash
-	 N8N_DEV_RELOAD=true n8n start
-	 ```
+  Or, use the hot reload mode to automatically apply changes from the project to your n8n instance:
+
+  ```bash
+  N8N_DEV_RELOAD=true n8n start
+  ```
 
 2. Open the n8n web interface at `http://localhost:5678`
 
 ### Running the project
 
 1. Run the project:
+
    ```bash
    npm run dev
    ```
@@ -168,6 +180,7 @@ To add support for new event types:
 ## Troubleshooting
 
 Common issues:
+
 1. **Connection Failed**: Verify your API key and server URL are correct
 2. **No Events Triggered**: Check that the chat room ID is valid and you have access
 3. **Authentication Errors**: Ensure your API key has the necessary permissions
@@ -181,6 +194,7 @@ Common issues:
 If your custom node package doesn't work or isn't recognized by n8n, check:
 
 1. **Package Name**: Ensure your `package.json` has the correct name format:
+
    ```json
    {
      "name": "n8n-nodes-your-service-name"
@@ -188,6 +202,7 @@ If your custom node package doesn't work or isn't recognized by n8n, check:
    ```
 
 2. **Keywords**: Include the required keyword:
+
    ```json
    {
      "keywords": ["n8n-community-node-package"]
@@ -195,6 +210,7 @@ If your custom node package doesn't work or isn't recognized by n8n, check:
    ```
 
 3. **n8n Configuration**: Make sure your `package.json` includes the proper n8n configuration:
+
    ```json
    {
      "n8n": {

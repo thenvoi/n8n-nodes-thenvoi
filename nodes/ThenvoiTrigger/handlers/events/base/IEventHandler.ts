@@ -1,4 +1,5 @@
 import { ITriggerFunctions, INodeProperties } from 'n8n-workflow';
+import { EventHandlerConfig } from '../../../types';
 
 /**
  * Base interface for all event handlers
@@ -18,6 +19,12 @@ export interface IEventHandler<TConfig = any, TData = any> {
 	 * Description of what this event handler does
 	 */
 	readonly description: string;
+
+	/**
+	 * Initialize the handler with configuration
+	 * @param config Configuration object containing user ID and other settings
+	 */
+	initialize(config: EventHandlerConfig): void;
 
 	/**
 	 * Validates the configuration for this event handler

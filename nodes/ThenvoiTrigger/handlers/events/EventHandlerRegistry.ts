@@ -1,5 +1,8 @@
 import { INodeProperties } from 'n8n-workflow';
 import { IEventHandler } from './base/IEventHandler';
+import { EventHandlerConfig } from '../../types';
+import { baseParameters } from '../../config/baseParameters';
+import { createEventParameter } from '../../utils/events/eventParameterUtils';
 
 /**
  * Registry for managing event handlers
@@ -68,33 +71,31 @@ export class EventHandlerRegistry {
 	}
 
 	/**
+	 * Initialize a handler with configuration
+	 */
+	initializeHandler(eventType: string, config: EventHandlerConfig): void {
+		const handler = this.getHandler(eventType);
+		handler.initialize(config);
+	}
+
+	/**
+	 * Initialize event handler for a specific event type with user credentials
+	 * This is a convenience method for the main trigger node
+	 */
+	static initializeEventHandler(eventType: string, userId: string): void {
+		const config: EventHandlerConfig = { userId };
+		eventHandlerRegistry.initializeHandler(eventType, config);
+	}
+
+	/**
 	 * Gets all node parameters for all events (for dynamic UI generation)
 	 */
 	getAllNodeParameters(): INodeProperties[] {
-		const baseParameters: INodeProperties[] = [
-			{
-				displayName: 'Chat Room ID',
-				name: 'chatRoomId',
-				type: 'string',
-				default: '',
-				required: true,
-				description: 'The ID of the chat room to listen to',
-			},
-			{
-				displayName: 'Event',
-				name: 'event',
-				type: 'options',
-				options: this.getSupportedEvents().map((eventType) => {
-					const handler = this.getHandler(eventType);
-					return {
-						name: handler.displayName,
-						value: eventType,
-					};
-				}),
-				default: '',
-				description: 'The event to listen for',
-			},
-		];
+		// Create event parameter with dynamic options
+		const eventParameter = createEventParameter(this.getAllHandlers());
+
+		// Get base parameters without the event parameter (we'll add our dynamic one)
+		const baseParamsWithoutEvent = baseParameters.filter((param) => param.name !== 'event');
 
 		// Collect all event-specific parameters from all handlers
 		const allEventSpecificParams: INodeProperties[] = [];
@@ -103,8 +104,8 @@ export class EventHandlerRegistry {
 			allEventSpecificParams.push(...eventSpecificParams);
 		});
 
-		// Combine base parameters with all event-specific parameters
-		return [...baseParameters, ...allEventSpecificParams];
+		// Combine base parameters with event parameter and event-specific parameters
+		return [...baseParamsWithoutEvent, eventParameter, ...allEventSpecificParams];
 	}
 }
 

@@ -2,7 +2,7 @@ import { IExecuteFunctions, INodeExecutionData, INodeType } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
 import { createErrorResult, getValidatedCredentials, processItem } from './utils';
 
-export class Thenvoi implements INodeType {
+export class ThenvoiTool implements INodeType {
 	description = nodeDescription;
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

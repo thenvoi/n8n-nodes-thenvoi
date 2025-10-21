@@ -34,7 +34,7 @@
     ],
     "nodes": [
       "dist/nodes/ThenvoiTrigger/ThenvoiTrigger.node.js",
-      "dist/nodes/Thenvoi/Thenvoi.node.js"
+      "dist/nodes/Thenvoi/ThenvoiTool.node.js"
     ]
   },
   "devDependencies": {

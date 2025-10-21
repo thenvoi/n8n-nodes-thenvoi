@@ -1,8 +1,8 @@
 import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
 
 export const nodeDescription: INodeTypeDescription = {
-	displayName: 'Thenvoi',
-	name: 'thenvoi',
+	displayName: 'ThenvoiTool',
+	name: 'thenvoiTool',
 	icon: 'file:assets/thenvoi.svg',
 	group: ['transform'],
 	version: 1,

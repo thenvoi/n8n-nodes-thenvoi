@@ -2,7 +2,7 @@ import { ITriggerFunctions, NodeOperationError } from 'n8n-workflow';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
 import { TriggerConfig } from '../types';
 import { ThenvoiCredentials } from '@lib/types';
-import { logError, getSafeErrorMessage } from '@lib/utils';
+import { logError, getSafeErrorMessage, validateCredentialsExist } from '@lib/utils';
 
 /**
  * Validates a regex pattern string
@@ -26,13 +26,18 @@ export function validateRegexPattern(pattern: string): boolean {
  * This method can be extended for more sophisticated validation if needed
  */
 export function validateCredentials(
-	credentials: ThenvoiCredentials,
+	credentials: ThenvoiCredentials | null | undefined,
 	triggerContext: ITriggerFunctions,
 ): void {
 	if (!credentials) {
 		triggerContext.logger.error('Thenvoi Trigger: No credentials provided');
-		throw new NodeOperationError(triggerContext.getNode(), 'Thenvoi credentials are required');
 	}
+
+	validateCredentialsExist(
+		credentials,
+		triggerContext.getNode(),
+		'Thenvoi credentials are required',
+	);
 }
 
 /**

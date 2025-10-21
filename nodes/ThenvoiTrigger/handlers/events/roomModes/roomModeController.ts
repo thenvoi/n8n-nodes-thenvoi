@@ -1,8 +1,8 @@
 import { ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { TriggerConfig } from '../../types';
 import { ThenvoiCredentials } from '@lib/types';
-import { RoomManager } from '../../managers/RoomManager';
+import { TriggerConfig } from '../../../../ThenvoiTrigger/types';
+import { RoomManager } from '../../../managers/RoomManager';
 
 /**
  * Controller that manages the complete room mode lifecycle (start and cleanup) for all room modes (single, multi, filtered)

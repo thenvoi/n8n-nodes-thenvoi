@@ -177,25 +177,49 @@ You need the following installed on your development machine:
 
 ## Project Structure
 
-```
+The project follows a clean, modular architecture with clear separation of concerns:
+
+```plaintext
+├── lib/                        # Shared library code
+│   ├── api/                    # API clients for Thenvoi operations
+│   ├── http/                   # HTTP client implementation
+│   ├── socket/                 # WebSocket connection and channel management
+│   ├── types/                  # Shared type definitions
+│   └── utils/                  # Shared utility functions
 ├── nodes/
-│   └── ThenvoiTrigger/          # Main trigger node
-│       ├── config/             # Node configuration
-│       ├── handlers/           # Event handlers
-│       ├── utils/              # Utility functions
-│       └── types/               # TypeScript type definitions
-├── credentials/
-│   └── ThenvoiApi.credentials.ts # API credential configuration
-└── dist/                       # Compiled output
+│   └── ThenvoiTrigger/         # Main trigger node
+│       ├── ThenvoiTrigger.node.ts  # Node entry point
+│       └── [config, handlers, managers, types, utils]/  # Supporting directories
+├── credentials/                # API credential configuration
+└── dist/                       # Compiled output (generated)
 ```
+
+### Architecture Highlights
+
+- **Shared Library (`lib/`)**: Reusable code that can be used across multiple nodes, including API clients, socket management, type definitions, and utility functions
+- **Module Aliases**: Uses `@lib` and `@credentials` aliases for clean imports
+- **Separation of Concerns**: Clear boundaries between HTTP operations, WebSocket management, and node-specific logic
+- **Event Handler System**: Extensible event handler architecture with base classes and specific implementations
+- **Type Safety**: Comprehensive TypeScript type definitions organized by domain
 
 ## Adding New Event Types
 
-To add support for new event types:
+To add support for new event types for ThenvoiTrigger node:
 
-1. Create a new handler in `nodes/ThenvoiTrigger/handlers/`
-2. Implement the `IEventHandler` interface
-3. Register the handler `config/nodeConfig.ts`
+1. Create a new handler directory in `nodes/ThenvoiTrigger/handlers/events/`
+2. Implement the `IEventHandler` interface from `handlers/events/base/`
+3. Extend the `BaseEventHandler` class for common functionality
+4. Register the handler in `EventHandlerRegistry` (`handlers/events/EventHandlerRegistry.ts`)
+5. Add the event configuration to `config/nodeConfig.ts`
+
+Example structure for a new event:
+
+```plaintext
+handlers/events/
+  └── yourEventName/
+      ├── handler.ts       # Main event handler implementation
+      └── utils.ts         # Event-specific utility functions (optional)
+```
 
 ## Configuration
 

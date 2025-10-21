@@ -1,7 +1,7 @@
 import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
 import { EventHandlerRegistry } from './handlers/events/EventHandlerRegistry';
-import { handleRoomMode } from './handlers/roomModes/roomModeController';
+import { handleRoomMode } from './handlers/events/roomModes/roomModeController';
 import { ThenvoiCredentials } from '@lib/types';
 import { getTriggerConfig } from './utils/configFactory';
 import { getSafeErrorMessage, logError } from '@lib/utils';

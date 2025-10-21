@@ -33,7 +33,8 @@
       "dist/credentials/ThenvoiApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ThenvoiTrigger/ThenvoiTrigger.node.js"
+      "dist/nodes/ThenvoiTrigger/ThenvoiTrigger.node.js",
+      "dist/nodes/Thenvoi/Thenvoi.node.js"
     ]
   },
   "devDependencies": {

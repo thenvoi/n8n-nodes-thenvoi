@@ -13,16 +13,18 @@ export interface ChatMessageMetadata {
 	mentions: ChatMessageMention[];
 }
 
-export type ChatMessageType =
-	| 'text'
-	| 'system'
-	| 'action'
-	| 'thought'
-	| 'guidelines'
-	| 'error'
-	| 'tool_call'
-	| 'tool_result'
-	| 'task';
+export const ChatMessageTypes = [
+	'text',
+	'system',
+	'action',
+	'thought',
+	'guidelines',
+	'error',
+	'tool_call',
+	'tool_result',
+	'task',
+] as const;
+export type ChatMessageType = (typeof ChatMessageTypes)[number];
 
 // Raw data structure as it comes from the socket
 export interface RawChatMessage extends RawBaseEventData {

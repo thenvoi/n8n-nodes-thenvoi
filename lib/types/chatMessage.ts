@@ -24,6 +24,15 @@ export type ChatMessageType =
 	| 'tool_result'
 	| 'task';
 
+/**
+ * Message payload sent to Thenvoi API
+ */
+export interface ThenvoiMessagePayload {
+	content: string;
+	message_type: string;
+	sender_id: string;
+}
+
 // Raw data structure as it comes from the socket
 export interface RawChatMessage extends RawBaseEventData {
 	chat_room_id: string;

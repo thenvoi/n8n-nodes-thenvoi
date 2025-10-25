@@ -8,11 +8,24 @@ Custom n8n nodes for integrating with Thenvoi platform, including real-time even
 
 This package provides n8n nodes for connecting to Thenvoi's real-time communication platform. It includes:
 
+- **Thenvoi Agent**: A full-featured AI Agent with built-in streaming to Thenvoi chats
 - **Thenvoi Trigger**: A trigger node that listens to real-time events from Thenvoi chat rooms
 - **Thenvoi API Credentials**: Secure credential management for Thenvoi API authentication
 
 ## Features
 
+### Thenvoi Agent (AI Integration)
+- **Full AI Agent functionality** - Complete replacement for n8n's built-in AI Agent
+- **Real-time streaming** - Automatic streaming of tool calls, results, thoughts, and task updates to Thenvoi
+- **LangChain integration** - Built-in callback handler captures all agent activity
+- **Capability system** - Extensible architecture for adding new features without modifying core logic
+- **Configurable streaming** - Control what gets streamed (task updates, thoughts, tool calls, tool results)
+- **Modern agent support** - Works with tool-calling agents (OpenAI, Claude, Gemini, etc.) and ReAct agents
+- **Memory support** - Full support for conversation memory
+- **Multiple message types** - Support for task updates, thoughts, tool calls, and tool results
+- **Thought modes** - Choose between synthetic (auto-generated) or model-generated reasoning
+
+### Thenvoi Trigger (Event Listening)
 - **Real-time event listening** via WebSocket connections
 - **Multi-room support** - Listen to single, multiple, or all chat rooms
 - **Secure API key authentication**
@@ -187,7 +200,10 @@ The project follows a clean, modular architecture with clear separation of conce
 │   ├── types/                  # Shared type definitions
 │   └── utils/                  # Shared utility functions
 ├── nodes/
-│   └── ThenvoiTrigger/         # Main trigger node
+│   ├── ThenvoiAgent/           # AI Agent node
+│   │   ├── ThenvoiAgent.node.ts    # Node entry point
+│   │   └── [config, types, utils, capabilities, factories, handlers]/ # Supporting directories
+│   └── ThenvoiTrigger/         # Trigger node
 │       ├── ThenvoiTrigger.node.ts  # Node entry point
 │       └── [config, handlers, managers, types, utils]/  # Supporting directories
 ├── credentials/                # API credential configuration
@@ -198,8 +214,11 @@ The project follows a clean, modular architecture with clear separation of conce
 
 - **Shared Library (`lib/`)**: Reusable code that can be used across multiple nodes, including API clients, socket management, type definitions, and utility functions
 - **Module Aliases**: Uses `@lib` and `@credentials` aliases for clean imports
-- **Separation of Concerns**: Clear boundaries between HTTP operations, WebSocket management, and node-specific logic
-- **Event Handler System**: Extensible event handler architecture with base classes and specific implementations
+- **Capability System**: Extensible architecture for ThenvoiAgent with priority-based lifecycle hooks (Setup, Prepare, Execute, Success/Error, Finalize)
+- **Execution Pipeline**: Clear phase-based execution flow with proper resource management and cleanup
+- **Separation of Concerns**: Clear boundaries between HTTP operations, WebSocket management, agent logic, and node-specific features
+- **Event Handler System**: Extensible event handler architecture with base classes and specific implementations (ThenvoiTrigger)
+- **Modular Factories**: Specialized factories for agent creation, memory configuration, and prompt preparation
 - **Type Safety**: Comprehensive TypeScript type definitions organized by domain
 
 ## Adding New Event Types

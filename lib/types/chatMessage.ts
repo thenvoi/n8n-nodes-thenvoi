@@ -1,7 +1,7 @@
 import { EventData, RawBaseEventData } from './events';
+import { ParticipantType } from './participant';
 
 // Type definitions for message handling
-export type SenderType = 'User' | 'Agent';
 
 export interface ChatMessageMention {
 	id: string;
@@ -31,6 +31,8 @@ export interface ThenvoiMessagePayload {
 	content: string;
 	message_type: string;
 	sender_id: string;
+	sender_type: ParticipantType;
+	mentions?: ChatMessageMention[];
 }
 
 // Raw data structure as it comes from the socket
@@ -40,7 +42,7 @@ export interface RawChatMessage extends RawBaseEventData {
 	message_type: ChatMessageType;
 	metadata: ChatMessageMetadata;
 	sender_id: string;
-	sender_type: SenderType;
+	sender_type: ParticipantType;
 	thread_id: string | null;
 }
 
@@ -53,7 +55,7 @@ export interface N8NMessageResponse {
 	originalContent: string;
 	sender: {
 		id: string;
-		type: SenderType;
+		type: ParticipantType;
 	};
 	chat_room_id: string;
 }

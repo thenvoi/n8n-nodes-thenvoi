@@ -4,3 +4,5 @@ export * from './chatMessage';
 export * from './errors';
 export * from './socket';
 export * from './events';
+export * from './agent';
+export * from './participant';

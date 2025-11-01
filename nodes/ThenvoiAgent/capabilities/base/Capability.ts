@@ -2,6 +2,9 @@ import { IExecuteFunctions } from 'n8n-workflow';
 import { ThenvoiCredentials } from '@lib/types';
 import { AgentNodeConfig } from '../../types';
 import { AgentExecutor } from 'langchain/agents';
+import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
+import { StructuredTool } from '@langchain/core/tools';
+import type { CapabilityRegistry } from './CapabilityRegistry';
 
 /**
  * Priority levels for capability execution order
@@ -17,20 +20,27 @@ export enum CapabilityPriority {
 
 /**
  * Execution context passed to capabilities
+ * Provides access to execution functions and capability-specific properties
  */
 export interface CapabilityContext {
-	context: IExecuteFunctions;
+	execution: IExecuteFunctions;
 	config: AgentNodeConfig;
 	credentials: ThenvoiCredentials;
 	input: string;
+	registry?: CapabilityRegistry; // Reference to CapabilityRegistry for cross-capability access
 }
 
 /**
  * Result from setup phase
+ *
+ * Capabilities return tools, callbacks, and metadata from their setup phase.
+ * Metadata is used to pass data from capabilities to the execution orchestrator
+ * that doesn't fit into tools or callbacks (e.g., availableAgents for prompt augmentation).
  */
 export interface SetupResult {
-	callbacks?: any[];
-	metadata?: Record<string, any>;
+	callbacks?: BaseCallbackHandler[];
+	tools?: StructuredTool[];
+	metadata?: Record<string, unknown>;
 }
 
 /**

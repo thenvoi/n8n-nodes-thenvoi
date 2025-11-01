@@ -1,6 +1,11 @@
 import { IExecuteFunctions, IHttpRequestOptions, IDataObject } from 'n8n-workflow';
-import { ChatMessageType, ThenvoiCredentials, ThenvoiMessagePayload } from '../types';
-import { getHttpUrl } from '../utils';
+import {
+	ChatMessageType,
+	ChatMessageMention,
+	ThenvoiCredentials,
+	ThenvoiMessagePayload,
+} from '../types';
+import { getHttpUrl, includeProperty } from '../utils';
 
 /**
  * Sends a message to the Thenvoi API
@@ -11,9 +16,10 @@ export async function sendMessageToThenvoi(
 	chatId: string,
 	messageType: ChatMessageType,
 	content: string,
+	mentions?: ChatMessageMention[],
 ): Promise<IDataObject> {
 	const url = buildMessageUrl(credentials, chatId);
-	const body = buildMessagePayload(messageType, content, credentials.userId);
+	const body = buildMessagePayload(messageType, content, credentials.userId, mentions);
 
 	const requestOptions: IHttpRequestOptions = {
 		method: 'POST',
@@ -44,10 +50,13 @@ function buildMessagePayload(
 	messageType: ChatMessageType,
 	content: string,
 	senderId: string,
+	mentions?: ChatMessageMention[],
 ): ThenvoiMessagePayload {
 	return {
 		content,
 		message_type: messageType,
 		sender_id: senderId,
+		sender_type: 'User',
+		...includeProperty('mentions', mentions),
 	};
 }

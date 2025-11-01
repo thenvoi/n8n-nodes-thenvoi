@@ -17,23 +17,33 @@ import { BaseMemory } from 'langchain/memory';
 import { AgentExecutor } from 'langchain/agents';
 import { Runnable } from '@langchain/core/runnables';
 import { AgentNodeConfig, AgentType } from '../types';
+import { AgentBasicInfo } from '@lib/types';
 import { configureMemory } from './memoryConfig';
 import { createAgent } from './agentCreation';
-import { prepareSystemMessage } from './promptFactory';
+import { prepareSystemMessage, augmentPromptWithAgents } from './promptFactory';
 
 /**
- * Prepares the system message with optional model thought augmentation
+ * Prepares the system message with optional model thought augmentation and agent context
  */
-function prepareAgentPrompt(config: AgentNodeConfig, ctx: IExecuteFunctions): string {
+function prepareAgentPrompt(
+	config: AgentNodeConfig,
+	ctx: IExecuteFunctions,
+	availableAgents: AgentBasicInfo[],
+): string {
 	const useModelThoughts =
 		config.messageTypes.includes('thoughts') && config.thoughtMode === 'model';
 
-	const systemMessage = prepareSystemMessage(config.prompt, useModelThoughts);
+	let systemMessage = prepareSystemMessage(config.prompt, useModelThoughts);
 
-	if (useModelThoughts) {
-		ctx.logger.info('Model thoughts enabled', {
+	// Augment with available agents for collaboration
+	systemMessage = augmentPromptWithAgents(systemMessage, availableAgents);
+
+	if (useModelThoughts || availableAgents.length > 0) {
+		ctx.logger.info('Prompt augmented', {
 			originalLength: config.prompt.length,
 			augmentedLength: systemMessage.length,
+			modelThoughts: useModelThoughts,
+			availableAgentsCount: availableAgents.length,
 		});
 	}
 
@@ -56,7 +66,7 @@ function assembleExecutor(
 		tools,
 		maxIterations: config.maxIterations,
 		returnIntermediateSteps: config.returnIntermediateSteps,
-		verbose: true,
+		verbose: false,
 		...(memory && {
 			memory,
 			memoryKey: 'chat_history',
@@ -82,9 +92,10 @@ export async function createAgentExecutor(
 	tools: StructuredTool[],
 	memory: BaseMemory | undefined,
 	config: AgentNodeConfig,
+	availableAgents: AgentBasicInfo[] = [],
 ): Promise<AgentExecutor> {
 	try {
-		const systemMessage = prepareAgentPrompt(config, ctx);
+		const systemMessage = prepareAgentPrompt(config, ctx, availableAgents);
 		configureMemory(memory, ctx);
 
 		const hasMemory = !!memory;

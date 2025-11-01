@@ -5,60 +5,122 @@
  * Manages the entire lifecycle from setup through execution to cleanup.
  *
  * Pipeline phases:
- * 1. Setup - Retrieve agent components (model, tools, memory)
- * 2. Prepare - Initialize capabilities and callbacks
- * 3. Execute - Run the agent with input
- * 4. Success/Error - Handle outcomes
- * 5. Finalize - Cleanup and final operations
+ * 1. Initialize Capabilities - Setup capabilities to get tools and metadata
+ * 2. Setup - Retrieve agent components and create executor with all tools
+ * 3. Prepare - Finalize capabilities and get callbacks
+ * 4. Execute - Run the agent with input
+ * 5. Success/Error - Handle outcomes
+ * 6. Finalize - Cleanup and final operations
  */
 
 import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials } from '@lib/types';
+import { ThenvoiCredentials, AgentBasicInfo } from '@lib/types';
 import { AgentNodeConfig, AgentExecutionResult } from './types';
 import { AgentComponents, CallbackHandlers } from './types/langchain';
 import { getConnectedModel, getConnectedTools, getConnectedMemory } from './utils/nodeConnections';
 import { createAgentExecutor } from './factories/agentFactory';
 import { executeAgent } from './utils/agents/agentExecutor';
-import { CapabilityRegistry, CapabilityContext } from './capabilities';
+import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
 import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
+import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
+import { StructuredTool } from '@langchain/core/tools';
 
 /**
- * Setup phase - retrieves all connected components
+ * Initialize capabilities phase - runs capability setup to get tools and metadata
+ *
+ * This phase executes the setup lifecycle method for all registered capabilities,
+ * collecting tools and metadata that will be used in subsequent phases.
+ * Capabilities are executed in priority order (lower priority values first).
+ *
+ * @param registry - Capability registry with registered capabilities
+ * @param capabilityContext - Execution context for capabilities
+ * @returns Setup results from all capabilities and extracted capability tools
+ */
+async function initializeCapabilitiesPhase(
+	registry: CapabilityRegistry,
+	capabilityContext: CapabilityContext,
+): Promise<{ setupResults: SetupResult[]; capabilityTools: StructuredTool[] }> {
+	const setupResults = await registry.executeSetup(capabilityContext);
+	const capabilityTools = setupResults.flatMap((result) => result.tools || []);
+
+	capabilityContext.execution.logger.info('Capabilities initialized', {
+		capabilityCount: registry.getCapabilities().length,
+		capabilityToolCount: capabilityTools.length,
+	});
+
+	return { setupResults, capabilityTools };
+}
+
+/**
+ * Setup phase - retrieves all connected components and creates executor
+ *
+ * Retrieves model, tools, and memory from node connections, combines them with
+ * capability-provided tools, and creates the agent executor. Also extracts
+ * available agent metadata for prompt augmentation.
+ *
+ * @param ctx - n8n execution context
+ * @param config - Agent node configuration
+ * @param capabilityTools - Tools provided by capabilities
+ * @param setupResults - Setup results from capabilities (for metadata extraction)
+ * @returns Agent components including model, tools, memory, and executor
  */
 async function setupPhase(
 	ctx: IExecuteFunctions,
 	config: AgentNodeConfig,
+	capabilityTools: StructuredTool[],
+	setupResults: SetupResult[],
 ): Promise<AgentComponents> {
 	const model = await getConnectedModel(ctx);
-	const tools = await getConnectedTools(ctx);
+	const connectedTools = await getConnectedTools(ctx);
 	const memory = await getConnectedMemory(ctx);
+
+	// Combine connected tools with capability tools
+	const allTools = [...connectedTools, ...capabilityTools];
+
+	// Extract available agents from capability metadata for prompt augmentation
+	const collaborationResult = setupResults.find((r) => r.metadata?.availableAgents);
+	const availableAgents = Array.isArray(collaborationResult?.metadata?.availableAgents)
+		? (collaborationResult.metadata.availableAgents as AgentBasicInfo[])
+		: [];
 
 	ctx.logger.info('Agent components retrieved', {
 		hasModel: !!model,
-		toolCount: tools.length,
+		connectedToolCount: connectedTools.length,
+		capabilityToolCount: capabilityTools.length,
+		totalToolCount: allTools.length,
 		hasMemory: !!memory,
+		availableAgentsCount: availableAgents.length,
 	});
 
-	const executor = await createAgentExecutor(ctx, model, tools, memory, config);
+	const executor = await createAgentExecutor(ctx, model, allTools, memory, config, availableAgents);
 
-	return { model, tools, memory, executor };
+	return { model, tools: allTools, memory, executor };
 }
 
 /**
- * Prepare phase - initializes capabilities and gets callbacks
+ * Prepare phase - finalizes capabilities and gets callbacks
+ *
+ * Executes the prepare lifecycle method for all capabilities, allowing them
+ * to inspect or modify the executor. Then collects all callback handlers
+ * that will be used during agent execution.
+ *
+ * @param registry - Capability registry
+ * @param capabilityContext - Execution context for capabilities
+ * @param components - Agent components including the executor
+ * @param setupResults - Setup results containing callbacks
+ * @returns Collected callback handlers from all capabilities
  */
 async function preparePhase(
 	registry: CapabilityRegistry,
 	capabilityContext: CapabilityContext,
 	components: AgentComponents,
+	setupResults: SetupResult[],
 ): Promise<CallbackHandlers> {
-	const setupResults = await registry.executeSetup(capabilityContext);
 	await registry.executePrepare(capabilityContext, components.executor);
 
 	const callbacks = setupResults.flatMap((result) => result.callbacks || []);
 
-	capabilityContext.context.logger.info('Capabilities prepared', {
-		capabilityCount: registry.getCapabilities().length,
+	capabilityContext.execution.logger.info('Capabilities prepared', {
 		callbackCount: callbacks.length,
 	});
 
@@ -67,6 +129,15 @@ async function preparePhase(
 
 /**
  * Execute phase - runs the agent with callbacks
+ *
+ * Executes the agent with the provided input and callback handlers.
+ * Callbacks enable real-time streaming of agent activity (thoughts, tool calls, etc.).
+ *
+ * @param executor - The agent executor to run
+ * @param input - User input for the agent
+ * @param callbacks - Callback handlers for streaming events
+ * @param ctx - n8n execution context for logging
+ * @returns Agent execution result with output and intermediate steps
  */
 async function executePhase(
 	executor: AgentComponents['executor'],
@@ -76,16 +147,18 @@ async function executePhase(
 ): Promise<AgentExecutionResult> {
 	const result = await executeAgent(executor, input, callbacks, ctx);
 
-	ctx.logger.info('Agent execution completed', {
-		outputLength: result.output.length,
-		intermediateStepCount: result.intermediateSteps?.length || 0,
-	});
-
 	return result;
 }
 
 /**
  * Success phase - handles successful execution
+ *
+ * Executes the success lifecycle method for all capabilities, allowing them
+ * to handle the successful result (e.g., send final response, update status).
+ *
+ * @param registry - Capability registry
+ * @param capabilityContext - Execution context for capabilities
+ * @param result - Successful execution result
  */
 async function successPhase(
 	registry: CapabilityRegistry,
@@ -97,6 +170,13 @@ async function successPhase(
 
 /**
  * Error phase - handles execution failure
+ *
+ * Executes the error lifecycle method for all capabilities, allowing them
+ * to handle errors appropriately (e.g., send error notifications, cleanup).
+ *
+ * @param registry - Capability registry
+ * @param capabilityContext - Execution context for capabilities
+ * @param error - The error that occurred
  */
 async function errorPhase(
 	registry: CapabilityRegistry,
@@ -108,6 +188,13 @@ async function errorPhase(
 
 /**
  * Finalize phase - cleanup and final operations
+ *
+ * Executes the finalize lifecycle method for all capabilities, allowing them
+ * to perform cleanup operations (e.g., wait for pending messages, release resources).
+ * This phase runs regardless of success or failure.
+ *
+ * @param registry - Capability registry
+ * @param capabilityContext - Execution context for capabilities
  */
 async function finalizePhase(
 	registry: CapabilityRegistry,
@@ -122,6 +209,7 @@ async function finalizePhase(
 function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry {
 	const registry = new CapabilityRegistry();
 
+	registry.register(new AgentCollaborationCapability());
 	registry.register(new MessagingCapability());
 
 	return registry;
@@ -132,7 +220,7 @@ function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry
  * Uses capability system for extensible functionality
  */
 export async function runAgent(
-	ctx: IExecuteFunctions,
+	execution: IExecuteFunctions,
 	input: string,
 	config: AgentNodeConfig,
 	credentials: ThenvoiCredentials,
@@ -140,16 +228,21 @@ export async function runAgent(
 	const registry = createCapabilitiesRegistry(config);
 
 	const capabilityContext: CapabilityContext = {
-		context: ctx,
+		execution,
 		config,
 		credentials,
 		input,
+		registry,
 	};
 
 	try {
-		const components = await setupPhase(ctx, config);
-		const callbacks = await preparePhase(registry, capabilityContext, components);
-		const result = await executePhase(components.executor, input, callbacks, ctx);
+		const { setupResults, capabilityTools } = await initializeCapabilitiesPhase(
+			registry,
+			capabilityContext,
+		);
+		const components = await setupPhase(execution, config, capabilityTools, setupResults);
+		const callbacks = await preparePhase(registry, capabilityContext, components, setupResults);
+		const result = await executePhase(components.executor, input, callbacks, execution);
 
 		await successPhase(registry, capabilityContext, result);
 		await finalizePhase(registry, capabilityContext);

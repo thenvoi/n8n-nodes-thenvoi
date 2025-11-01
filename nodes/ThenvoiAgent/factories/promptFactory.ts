@@ -1,6 +1,7 @@
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { augmentPromptForModelThoughts } from '../utils/thoughts/thoughtExtraction';
+import { AgentBasicInfo } from '@lib/types';
 
 /**
  * Base ReAct template structure shared between memory and non-memory versions
@@ -93,8 +94,64 @@ export function createReactPrompt(systemMessage: string, hasMemory: boolean): Pr
 }
 
 /**
+ * Augments system message with mention guidelines for all participants
+ */
+function addMentionGuidelines(basePrompt: string): string {
+	const mentionGuidelines = `
+## Mention Guidelines
+
+When mentioning other participants (agents or users), use "@" followed by their name (e.g., "@AgentName" or "@UserName"). The "@" symbol is required.
+
+Rules:
+- Do NOT mention yourself - only mention others when addressing them
+- Use "@" only when you have a clear, actionable question or task ready NOW
+- You can reference names without "@" when discussing them - only use "@" when you need something immediately
+- After someone responds, acknowledge without "@" unless asking something else
+`;
+
+	return `${basePrompt}\n${mentionGuidelines}`;
+}
+
+/**
+ * Augments system message with available agents context for collaboration
+ */
+export function augmentPromptWithAgents(
+	basePrompt: string,
+	availableAgents: AgentBasicInfo[],
+): string {
+	if (availableAgents.length === 0) {
+		return basePrompt;
+	}
+
+	const agentsList = availableAgents
+		.map((agent) => `- ${agent.name}: ${agent.description}`)
+		.join('\n');
+
+	const agentContext = `
+## Available Agents for Collaboration
+
+You can add specialized agents to this chat when you need expertise. Use the add_agent_to_chat tool to bring them in.
+
+Available agents:
+${agentsList}
+`;
+
+	return `${basePrompt}\n${agentContext}`;
+}
+
+/**
  * Augments a system message with model thought instructions if needed
+ * Also adds mention guidelines to all system messages
  */
 export function prepareSystemMessage(basePrompt: string, useModelThoughts: boolean): string {
-	return useModelThoughts ? augmentPromptForModelThoughts(basePrompt) : basePrompt;
+	let prompt = basePrompt;
+
+	if (useModelThoughts) {
+		prompt = augmentPromptForModelThoughts(prompt);
+	}
+
+	// Add mention guidelines to all system messages
+	prompt = addMentionGuidelines(prompt);
+
+	return prompt;
 }

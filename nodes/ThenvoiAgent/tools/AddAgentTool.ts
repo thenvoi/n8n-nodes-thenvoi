@@ -16,7 +16,7 @@ import { AgentBasicInfo, ChatParticipant } from '@lib/types';
 import { HttpClient } from '@lib/http/client';
 import { addAgentToChat } from '@lib/api';
 import { isAgentParticipant, createAgentParticipantObject } from '../utils/participants';
-import { extractErrorMessage } from '../utils/errors';
+import { formatToolErrorResponse } from '../utils/errors';
 
 /**
  * Tool configuration dependencies
@@ -56,23 +56,36 @@ export class AddAgentTool extends Tool {
 	 * Executes the tool - validates and adds the agent to chat
 	 *
 	 * @param agent_name - The exact name of the agent to add (case-sensitive)
-	 * @returns Success message with agent name, or error message describing the issue
+	 * @returns JSON string with result data, or error message string
 	 */
 	async _call(agent_name: string): Promise<string> {
 		const agent = this.findAgentByName(agent_name);
 		if (!agent) {
-			return this.buildAgentNotFoundError(agent_name);
+			return JSON.stringify({
+				error: this.buildAgentNotFoundError(agent_name),
+				availableAgents: this.availableAgents.map((a) => ({ id: a.id, name: a.name })),
+			});
 		}
 
 		if (this.isAgentAlreadyInChat(agent)) {
-			return this.buildAlreadyInChatMessage(agent);
+			return JSON.stringify({
+				success: true,
+				message: this.buildAlreadyInChatMessage(agent),
+				agent: agent,
+				alreadyInChat: true,
+			});
 		}
 
 		try {
-			await this.addAgentToChat(agent);
-			return this.buildSuccessMessage(agent);
+			const participant = await this.addAgentToChat(agent);
+			return JSON.stringify({
+				success: true,
+				message: this.buildSuccessMessage(agent),
+				agent: agent,
+				participant,
+			});
 		} catch (error) {
-			return this.buildErrorMessage(error);
+			return formatToolErrorResponse(error, 'adding agent to chat');
 		}
 	}
 
@@ -80,8 +93,9 @@ export class AddAgentTool extends Tool {
 	 * Finds an agent by name in the available agents list
 	 *
 	 * Matching is case-sensitive to ensure exact agent identification.
+	 * This tool requires precise agent names to prevent accidental additions.
 	 *
-	 * @param agentName - The name to search for
+	 * @param agentName - The name to search for (case-sensitive)
 	 * @returns The agent if found, undefined otherwise
 	 */
 	private findAgentByName(agentName: string): AgentBasicInfo | undefined {
@@ -159,18 +173,5 @@ export class AddAgentTool extends Tool {
 	 */
 	private buildSuccessMessage(agent: AgentBasicInfo): string {
 		return `Successfully added "${agent.name}" to the chat. You can now mention them using "@${agent.name}" in your response if needed.`;
-	}
-
-	/**
-	 * Builds error message for API failures
-	 *
-	 * Extracts user-friendly error message from the error object.
-	 *
-	 * @param error - The error that occurred
-	 * @returns Error message string
-	 */
-	private buildErrorMessage(error: unknown): string {
-		const errorMessage = extractErrorMessage(error);
-		return `Error adding agent to chat: ${errorMessage}`;
 	}
 }

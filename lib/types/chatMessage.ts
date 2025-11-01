@@ -13,16 +13,19 @@ export interface ChatMessageMetadata {
 	mentions: ChatMessageMention[];
 }
 
-export type ChatMessageType =
-	| 'text'
-	| 'system'
-	| 'action'
-	| 'thought'
-	| 'guidelines'
-	| 'error'
-	| 'tool_call'
-	| 'tool_result'
-	| 'task';
+export const CHAT_MESSAGE_TYPES: readonly string[] = [
+	'text',
+	'system',
+	'action',
+	'thought',
+	'guidelines',
+	'error',
+	'tool_call',
+	'tool_result',
+	'task',
+];
+
+export type ChatMessageType = (typeof CHAT_MESSAGE_TYPES)[number];
 
 /**
  * Message payload sent to Thenvoi API

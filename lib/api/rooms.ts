@@ -51,3 +51,15 @@ export async function fetchAllRooms(httpClient: HttpClient, logger: Logger): Pro
 function isLastPage(rooms: RoomInfo[], perPage: number): boolean {
 	return rooms.length === 0 || rooms.length < perPage;
 }
+
+/**
+ * Fetches information about a specific chat room
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @returns Chat room information
+ */
+export async function fetchChatRoom(httpClient: HttpClient, chatId: string): Promise<RoomInfo> {
+	const response = await httpClient.get<{ data: RoomInfo }>(`/chats/${chatId}`);
+	return response.data;
+}

@@ -23,6 +23,7 @@ import { executeAgent } from './utils/agents/agentExecutor';
 import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
 import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
 import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
+import { ChatContextCapability } from './capabilities/context/ChatContextCapability';
 import { StructuredTool } from '@langchain/core/tools';
 
 /**
@@ -211,6 +212,7 @@ function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry
 
 	registry.register(new AgentCollaborationCapability());
 	registry.register(new MessagingCapability());
+	registry.register(new ChatContextCapability());
 
 	return registry;
 }

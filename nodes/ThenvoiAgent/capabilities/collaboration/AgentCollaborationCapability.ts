@@ -14,7 +14,7 @@ import { AgentBasicInfo, ChatParticipant } from '@lib/types';
 import { fetchAvailableAgents, fetchChatParticipants } from '@lib/api';
 import { AddAgentTool, AddAgentToolConfig } from '../../tools';
 import { filterAgents } from '../../utils/participants';
-import { extractErrorMessage } from '../../utils/errors';
+import { getErrorMessage } from '@lib/utils/errors';
 import { MessagingCapability } from '../messaging/MessagingCapability';
 
 export class AgentCollaborationCapability implements Capability {
@@ -49,7 +49,7 @@ export class AgentCollaborationCapability implements Capability {
 				callbacks: [],
 				metadata: {
 					collaborationEnabled: false,
-					error: extractErrorMessage(error),
+					error: getErrorMessage(error),
 				},
 			};
 		}

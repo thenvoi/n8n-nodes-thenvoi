@@ -2,7 +2,6 @@ import { Logger } from 'n8n-workflow';
 import { ThenvoiCredentials } from '../types';
 import { logError } from '../utils/errors';
 import { getHttpUrl } from '../utils/urls';
-import { includeProperty } from '@lib/utils';
 
 /**
  * HTTP client for making API requests to Thenvoi
@@ -51,8 +50,11 @@ export class HttpClient {
 					'Content-Type': 'application/json',
 				},
 				...headers,
-				...includeProperty('body', body),
 			};
+
+			if (body !== undefined) {
+				fetchOptions.body = JSON.stringify(body);
+			}
 
 			const response = await fetch(url, fetchOptions);
 

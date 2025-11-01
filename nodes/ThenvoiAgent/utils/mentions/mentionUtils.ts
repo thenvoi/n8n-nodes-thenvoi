@@ -8,6 +8,11 @@ import { ChatMessageMention, ChatParticipant } from '@lib/types';
 import { escapeRegex } from '@lib/utils/strings';
 
 /**
+ * Characters that mark the end of a mention (punctuation followed by whitespace or end)
+ */
+const MENTION_ENDING_PUNCTUATION = '!.,;:?';
+
+/**
  * Detects participants mentioned in a message text using @Name format.
  * The AI is responsible for adding @ mentions in the text - this only detects them.
  * Matching is case-sensitive.
@@ -33,14 +38,14 @@ export function detectMentions(
 
 			const escapedName = escapeRegex(trimmedName);
 			// Match @Name followed by:
-			// - Punctuation (!.,;:?)
+			// - Punctuation (MENTION_ENDING_PUNCTUATION)
 			// - Whitespace (space, tab, newline)
 			// - Word boundary (for names ending with word characters)
 			// - End of string
 			// This handles cases like "@Treasure Hunter!", "@Treasure Hunter hello", "@Name.", etc.
 			// Using positive lookahead to ensure the mention is followed by valid characters
 			// Matching is case-sensitive as documented
-			const pattern = `@${escapedName}(?=[!.,;:?\\s]|\\b|$)`;
+			const pattern = `@${escapedName}(?=[${MENTION_ENDING_PUNCTUATION}\\s]|\\b|$)`;
 			const atMentionPattern = new RegExp(pattern);
 
 			return atMentionPattern.test(message);

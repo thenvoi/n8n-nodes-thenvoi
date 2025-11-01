@@ -22,10 +22,27 @@ export function detectMentions(
 	}
 
 	return participants
+		.filter((participant) => !!participant.name)
 		.filter((participant) => !currentAgentId || participant.id !== currentAgentId)
 		.filter((participant) => {
-			const escapedName = escapeRegex(participant.name);
-			const atMentionPattern = new RegExp(`@${escapedName}(?:\\b|$)`);
+			// Trim whitespace from participant name to handle any edge cases
+			const trimmedName = participant.name.trim();
+			if (!trimmedName) {
+				return false;
+			}
+
+			const escapedName = escapeRegex(trimmedName);
+			// Match @Name followed by:
+			// - Punctuation (!.,;:?)
+			// - Whitespace (space, tab, newline)
+			// - Word boundary (for names ending with word characters)
+			// - End of string
+			// This handles cases like "@Treasure Hunter!", "@Treasure Hunter hello", "@Name.", etc.
+			// Using positive lookahead to ensure the mention is followed by valid characters
+			// Matching is case-sensitive as documented
+			const pattern = `@${escapedName}(?=[!.,;:?\\s]|\\b|$)`;
+			const atMentionPattern = new RegExp(pattern);
+
 			return atMentionPattern.test(message);
 		});
 }

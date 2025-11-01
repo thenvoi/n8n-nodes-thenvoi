@@ -15,6 +15,7 @@ import { fetchAvailableAgents, fetchChatParticipants } from '@lib/api';
 import { AddAgentTool, AddAgentToolConfig } from '../../tools';
 import { filterAgents } from '../../utils/participants';
 import { extractErrorMessage } from '../../utils/errors';
+import { MessagingCapability } from '../messaging/MessagingCapability';
 
 export class AgentCollaborationCapability implements Capability {
 	readonly name = 'agent_collaboration';
@@ -129,10 +130,11 @@ export class AgentCollaborationCapability implements Capability {
 	 * Creates callback handler for when an agent is added via tool
 	 *
 	 * Updates internal participants list to keep state in sync when agents
-	 * are dynamically added during execution. Prevents duplicate entries
+	 * are dynamically added during execution. Also notifies MessagingCapability
+	 * if available so mentions work immediately. Prevents duplicate entries
 	 * and logs the addition for debugging.
 	 *
-	 * @param ctx - Capability context for logging
+	 * @param ctx - Capability context for logging and registry access
 	 * @returns Callback function that receives the added agent
 	 */
 	private createAgentAddedCallback(ctx: CapabilityContext) {
@@ -140,6 +142,16 @@ export class AgentCollaborationCapability implements Capability {
 			const wasAlreadyInList = this.currentParticipants.some((p) => p.id === agent.id);
 			if (!wasAlreadyInList) {
 				this.currentParticipants.push(agent);
+			}
+
+			// Notify MessagingCapability so it can update its participants list
+			// This allows mentions to work immediately without refetching
+			const messagingCapability = ctx.registry?.getCapabilityByName('messaging') as
+				| MessagingCapability
+				| undefined;
+
+			if (messagingCapability?.addParticipant) {
+				messagingCapability.addParticipant(agent);
 			}
 
 			ctx.execution.logger.info('Agent added via tool', {

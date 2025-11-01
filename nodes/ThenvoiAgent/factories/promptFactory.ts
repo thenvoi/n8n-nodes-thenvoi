@@ -96,17 +96,28 @@ export function createReactPrompt(systemMessage: string, hasMemory: boolean): Pr
 /**
  * Augments system message with mention guidelines for all participants
  */
-function addMentionGuidelines(basePrompt: string): string {
+export function addMentionGuidelines(basePrompt: string): string {
 	const mentionGuidelines = `
 ## Mention Guidelines
 
-When mentioning other participants (agents or users), use "@" followed by their name (e.g., "@AgentName" or "@UserName"). The "@" symbol is required.
+The "@" symbol notifies participants and triggers immediate action. Use it carefully.
 
 Rules:
 - Do NOT mention yourself - only mention others when addressing them
-- Use "@" only when you have a clear, actionable question or task ready NOW
-- You can reference names without "@" when discussing them - only use "@" when you need something immediately
-- After someone responds, acknowledge without "@" unless asking something else
+- NEVER use "@" in these situations:
+  - Thanking or acknowledging someone
+  - Just referencing someone in conversation
+  - Using conditional statements like "if...", "when...", "I would...", "I will..."
+  - Planning to ask someone later
+  - Waiting for information before you can ask
+  - Explaining what you would do in a hypothetical situation
+  - You don't have ALL required information to ask a complete question RIGHT NOW
+  - In all these cases, use their name WITHOUT "@"
+- Use "@" ONLY when:
+  - You are literally asking a question or making a request RIGHT NOW
+  - You have ALL required information immediately available
+  - The question is complete and ready to be answered without any missing data
+  - You are not waiting for anything from anyone
 `;
 
 	return `${basePrompt}\n${mentionGuidelines}`;
@@ -130,7 +141,13 @@ export function augmentPromptWithAgents(
 	const agentContext = `
 ## Available Agents for Collaboration
 
-You can add specialized agents to this chat when you need expertise. Use the add_agent_to_chat tool to bring them in.
+When you need specialized expertise, directly add and use agents without asking the user for permission. Use the add_agent_to_chat tool to bring them in, then immediately use them to fulfill the user's request. If you don't have all the information you need to ask them a question, add the agent but ask the user to provide the missing information before using the agent.
+
+IMPORTANT:
+- Do NOT ask the user if you should add an agent - just add it if needed
+- Do NOT explain to the user how to interact with agents
+- Do NOT tell the user they can ask the agent - instead, add the agent and use it yourself to answer the user's question
+- After adding an agent, directly use it to get the information needed and provide the answer to the user unless you need to ask the user for more information before using the agent.
 
 Available agents:
 ${agentsList}
@@ -141,7 +158,6 @@ ${agentsList}
 
 /**
  * Augments a system message with model thought instructions if needed
- * Also adds mention guidelines to all system messages
  */
 export function prepareSystemMessage(basePrompt: string, useModelThoughts: boolean): string {
 	let prompt = basePrompt;
@@ -149,9 +165,6 @@ export function prepareSystemMessage(basePrompt: string, useModelThoughts: boole
 	if (useModelThoughts) {
 		prompt = augmentPromptForModelThoughts(prompt);
 	}
-
-	// Add mention guidelines to all system messages
-	prompt = addMentionGuidelines(prompt);
 
 	return prompt;
 }

@@ -11,6 +11,7 @@
  * Priority: HIGH (25) - Runs early to capture all agent events
  */
 
+import { Logger } from 'n8n-workflow';
 import { Capability, CapabilityContext, SetupResult, CapabilityPriority } from '../base/Capability';
 import { ThenvoiAgentCallbackHandler } from '../../handlers/callbacks/ThenvoiAgentCallbackHandler';
 import { createCallbackOptions } from '../../utils/config';
@@ -26,12 +27,14 @@ export class MessagingCapability implements Capability {
 	private handler: ThenvoiAgentCallbackHandler | null = null;
 	private sendTaskUpdates: boolean = false;
 	private participants: ChatParticipant[] = [];
+	private httpClient: HttpClient | null = null;
 
 	async onSetup(ctx: CapabilityContext): Promise<SetupResult> {
 		const handler = this.initializeHandler(ctx);
 		this.sendTaskUpdates = ctx.config.messageTypes.includes('task_updates');
+		this.httpClient = new HttpClient(ctx.credentials, ctx.execution.logger);
 
-		await this.fetchParticipantsForMentions(ctx);
+		await this.fetchParticipantsForMentions(ctx.config.chatId, ctx.execution.logger);
 
 		if (this.sendTaskUpdates) {
 			await handler.sendTaskUpdate(ctx.input, 'in_progress');
@@ -71,19 +74,23 @@ export class MessagingCapability implements Capability {
 	/**
 	 * Fetches all participants (users and agents) for mention detection
 	 *
-	 * Fetches participants asynchronously and handles errors gracefully.
 	 * If fetching fails, continues without participants - mentions won't work
 	 * but messaging functionality remains available.
 	 *
-	 * @param ctx - Capability context for HTTP client and logging
+	 * @param chatId - ID of the chat to fetch participants from
+	 * @param logger - Logger for error reporting
 	 */
-	private async fetchParticipantsForMentions(ctx: CapabilityContext): Promise<void> {
+	private async fetchParticipantsForMentions(chatId: string, logger: Logger): Promise<void> {
+		if (!this.httpClient) {
+			logger.warn('HTTP client not initialized, cannot fetch participants for mentions');
+			return;
+		}
+
 		try {
-			const httpClient = new HttpClient(ctx.credentials, ctx.execution.logger);
-			this.participants = await fetchChatParticipants(httpClient, ctx.config.chatId);
+			this.participants = await fetchChatParticipants(this.httpClient, chatId);
 		} catch (error) {
-			ctx.execution.logger.warn('Failed to fetch participants for mentions', { error });
 			// Continue without participants - mentions won't work but messaging will
+			logger.warn('Failed to fetch participants for mentions', { error });
 			this.participants = [];
 		}
 	}
@@ -107,7 +114,12 @@ export class MessagingCapability implements Capability {
 		if (!this.handler) return;
 
 		if (output) {
-			const { content, mentions } = this.processMentionsInResponse(output, ctx.credentials.userId);
+			// Remove thoughts from the final response
+			const cleanedOutput = this.removeThoughtsFromOutput(output);
+			const { content, mentions } = this.processMentionsInResponse(
+				cleanedOutput,
+				ctx.credentials.userId,
+			);
 			await this.handler.sendFinalResponse(content, mentions);
 		}
 
@@ -120,6 +132,30 @@ export class MessagingCapability implements Capability {
 
 			await this.handler.sendTaskUpdate(ctx.input, 'completed', summary);
 		}
+	}
+
+	/**
+	 * Removes model-generated thoughts from the output text
+	 *
+	 * Removes patterns like "Thinking: ..." and "Reasoning: ..." from the final response
+	 * since thoughts are sent separately as thought messages.
+	 * Handles both single-line and multi-line thoughts.
+	 *
+	 * @param output - The agent output that may contain thoughts
+	 * @returns The output with thoughts removed
+	 */
+	private removeThoughtsFromOutput(output: string): string {
+		// Remove "Thinking: ..." patterns - matches until newline or end of string
+		// This captures the entire thought line including any trailing text on the same line
+		let cleaned = output.replace(/Thinking:\s*[^\n]*(?:\n|$)/gi, '');
+
+		// Remove "Reasoning: ..." patterns
+		cleaned = cleaned.replace(/Reasoning:\s*[^\n]*(?:\n|$)/gi, '');
+
+		// Remove any standalone "Thinking:" or "Reasoning:" labels that might be left
+		cleaned = cleaned.replace(/^(?:Thinking|Reasoning):\s*/gim, '');
+
+		return cleaned;
 	}
 
 	async onError(ctx: CapabilityContext, error: Error): Promise<void> {
@@ -136,6 +172,22 @@ export class MessagingCapability implements Capability {
 	async onFinalize(ctx: CapabilityContext): Promise<void> {
 		if (this.handler) {
 			await this.handler.waitForPendingOperations();
+		}
+	}
+
+	/**
+	 * Adds a participant to the participants list for mention detection
+	 *
+	 * Used when agents are dynamically added during execution.
+	 * Prevents duplicate entries by checking if participant already exists.
+	 *
+	 * @param participant - The participant to add
+	 */
+	addParticipant(participant: ChatParticipant): void {
+		const exists = this.participants.some((p) => p.id === participant.id);
+
+		if (!exists) {
+			this.participants.push(participant);
 		}
 	}
 

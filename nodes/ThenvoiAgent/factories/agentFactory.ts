@@ -20,7 +20,11 @@ import { AgentNodeConfig, AgentType } from '../types';
 import { AgentBasicInfo } from '@lib/types';
 import { configureMemory } from './memoryConfig';
 import { createAgent } from './agentCreation';
-import { prepareSystemMessage, augmentPromptWithAgents } from './promptFactory';
+import {
+	prepareSystemMessage,
+	augmentPromptWithAgents,
+	addMentionGuidelines,
+} from './promptFactory';
 
 /**
  * Prepares the system message with optional model thought augmentation and agent context
@@ -37,6 +41,9 @@ function prepareAgentPrompt(
 
 	// Augment with available agents for collaboration
 	systemMessage = augmentPromptWithAgents(systemMessage, availableAgents);
+
+	// Add mention guidelines at the end (after agents section) for maximum effectiveness
+	systemMessage = addMentionGuidelines(systemMessage);
 
 	if (useModelThoughts || availableAgents.length > 0) {
 		ctx.logger.info('Prompt augmented', {

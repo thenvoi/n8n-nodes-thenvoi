@@ -1,7 +1,7 @@
 import { IExecuteFunctions } from 'n8n-workflow';
 import { ThenvoiCredentials, ChatMessageType, ChatMessageMention } from '@lib/types';
 import { sendMessageToThenvoi } from '@lib/api/messages';
-import { extractErrorMessage } from '../errors';
+import { getErrorMessage } from '@lib/utils/errors';
 
 /**
  * Message queue interface for managing sequential message sending
@@ -33,7 +33,7 @@ export function createMessageQueue(
 				try {
 					await sendMessageToThenvoi(context, credentials, chatId, messageType, content, mentions);
 				} catch (error) {
-					const errorDetails = extractErrorMessage(error);
+					const errorDetails = getErrorMessage(error);
 					const errorStack = error instanceof Error ? error.stack : undefined;
 
 					context.logger.error(

@@ -6,3 +6,6 @@ export { validateAgentInput } from './validation';
 
 // Item Processing
 export { processAgentItem } from './itemProcessor';
+
+// Errors
+export { extractErrorMessage } from './errors';

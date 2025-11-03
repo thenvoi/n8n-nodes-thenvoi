@@ -79,15 +79,15 @@ export const MESSAGE_TYPES_NODE_PROPERTY: INodeProperties = {
  */
 const THOUGHT_MODE_OPTIONS = [
 	{
+		name: 'Model Generated',
+		value: 'model',
+		description: 'Let the LLM explicitly state its reasoning (natural, model-dependent)',
+	},
+	{
 		name: 'Synthetic',
 		value: 'synthetic',
 		description:
 			'Automatically generate reasoning messages based on agent actions (fast, consistent)',
-	},
-	{
-		name: 'Model Generated',
-		value: 'model',
-		description: 'Let the LLM explicitly state its reasoning (natural, model-dependent)',
 	},
 ] as const;
 

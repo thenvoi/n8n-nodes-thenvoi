@@ -1,9 +1,9 @@
 import { Serialized } from '@langchain/core/load/serializable';
 import { LLMResult } from '@langchain/core/outputs';
-import { CallbackContext } from '../../types/agentCapabilities';
-import { LLMGeneration, LLMGenerationMessage } from '../../types/langchain';
-import { extractModelThought } from '../../utils/thoughts/thoughtExtraction';
 import { getSafeErrorMessage } from '@lib/utils';
+import { CallbackContext } from '../../types/agentCapabilities';
+import { ContentBlock, LLMGeneration, LLMGenerationMessage } from '../../types/langchain';
+import { extractModelThought } from '../../utils/thoughts/thoughtExtraction';
 
 /**
  * Extracts thinking/reasoning from message additional_kwargs
@@ -31,8 +31,20 @@ function extractContentFromMessage(message: LLMGenerationMessage): string {
 
 	if (Array.isArray(content)) {
 		const textParts = content
-			.filter((part: any) => part.type === 'text' || typeof part === 'string')
-			.map((part: any) => (typeof part === 'string' ? part : part.text || part.content || ''))
+			.filter(
+				(part: ContentBlock) =>
+					part.type === 'text' || part.type === 'thinking' || typeof part === 'string',
+			)
+			.map((part: any) => {
+				if (typeof part === 'string') {
+					return part;
+				}
+				if (part.type === 'thinking' && part.thinking) {
+					// Extract thinking from ThinkingContentBlock
+					return `Thinking: ${part.thinking}`;
+				}
+				return part.text || part.content || '';
+			})
 			.filter((text: string) => text.length > 0);
 
 		return textParts.join('\n');

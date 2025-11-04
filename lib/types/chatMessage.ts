@@ -28,14 +28,22 @@ export const CHAT_MESSAGE_TYPES: readonly string[] = [
 export type ChatMessageType = (typeof CHAT_MESSAGE_TYPES)[number];
 
 /**
- * Message payload sent to Thenvoi API
+ * Inner message structure sent to Thenvoi API
  */
 export interface ThenvoiMessagePayload {
 	content: string;
 	message_type: string;
 	sender_id: string;
 	sender_type: ParticipantType;
-	mentions?: ChatMessageMention[];
+	mentions: ChatMessageMention[];
+}
+
+/**
+ * Request body wrapper for Thenvoi API message endpoint
+ * The API requires the message payload to be wrapped in a "message" object
+ */
+export interface ThenvoiMessageRequest {
+	message: ThenvoiMessagePayload;
 }
 
 // Raw data structure as it comes from the socket
@@ -46,6 +54,7 @@ export interface RawChatMessage extends RawBaseEventData {
 	metadata: ChatMessageMetadata;
 	sender_id: string;
 	sender_type: ParticipantType;
+	sender_name: string;
 	thread_id: string | null;
 }
 

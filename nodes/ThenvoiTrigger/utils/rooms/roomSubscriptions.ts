@@ -110,12 +110,12 @@ async function handleRoomRemoved(
  */
 export function setupAutoSubscribe(
 	socket: Socket,
-	userId: string,
+	agentId: string,
 	logger: Logger,
 	onRoomAdded: (room: RoomInfo) => Promise<void>,
 	onRoomRemoved: (roomId: string) => Promise<void>,
 ): void {
-	const userChannel = socket.channel(`user_rooms:${userId}`, {});
+	const userChannel = socket.channel(`agent_rooms:${agentId}`, {});
 
 	userChannel.on('room_added', (data: RoomAddedEvent) => {
 		handleRoomAdded(data, onRoomAdded, logger);

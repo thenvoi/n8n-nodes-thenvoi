@@ -9,6 +9,7 @@ export interface AgentNodeConfig {
 	maxIterations: number;
 	messageTypes: MessageTypeOptionValue[];
 	thoughtMode: ThoughtModeValue;
+	messageId: string;
 	returnIntermediateSteps: boolean;
 }
 

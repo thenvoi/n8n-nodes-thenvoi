@@ -180,6 +180,7 @@ export const NODE_PARAMETER_NAMES = {
 	MAX_ITERATIONS: 'maxIterations',
 	MESSAGE_TYPES: 'messageTypes',
 	THOUGHT_MODE: 'thoughtMode',
+	MESSAGE_ID: 'messageId',
 	OPTIONS: 'options',
 } as const;
 
@@ -188,7 +189,7 @@ export const NODE_PARAMETER_NAMES = {
  */
 export const DEFAULT_PARAMETERS = {
 	PROMPT: 'You are a helpful AI assistant.',
-	MAX_ITERATIONS: 10,
+	MAX_ITERATIONS: 20,
 } as const;
 
 /**
@@ -219,8 +220,18 @@ const MAX_ITERATIONS_PROPERTY: INodeProperties = {
 	displayName: 'Max Iterations',
 	name: NODE_PARAMETER_NAMES.MAX_ITERATIONS,
 	type: 'number',
-	default: 10,
+	default: 20,
 	description: 'Maximum number of iterations the agent can perform before stopping',
+};
+
+const MESSAGE_ID_PROPERTY: INodeProperties = {
+	displayName: 'Message ID',
+	name: NODE_PARAMETER_NAMES.MESSAGE_ID,
+	type: 'string',
+	default: '',
+	required: true,
+	placeholder: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
+	description: 'ID of the message to reply to',
 };
 
 export const NODE_PARAMETER_PROPERTIES = [
@@ -229,5 +240,6 @@ export const NODE_PARAMETER_PROPERTIES = [
 	MAX_ITERATIONS_PROPERTY,
 	MESSAGE_TYPES_NODE_PROPERTY,
 	THOUGHT_MODE_NODE_PROPERTY,
+	MESSAGE_ID_PROPERTY,
 	OPTIONS_NODE_PROPERTY,
 ];

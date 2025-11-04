@@ -46,10 +46,11 @@ export class HttpClient {
 			const fetchOptions: RequestInit = {
 				method,
 				headers: {
+					accept: 'application/json',
 					'X-API-Key': this.credentials.apiKey,
 					'Content-Type': 'application/json',
+					...headers,
 				},
-				...headers,
 			};
 
 			if (body !== undefined) {

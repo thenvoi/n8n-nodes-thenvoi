@@ -25,6 +25,8 @@ import { MessagingCapability } from './capabilities/messaging/MessagingCapabilit
 import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
 import { ChatContextCapability } from './capabilities/context/ChatContextCapability';
 import { StructuredTool } from '@langchain/core/tools';
+import { HttpClient } from '@lib/http/client';
+import { updateMessageProcessingStatus } from './utils/messages';
 
 /**
  * Initialize capabilities phase - runs capability setup to get tools and metadata
@@ -227,6 +229,14 @@ export async function runAgent(
 	config: AgentNodeConfig,
 	credentials: ThenvoiCredentials,
 ): Promise<AgentExecutionResult> {
+	const httpClient = new HttpClient(credentials, execution.logger);
+	await updateMessageProcessingStatus(
+		httpClient,
+		execution.logger,
+		config.chatId,
+		config.messageId,
+	);
+
 	const registry = createCapabilitiesRegistry(config);
 
 	const capabilityContext: CapabilityContext = {
@@ -234,6 +244,8 @@ export async function runAgent(
 		config,
 		credentials,
 		input,
+		messageId: config.messageId,
+		httpClient,
 		registry,
 	};
 

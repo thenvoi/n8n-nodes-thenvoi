@@ -26,12 +26,10 @@ export class AgentCollaborationCapability implements Capability {
 	private tool: AddAgentTool | null = null;
 
 	async onSetup(ctx: CapabilityContext): Promise<SetupResult> {
-		const httpClient = new HttpClient(ctx.credentials, ctx.execution.logger);
-
 		try {
-			await this.fetchCollaborationData(httpClient, ctx.config.chatId, ctx);
+			await this.fetchCollaborationData(ctx.httpClient, ctx.config.chatId, ctx);
 
-			const toolConfig = this.createToolConfiguration(httpClient, ctx.config.chatId, ctx);
+			const toolConfig = this.createToolConfiguration(ctx.httpClient, ctx.config.chatId, ctx);
 			this.tool = new AddAgentTool(toolConfig);
 
 			const metadata = this.buildSetupMetadata();

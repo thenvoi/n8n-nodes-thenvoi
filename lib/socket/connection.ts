@@ -41,6 +41,7 @@ function createSocketOptions(config: SocketConfig, logger: Logger) {
 	return {
 		params: {
 			api_key: config.apiKey,
+			agent_id: config.agentId,
 		},
 		logger: createSocketLogger(logger),
 		reconnectAfterMs: config.reconnectAfterMs || DEFAULT_RECONNECT_STRATEGY,

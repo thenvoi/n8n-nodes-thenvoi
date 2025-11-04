@@ -3,41 +3,58 @@ import { Logger } from 'n8n-workflow';
 import { HttpClient } from '../http/client';
 
 /**
- * Fetches a single page of rooms
+ * Fetches a single page of rooms for an agent
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param agentId - ID of the agent
+ * @param page - Page number to fetch
+ * @param pageSize - Number of rooms per page
+ * @returns Array of room information
  */
 export async function fetchRoomsPage(
 	httpClient: HttpClient,
+	agentId: string,
 	page: number,
-	perPage: number,
+	pageSize: number,
 ): Promise<RoomInfo[]> {
 	const params = {
 		status: 'active',
-		type: 'direct',
 		page: page.toString(),
-		per_page: perPage.toString(),
+		page_size: pageSize.toString(),
 	};
 
-	const response = await httpClient.get<{ data: RoomInfo[] }>('/me/chats', params);
+	const response = await httpClient.get<{ data: RoomInfo[] }>(`/agents/${agentId}/chats`, params);
 	return response.data || [];
 }
 
 /**
  * Fetches all rooms by handling pagination automatically
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param agentId - ID of the agent
+ * @param logger - Logger for pagination progress
+ * @returns Array of all room information
  */
-export async function fetchAllRooms(httpClient: HttpClient, logger: Logger): Promise<RoomInfo[]> {
+export async function fetchAllRooms(
+	httpClient: HttpClient,
+	agentId: string,
+	logger: Logger,
+): Promise<RoomInfo[]> {
 	const allRooms: RoomInfo[] = [];
 	let page = 1;
-	const perPage = 100;
+	const pageSize = 100;
 
 	while (true) {
-		const rooms = await fetchRoomsPage(httpClient, page, perPage);
+		const rooms = await fetchRoomsPage(httpClient, agentId, page, pageSize);
 
-		if (isLastPage(rooms, perPage)) {
-			allRooms.push(...rooms);
+		logger.info('Fetched rooms on page', { page, roomCount: rooms.length });
+
+		allRooms.push(...rooms);
+
+		if (isLastPage(rooms, pageSize)) {
 			break;
 		}
 
-		allRooms.push(...rooms);
 		page++;
 	}
 

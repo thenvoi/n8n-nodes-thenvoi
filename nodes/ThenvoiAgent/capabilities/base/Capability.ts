@@ -5,6 +5,7 @@ import { AgentExecutor } from 'langchain/agents';
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { StructuredTool } from '@langchain/core/tools';
 import type { CapabilityRegistry } from './CapabilityRegistry';
+import { HttpClient } from '@lib/http/client';
 
 /**
  * Priority levels for capability execution order
@@ -27,6 +28,8 @@ export interface CapabilityContext {
 	config: AgentNodeConfig;
 	credentials: ThenvoiCredentials;
 	input: string;
+	messageId: string;
+	httpClient: HttpClient;
 	registry?: CapabilityRegistry; // Reference to CapabilityRegistry for cross-capability access
 }
 

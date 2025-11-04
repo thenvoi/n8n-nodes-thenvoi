@@ -28,3 +28,10 @@ export interface AddParticipantPayload {
 	participant_id: string;
 	role: ParticipantRole;
 }
+
+/**
+ * Request body for adding a participant to a chat API endpoint
+ */
+export interface AddParticipantRequest {
+	participant: AddParticipantPayload;
+}

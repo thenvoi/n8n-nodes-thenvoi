@@ -23,7 +23,7 @@ export class RoomManager {
 	private config: TriggerConfig;
 	private triggerContext: ITriggerFunctions;
 	private httpClient: HttpClient;
-	private userId: string;
+	private agentId: string;
 	private subscriptions = new Map<string, RoomSubscription>();
 
 	constructor(
@@ -37,7 +37,7 @@ export class RoomManager {
 		this.logger = triggerContext.logger;
 		this.triggerContext = triggerContext;
 		this.httpClient = new HttpClient(credentials, this.logger);
-		this.userId = credentials.userId;
+		this.agentId = credentials.agentId;
 
 		this.subscribeToNewRoom = this.subscribeToNewRoom.bind(this);
 		this.unsubscribeFromRoom = this.unsubscribeFromRoom.bind(this);
@@ -45,7 +45,12 @@ export class RoomManager {
 
 	async initialize(): Promise<void> {
 		// Get rooms to subscribe based on room mode
-		const roomIds = await getRoomIdsForMode(this.config, this.httpClient, this.logger);
+		const roomIds = await getRoomIdsForMode(
+			this.config,
+			this.httpClient,
+			this.agentId,
+			this.logger,
+		);
 
 		// Subscribe to all rooms
 		await subscribeToRooms(
@@ -64,7 +69,7 @@ export class RoomManager {
 		if (supportsAutoSubscribe(this.config) && this.config.autoSubscribe) {
 			setupAutoSubscribe(
 				this.socket,
-				this.userId,
+				this.agentId,
 				this.logger,
 				this.subscribeToNewRoom,
 				this.unsubscribeFromRoom,

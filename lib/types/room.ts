@@ -27,8 +27,11 @@ export interface RoomInfo {
 	title: string;
 	status: RoomStatus;
 	type: RoomTypeValue;
-	inserted_at: string;
-	updated_at: string;
+	inserted_at?: string;
+	updated_at?: string;
+	deleted_at?: string | null;
+	metadata?: Record<string, unknown> | null;
+	task_id?: string | null;
 }
 
 export interface RoomSubscription {

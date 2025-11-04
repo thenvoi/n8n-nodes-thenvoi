@@ -19,6 +19,8 @@ import { createMentionMetadata, detectMentions } from '../../utils/mentions';
 import { ChatParticipant, ChatMessageMention } from '@lib/types';
 import { HttpClient } from '@lib/http/client';
 import { fetchChatParticipants } from '@lib/api';
+import { updateMessageProcessedStatus, updateMessageFailedStatus } from '../../utils/messages';
+import { SendMessageTool } from '../../tools';
 
 export class MessagingCapability implements Capability {
 	readonly name = 'messaging';
@@ -27,14 +29,16 @@ export class MessagingCapability implements Capability {
 	private handler: ThenvoiAgentCallbackHandler | null = null;
 	private sendTaskUpdates: boolean = false;
 	private participants: ChatParticipant[] = [];
-	private httpClient: HttpClient | null = null;
 
 	async onSetup(ctx: CapabilityContext): Promise<SetupResult> {
 		const handler = this.initializeHandler(ctx);
 		this.sendTaskUpdates = ctx.config.messageTypes.includes('task_updates');
-		this.httpClient = new HttpClient(ctx.credentials, ctx.execution.logger);
 
-		await this.fetchParticipantsForMentions(ctx.config.chatId, ctx.execution.logger);
+		await this.fetchParticipantsForMentions(
+			ctx.config.chatId,
+			ctx.execution.logger,
+			ctx.httpClient,
+		);
 
 		if (this.sendTaskUpdates) {
 			await handler.sendTaskUpdate(ctx.input, 'in_progress');
@@ -44,6 +48,7 @@ export class MessagingCapability implements Capability {
 			sendTaskUpdates: this.sendTaskUpdates,
 			messageTypes: ctx.config.messageTypes,
 			participantsCount: this.participants.length,
+			messageId: ctx.messageId,
 		});
 
 		return this.buildSetupResult(handler);
@@ -79,15 +84,15 @@ export class MessagingCapability implements Capability {
 	 *
 	 * @param chatId - ID of the chat to fetch participants from
 	 * @param logger - Logger for error reporting
+	 * @param httpClient - HTTP client for API requests
 	 */
-	private async fetchParticipantsForMentions(chatId: string, logger: Logger): Promise<void> {
-		if (!this.httpClient) {
-			logger.warn('HTTP client not initialized, cannot fetch participants for mentions');
-			return;
-		}
-
+	private async fetchParticipantsForMentions(
+		chatId: string,
+		logger: Logger,
+		httpClient: HttpClient,
+	): Promise<void> {
 		try {
-			this.participants = await fetchChatParticipants(this.httpClient, chatId);
+			this.participants = await fetchChatParticipants(httpClient, chatId);
 		} catch (error) {
 			// Continue without participants - mentions won't work but messaging will
 			logger.warn('Failed to fetch participants for mentions', { error });
@@ -96,13 +101,22 @@ export class MessagingCapability implements Capability {
 	}
 
 	/**
-	 * Builds the setup result object with callbacks and metadata
+	 * Builds the setup result object with callbacks, tools, and metadata
+	 *
+	 * Creates the send_message tool and includes it in the setup result.
+	 * The tool allows agents to send messages during execution.
 	 *
 	 * @param handler - The initialized callback handler
-	 * @returns Setup result with callbacks and metadata
+	 * @returns Setup result with callbacks, tools, and metadata
 	 */
 	private buildSetupResult(handler: ThenvoiAgentCallbackHandler): SetupResult {
+		const sendMessageTool = new SendMessageTool({
+			messageQueue: handler.messageQueue,
+			participants: this.participants,
+		});
+
 		return {
+			tools: [sendMessageTool],
 			callbacks: [handler],
 			metadata: {
 				messagingEnabled: true,
@@ -110,15 +124,28 @@ export class MessagingCapability implements Capability {
 		};
 	}
 
+	/**
+	 * Handles successful agent execution
+	 *
+	 * Sends final response only if agent didn't use send_message tool.
+	 * If agent sent messages via tool, skips final output to avoid redundancy.
+	 *
+	 * @param ctx - Capability context with execution state
+	 * @param output - Agent's final output string
+	 */
 	async onSuccess(ctx: CapabilityContext, output: string): Promise<void> {
 		if (!this.handler) return;
 
-		if (output) {
-			// Remove thoughts from the final response
+		const toolsUsed = this.handler.getToolsUsed();
+		const sentMessagesViaTool = toolsUsed.includes('send_message');
+
+		// Only send final output if no messages were sent via tool
+		// This prevents redundant messages when agent already sent what it needed
+		if (output && !sentMessagesViaTool) {
 			const cleanedOutput = this.removeThoughtsFromOutput(output);
 			const { content, mentions } = this.processMentionsInResponse(
 				cleanedOutput,
-				ctx.credentials.userId,
+				ctx.credentials.agentId,
 			);
 			await this.handler.sendFinalResponse(content, mentions);
 		}
@@ -132,6 +159,13 @@ export class MessagingCapability implements Capability {
 
 			await this.handler.sendTaskUpdate(ctx.input, 'completed', summary);
 		}
+
+		await updateMessageProcessedStatus(
+			ctx.httpClient,
+			ctx.execution.logger,
+			ctx.config.chatId,
+			ctx.messageId,
+		);
 	}
 
 	/**
@@ -163,10 +197,19 @@ export class MessagingCapability implements Capability {
 
 		await this.handler.waitForPendingOperations();
 
+		const errorMessage = error.message || 'Unknown error occurred';
+
 		if (this.sendTaskUpdates) {
-			const errorMessage = error.message || 'Unknown error occurred';
 			await this.handler.sendTaskUpdate(ctx.input, 'failed', `Error: ${errorMessage}`);
 		}
+
+		await updateMessageFailedStatus(
+			ctx.httpClient,
+			ctx.execution.logger,
+			ctx.config.chatId,
+			ctx.messageId,
+			errorMessage,
+		);
 	}
 
 	async onFinalize(ctx: CapabilityContext): Promise<void> {

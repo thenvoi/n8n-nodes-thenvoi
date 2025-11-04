@@ -1,7 +1,8 @@
-import { IExecuteFunctions } from 'n8n-workflow';
+import { Logger } from 'n8n-workflow';
 import { ThenvoiCredentials, ChatMessageType, ChatMessageMention } from '@lib/types';
 import { sendMessageToThenvoi } from '@lib/api/messages';
 import { getErrorMessage } from '@lib/utils/errors';
+import { HttpClient } from '@lib/http/client';
 
 /**
  * Message queue interface for managing sequential message sending
@@ -17,7 +18,8 @@ export interface MessageQueue {
  * Uses closure to maintain state
  */
 export function createMessageQueue(
-	context: IExecuteFunctions,
+	httpClient: HttpClient,
+	logger: Logger,
 	credentials: ThenvoiCredentials,
 	chatId: string,
 ): MessageQueue {
@@ -31,30 +33,24 @@ export function createMessageQueue(
 
 			queue = queue.then(async () => {
 				try {
-					await sendMessageToThenvoi(context, credentials, chatId, messageType, content, mentions);
+					await sendMessageToThenvoi(
+						httpClient,
+						chatId,
+						messageType,
+						content,
+						credentials.agentId,
+						mentions,
+					);
 				} catch (error) {
 					const errorDetails = getErrorMessage(error);
 					const errorStack = error instanceof Error ? error.stack : undefined;
 
-					context.logger.error(
-						'Failed to send queued message' +
-							JSON.stringify({
-								messageId,
-								messageType,
-								error: errorDetails,
-								stack: errorStack,
-								// Log the full error object for debugging
-								fullError: JSON.stringify(error, null, 2),
-							}),
-						{
-							messageId,
-							messageType,
-							error: errorDetails,
-							stack: errorStack,
-							// Log the full error object for debugging
-							fullError: JSON.stringify(error, null, 2),
-						},
-					);
+					logger.error('Failed to send queued message', {
+						messageId,
+						messageType,
+						error: errorDetails,
+						stack: errorStack,
+					});
 				}
 			});
 		},
@@ -67,7 +63,7 @@ export function createMessageQueue(
 			try {
 				await queue;
 			} catch (error) {
-				context.logger.warn('Error while waiting for message queue', {
+				logger.warn('Error while waiting for message queue', {
 					error: (error as Error).message,
 				});
 			}

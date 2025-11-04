@@ -1,5 +1,5 @@
 import { Channel } from 'phoenix';
-import { SenderType } from './chatMessage';
+import { ParticipantType } from './participant';
 
 /**
  * Room Mode constants for type safety
@@ -57,7 +57,7 @@ export interface RoomAddedEvent extends Omit<RoomInfo, 'updated_at'> {
 	owner: {
 		id: string;
 		name: string;
-		type: SenderType;
+		type: ParticipantType;
 	};
 	participant_role: string;
 }

@@ -1,7 +1,7 @@
 import { EventData, RawBaseEventData } from './events';
+import { ParticipantType } from './participant';
 
 // Type definitions for message handling
-export type SenderType = 'User' | 'Agent';
 
 export interface ChatMessageMention {
 	id: string;
@@ -13,16 +13,19 @@ export interface ChatMessageMetadata {
 	mentions: ChatMessageMention[];
 }
 
-export type ChatMessageType =
-	| 'text'
-	| 'system'
-	| 'action'
-	| 'thought'
-	| 'guidelines'
-	| 'error'
-	| 'tool_call'
-	| 'tool_result'
-	| 'task';
+export const CHAT_MESSAGE_TYPES: readonly string[] = [
+	'text',
+	'system',
+	'action',
+	'thought',
+	'guidelines',
+	'error',
+	'tool_call',
+	'tool_result',
+	'task',
+];
+
+export type ChatMessageType = (typeof CHAT_MESSAGE_TYPES)[number];
 
 /**
  * Message payload sent to Thenvoi API
@@ -31,6 +34,8 @@ export interface ThenvoiMessagePayload {
 	content: string;
 	message_type: string;
 	sender_id: string;
+	sender_type: ParticipantType;
+	mentions?: ChatMessageMention[];
 }
 
 // Raw data structure as it comes from the socket
@@ -40,7 +45,7 @@ export interface RawChatMessage extends RawBaseEventData {
 	message_type: ChatMessageType;
 	metadata: ChatMessageMetadata;
 	sender_id: string;
-	sender_type: SenderType;
+	sender_type: ParticipantType;
 	thread_id: string | null;
 }
 
@@ -53,7 +58,7 @@ export interface N8NMessageResponse {
 	originalContent: string;
 	sender: {
 		id: string;
-		type: SenderType;
+		type: ParticipantType;
 	};
 	chat_room_id: string;
 }

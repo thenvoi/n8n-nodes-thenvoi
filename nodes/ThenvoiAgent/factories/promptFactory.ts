@@ -1,6 +1,7 @@
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { augmentPromptForModelThoughts } from '../utils/thoughts/thoughtExtraction';
+import { AgentBasicInfo } from '@lib/types';
 
 /**
  * Base ReAct template structure shared between memory and non-memory versions
@@ -93,8 +94,77 @@ export function createReactPrompt(systemMessage: string, hasMemory: boolean): Pr
 }
 
 /**
+ * Augments system message with mention guidelines for all participants
+ */
+export function addMentionGuidelines(basePrompt: string): string {
+	const mentionGuidelines = `
+## Mention Guidelines
+
+The "@" symbol notifies participants and triggers immediate action. Use it carefully.
+
+Rules:
+- Do NOT mention yourself - only mention others when addressing them
+- NEVER use "@" in these situations:
+  - Thanking or acknowledging someone
+  - Just referencing someone in conversation
+  - Using conditional statements like "if...", "when...", "I would...", "I will..."
+  - Planning to ask someone later
+  - Waiting for information before you can ask
+  - Explaining what you would do in a hypothetical situation
+  - You don't have ALL required information to ask a complete question RIGHT NOW
+  - In all these cases, use their name WITHOUT "@"
+- Use "@" ONLY when:
+  - You are literally asking a question or making a request RIGHT NOW
+  - You have ALL required information immediately available
+  - The question is complete and ready to be answered without any missing data
+  - You are not waiting for anything from anyone
+`;
+
+	return `${basePrompt}\n${mentionGuidelines}`;
+}
+
+/**
+ * Augments system message with available agents context for collaboration
+ */
+export function augmentPromptWithAgents(
+	basePrompt: string,
+	availableAgents: AgentBasicInfo[],
+): string {
+	if (availableAgents.length === 0) {
+		return basePrompt;
+	}
+
+	const agentsList = availableAgents
+		.map((agent) => `- ${agent.name}: ${agent.description}`)
+		.join('\n');
+
+	const agentContext = `
+## Available Agents for Collaboration
+
+When you need specialized expertise, directly add and use agents without asking the user for permission. Use the add_agent_to_chat tool to bring them in, then immediately use them to fulfill the user's request. If you don't have all the information you need to ask them a question, add the agent but ask the user to provide the missing information before using the agent.
+
+IMPORTANT:
+- Do NOT ask the user if you should add an agent - just add it if needed
+- Do NOT explain to the user how to interact with agents
+- Do NOT tell the user they can ask the agent - instead, add the agent and use it yourself to answer the user's question
+- After adding an agent, directly use it to get the information needed and provide the answer to the user unless you need to ask the user for more information before using the agent.
+
+Available agents:
+${agentsList}
+`;
+
+	return `${basePrompt}\n${agentContext}`;
+}
+
+/**
  * Augments a system message with model thought instructions if needed
  */
 export function prepareSystemMessage(basePrompt: string, useModelThoughts: boolean): string {
-	return useModelThoughts ? augmentPromptForModelThoughts(basePrompt) : basePrompt;
+	let prompt = basePrompt;
+
+	if (useModelThoughts) {
+		prompt = augmentPromptForModelThoughts(prompt);
+	}
+
+	return prompt;
 }

@@ -2,7 +2,7 @@ import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { Serialized } from '@langchain/core/load/serializable';
 import { LLMResult } from '@langchain/core/outputs';
 import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials } from '@lib/types';
+import { ThenvoiCredentials, ChatMessageMention } from '@lib/types';
 import { CallbackOptions } from '../../types/callbackHandler';
 import { CallbackContext } from '../../types/agentCapabilities';
 import { TaskStatus } from '../../types/common';
@@ -113,7 +113,7 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		await this.ctx.messageQueue.wait();
 	}
 
-	async sendFinalResponse(finalAnswer: string): Promise<void> {
+	async sendFinalResponse(finalAnswer: string, mentions?: ChatMessageMention[]): Promise<void> {
 		await this.waitForPendingOperations();
 
 		// Defensive string conversion for various LangChain output formats
@@ -127,9 +127,13 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 		this.ctx.executionContext.logger.info('Sending final response', {
 			responseLength: answerText.length,
+			mentionCount: mentions?.length || 0,
 		});
 
-		this.ctx.messageQueue.enqueue('text', answerText);
+		this.ctx.messageQueue.enqueue('text', answerText, mentions);
+
+		// Wait for the final response to be sent before returning
+		await this.waitForPendingOperations();
 	}
 
 	async sendTaskUpdate(task: string, status: TaskStatus, summary?: string): Promise<void> {

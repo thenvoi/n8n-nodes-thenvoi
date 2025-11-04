@@ -83,6 +83,8 @@ alwaysApply: true
 - Group related utilities in focused files
 - Question file names that don't match their content
 - Reorganize files when content doesn't match their name or purpose
+- Don't place core/orchestration files in utility folders
+- Reserve utility folders for helper functions, not main execution logic
 
 ### TypeScript-Specific Project Patterns
 
@@ -110,6 +112,9 @@ alwaysApply: true
 - Break down functions that do multiple things
 - Balance function extraction - extract meaningful complexity, avoid over-engineering simple operations
 - Question whether a function needs to be extracted
+- Prefer array methods (`filter`, `map`, `find`) over for loops when selecting or transforming arrays
+- Use `filter` when selecting items from an array, `map` when transforming items, `find` when searching for one item
+- When checking all items against a condition, looping through items and checking each can be appropriate and readable
 
 ### When to Extract Functions
 
@@ -119,6 +124,8 @@ alwaysApply: true
 - Logic is reusable across multiple locations
 - Improves testability significantly
 - Separates concerns (orchestration vs implementation)
+- Setup/initialization functions become too large and handle multiple concerns (e.g., fetching data, creating objects, building configs)
+- Function does multiple distinct things that can be clearly separated
 
 **Don't extract when:**
 
@@ -164,6 +171,8 @@ alwaysApply: true
 - Always verify external library types before creating custom interfaces
 - Export types alongside implementations when they're part of the public API
 - Group related types in the same file or adjacent files
+- In `types/` folders, `index.ts` should only contain exports, not type definitions
+- Derive types from constants using TypeScript's inference instead of hardcoding them
 
 ### Type Validation
 
@@ -200,6 +209,8 @@ alwaysApply: true
 ### Anti-Patterns to Avoid
 
 - Don't use `any` as a quick fix - use proper types or `unknown`
+- Eliminate `any` types systematically - they bypass type safety and hide bugs
+- When working with external libraries or frameworks, find or create proper types instead of using `any`
 - Avoid `@ts-ignore` - fix the underlying type issue instead
 - Don't use `as` type assertions unless absolutely necessary - prefer type guards
 - Avoid complex nested generics that make code hard to understand
@@ -217,6 +228,13 @@ alwaysApply: true
 - Implement proper error handling with typed error objects
 - Use branded types to prevent mixing different domain values
 - Leverage TypeScript's control flow analysis for type narrowing
+
+### String Operations
+
+- Be explicit about case sensitivity in string matching - don't use case-insensitive matching by default unless there's a clear reason
+- Use case-sensitive matching unless user input or domain requirements necessitate case-insensitive matching
+- Document when case-insensitive matching is used and why
+- Consider performance implications of case-insensitive regex (`i` flag) vs explicit case handling
 
 ## Modern TypeScript Features
 
@@ -238,6 +256,8 @@ alwaysApply: true
 - Use `export type` for type-only exports
 - Group imports logically: external libraries → internal modules → types
 - Use barrel exports (`index.ts`) for clean public APIs
+- When a barrel export re-exports from a single file, use `export *` instead of listing all exports
+- Simplify barrel exports when consolidating multiple files into one
 - Avoid circular dependencies between modules
 - Use dynamic imports for code splitting when appropriate
 
@@ -288,6 +308,9 @@ alwaysApply: true
 - Separate concerns clearly - each component should handle its own responsibilities
 - Orchestrate cleanup at the right level
 - Validate cleanup completeness - ensure no orphaned resources remain
+- Keep features independent when possible - don't create unnecessary dependencies between features
+- If feature A uses feature B, B should not depend on A unless necessary
+- Fetch data where it's needed - avoid chaining dependencies through components just to access data
 
 ### Control Flow
 
@@ -311,12 +334,16 @@ alwaysApply: true
 - Create generic functions that work with any condition type
 - Use explicit condition matching for parameter visibility
 - Support future extensibility through generic condition system
+- When defining configuration parameters, keep all related definitions together (types, defaults, properties)
+- Design configuration so that adding new parameters requires changes in only one place
 
 ### Configuration Organization
 
 - Keep configuration in dedicated files
 - Use const assertions for configuration objects
 - Maintain single source of truth for configuration
+- Consolidate related configuration files when they serve the same purpose
+- Use well-organized sections with clear comments when consolidating multiple configurations
 
 ## Avoiding Duplication
 
@@ -354,6 +381,9 @@ alwaysApply: true
 - Group related utilities in subfolders when appropriate
 - Keep utility functions focused and reusable
 - Avoid scattering utilities throughout the codebase
+- Place general-purpose utilities (e.g., string manipulation, regex operations) in shared utils location (e.g., `lib/utils/`)
+- Place domain-specific utilities close to where they're used
+- Question utility placement: "Is this general-purpose or domain-specific?"
 
 ## Refactoring Approach
 
@@ -370,6 +400,7 @@ alwaysApply: true
 - Large files should be questioned - what can be extracted to utilities?
 - Main/entry files should be lean - extract validation, config creation, and complex logic
 - Question over-engineering - if a solution seems complex, ask "Is there a simpler way?"
+- When consolidating files, simplify related infrastructure (barrel exports, imports, etc.)
 - Learn from refactoring sessions - document insights gained when eliminating unnecessary complexity
 - Validate architectural decisions with real usage
 
@@ -390,6 +421,31 @@ alwaysApply: true
 - Document configuration options and their effects
 - Keep comments concise and relevant
 - Remove outdated comments promptly
+- Add JSDoc comments to all public methods explaining purpose and return values
+- Document private methods when they contain complex logic or non-obvious behavior
+- Add inline comments explaining "why" for non-obvious code paths, not just "what"
+
+## Logging
+
+### Logging Best Practices
+
+- Log at appropriate levels: `info` for major milestones and state changes, `debug` for detailed flow, `warn` for recoverable issues, `error` for failures
+- Avoid redundant logging - don't log "Success notifications sent" after actual operations that already log their completion
+- Log initialization and configuration changes for debugging
+- Log errors with context (error message, relevant IDs, state)
+- Remove debug logs for normal operations in production code paths
+- Keep critical logs: initialization, errors, major phase transitions
+- Don't log at the same level multiple times for the same operation in different places
+- Log failures, not success of every operation
+- Consider log verbosity: too many logs make it hard to find important information
+
+### Logging Patterns
+
+- Log once at the appropriate level for each significant event
+- Use structured logging with context objects
+- Log errors before throwing to capture context
+- Log major phase transitions (setup, execution, cleanup)
+- Avoid logging success messages that duplicate information already logged elsewhere
 
 ## Testing and Quality Assurance
 

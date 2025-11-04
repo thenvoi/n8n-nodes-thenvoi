@@ -29,6 +29,16 @@ export class CapabilityRegistry {
 		return [...this.capabilities];
 	}
 
+	/**
+	 * Finds a capability by name
+	 *
+	 * @param name - Name of the capability to find
+	 * @returns The capability if found, undefined otherwise
+	 */
+	getCapabilityByName(name: string): Capability | undefined {
+		return this.capabilities.find((capability) => capability.name === name);
+	}
+
 	async executeSetup(ctx: CapabilityContext): Promise<SetupResult[]> {
 		const results: SetupResult[] = [];
 

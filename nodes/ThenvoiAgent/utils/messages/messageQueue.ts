@@ -1,12 +1,13 @@
 import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, ChatMessageType } from '@lib/types';
+import { ThenvoiCredentials, ChatMessageType, ChatMessageMention } from '@lib/types';
 import { sendMessageToThenvoi } from '@lib/api/messages';
+import { getErrorMessage } from '@lib/utils/errors';
 
 /**
  * Message queue interface for managing sequential message sending
  */
 export interface MessageQueue {
-	enqueue: (messageType: ChatMessageType, content: string) => void;
+	enqueue: (messageType: ChatMessageType, content: string, mentions?: ChatMessageMention[]) => void;
 	wait: () => Promise<void>;
 	getCount: () => number;
 }
@@ -24,52 +25,47 @@ export function createMessageQueue(
 	let count = 0;
 
 	return {
-		enqueue: (messageType: ChatMessageType, content: string) => {
+		enqueue: (messageType: ChatMessageType, content: string, mentions?: ChatMessageMention[]) => {
 			count++;
 			const messageId = count;
 
-			context.logger.debug('Queueing message', {
-				messageId,
-				messageType,
-				contentLength: content?.length || 0,
-			});
-
 			queue = queue.then(async () => {
 				try {
-					context.logger.debug('Sending queued message', {
-						messageId,
-						messageType,
-					});
-
-					await sendMessageToThenvoi(context, credentials, chatId, messageType, content);
-
-					context.logger.debug('Queued message sent successfully', {
-						messageId,
-						messageType,
-					});
+					await sendMessageToThenvoi(context, credentials, chatId, messageType, content, mentions);
 				} catch (error) {
-					context.logger.error('Failed to send queued message', {
-						messageId,
-						messageType,
-						error: (error as Error).message,
-					});
+					const errorDetails = getErrorMessage(error);
+					const errorStack = error instanceof Error ? error.stack : undefined;
+
+					context.logger.error(
+						'Failed to send queued message' +
+							JSON.stringify({
+								messageId,
+								messageType,
+								error: errorDetails,
+								stack: errorStack,
+								// Log the full error object for debugging
+								fullError: JSON.stringify(error, null, 2),
+							}),
+						{
+							messageId,
+							messageType,
+							error: errorDetails,
+							stack: errorStack,
+							// Log the full error object for debugging
+							fullError: JSON.stringify(error, null, 2),
+						},
+					);
 				}
 			});
 		},
 
 		wait: async () => {
 			if (count === 0) {
-				context.logger.debug('No queued messages to wait for');
 				return;
 			}
 
-			context.logger.info('Waiting for message queue to complete', {
-				queuedMessages: count,
-			});
-
 			try {
 				await queue;
-				context.logger.info('All queued messages sent');
 			} catch (error) {
 				context.logger.warn('Error while waiting for message queue', {
 					error: (error as Error).message,
@@ -80,4 +76,3 @@ export function createMessageQueue(
 		getCount: () => count,
 	};
 }
-

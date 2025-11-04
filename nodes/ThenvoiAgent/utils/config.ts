@@ -32,6 +32,7 @@ export function getAgentConfig(ctx: IExecuteFunctions, itemIndex: number): Agent
 			itemIndex,
 		) as MessageTypeOptionValue[],
 		thoughtMode: thoughtMode || DEFAULT_THOUGHT_MODE,
+		messageId: ctx.getNodeParameter(NODE_PARAMETER_NAMES.MESSAGE_ID, itemIndex) as string,
 		returnIntermediateSteps: options.returnIntermediateSteps || false,
 	};
 }

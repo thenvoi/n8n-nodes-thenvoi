@@ -29,11 +29,12 @@ export const AUTO_SUBSCRIBE_SUPPORTED_MODES = [RoomMode.ALL, RoomMode.FILTERED] 
  */
 export async function fetchRooms(
 	httpClient: HttpClient,
+	agentId: string,
 	logger: Logger,
 	filterPattern?: string,
 	roomTypes?: string[],
 ): Promise<RoomInfo[]> {
-	const rooms = await fetchAllRooms(httpClient, logger);
+	const rooms = await fetchAllRooms(httpClient, agentId, logger);
 
 	return filterRooms(rooms, filterPattern, roomTypes);
 }
@@ -53,6 +54,7 @@ export function supportsAutoSubscribe(
 export async function getRoomIdsForMode(
 	config: TriggerConfig,
 	httpClient: HttpClient,
+	agentId: string,
 	logger: Logger,
 ): Promise<string[]> {
 	const handlers = {
@@ -61,13 +63,14 @@ export async function getRoomIdsForMode(
 			return [singleConfig.chatRoomId];
 		},
 		[RoomMode.ALL]: async () => {
-			const rooms = await fetchRooms(httpClient, logger);
+			const rooms = await fetchRooms(httpClient, agentId, logger);
 			return rooms.map((room) => room.id);
 		},
 		[RoomMode.FILTERED]: async () => {
 			const filteredConfig = config as FilteredRoomsConfig;
 			const rooms = await fetchRooms(
 				httpClient,
+				agentId,
 				logger,
 				filteredConfig.roomFilter,
 				filteredConfig.roomTypes,

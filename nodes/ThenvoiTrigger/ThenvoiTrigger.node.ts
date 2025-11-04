@@ -20,7 +20,7 @@ export class ThenvoiTrigger {
 			validateConfig(config, this);
 
 			// Initialize the event handler
-			EventHandlerRegistry.initializeEventHandler(config.event, credentials.userId);
+			EventHandlerRegistry.initializeEventHandler(config.event, credentials.agentId);
 
 			const socket = await createSocket(credentials, this.logger);
 

@@ -35,7 +35,7 @@ export interface AddAgentToolConfig {
 export class AddAgentTool extends Tool {
 	name = 'add_agent_to_chat';
 	description =
-		'Add a specialized Thenvoi agent to this chat to help answer questions. Use this when you need expertise in a specific domain. Input should be the exact name of the agent to add.';
+		'Add a specialized Thenvoi agent to this chat to help answer questions. Use this when you need expertise in a specific domain. Input should be the exact name of the agent to add. IMPORTANT: Only call this ONCE per agent. If the agent is already in chat or successfully added, do NOT call this tool again - instead mention the agent with "@AgentName" in your response to ask them your question.';
 
 	private httpClient: HttpClient;
 	private chatId: string;
@@ -160,18 +160,18 @@ export class AddAgentTool extends Tool {
 	 * @returns Informative message string
 	 */
 	private buildAlreadyInChatMessage(agent: AgentBasicInfo): string {
-		return `Agent "${agent.name}" is already in this chat and available to help.`;
+		return `Agent "${agent.name}" is already in this chat and ready to help. You can now ask them your question by mentioning them with "@${agent.name}" in your response. Do NOT call add_agent_to_chat or get_agent_info again - proceed directly to asking your question or providing your answer.`;
 	}
 
 	/**
 	 * Builds success message after adding agent
 	 *
-	 * Includes mention format hint to help the AI use the agent correctly.
+	 * Includes clear instructions on how to proceed and not to call the tool again.
 	 *
 	 * @param agent - The agent that was added
 	 * @returns Success message string
 	 */
 	private buildSuccessMessage(agent: AgentBasicInfo): string {
-		return `Successfully added "${agent.name}" to the chat. You can now mention them using "@${agent.name}" in your response if needed.`;
+		return `Successfully added "${agent.name}" to the chat. You can now ask them your question by mentioning them with "@${agent.name}" in your response. Do NOT call add_agent_to_chat or get_agent_info again - proceed directly to asking your question.`;
 	}
 }

@@ -27,14 +27,12 @@ export class ChatContextCapability implements Capability {
 	readonly priority = CapabilityPriority.NORMAL;
 
 	async onSetup(ctx: CapabilityContext): Promise<SetupResult> {
-		const httpClient = new HttpClient(ctx.credentials, ctx.execution.logger);
-
 		try {
 			// Fetch available agents for GetAgentInfoTool (needed to resolve agent names to IDs)
-			const availableAgents = await this.fetchAvailableAgents(httpClient);
+			const availableAgents = await this.fetchAvailableAgents(ctx.httpClient);
 
 			// Create all context tools
-			const tools = this.createContextTools(httpClient, ctx.config.chatId, availableAgents);
+			const tools = this.createContextTools(ctx.httpClient, ctx.config.chatId, availableAgents);
 
 			ctx.execution.logger.info('Chat context capability initialized', {
 				chatId: ctx.config.chatId,

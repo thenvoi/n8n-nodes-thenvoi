@@ -3,6 +3,7 @@ import { Serialized } from '@langchain/core/load/serializable';
 import { LLMResult } from '@langchain/core/outputs';
 import { IExecuteFunctions } from 'n8n-workflow';
 import { ThenvoiCredentials, ChatMessageMention } from '@lib/types';
+import { HttpClient } from '@lib/http/client';
 import { CallbackOptions } from '../../types/callbackHandler';
 import { CallbackContext } from '../../types/agentCapabilities';
 import { TaskStatus } from '../../types/common';
@@ -38,10 +39,12 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 		this.taskId = this.generateTaskId();
 
+		const httpClient = new HttpClient(credentials, executionContext.logger);
+
 		this.ctx = {
 			executionContext,
 			options,
-			messageQueue: createMessageQueue(executionContext, credentials, chatId),
+			messageQueue: createMessageQueue(httpClient, executionContext.logger, credentials, chatId),
 			currentTool: null,
 			toolsUsed: [],
 		};
@@ -107,6 +110,15 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	getToolsUsed(): string[] {
 		return this.ctx.toolsUsed;
+	}
+
+	/**
+	 * Gets the message queue for sending messages
+	 *
+	 * @returns The message queue instance
+	 */
+	get messageQueue() {
+		return this.ctx.messageQueue;
 	}
 
 	async waitForPendingOperations(): Promise<void> {

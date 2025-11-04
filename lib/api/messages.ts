@@ -1,49 +1,35 @@
-import { IExecuteFunctions, IHttpRequestOptions, IDataObject } from 'n8n-workflow';
 import {
 	ChatMessageType,
 	ChatMessageMention,
-	ThenvoiCredentials,
-	ThenvoiMessagePayload,
+	ThenvoiMessageRequest,
 	ChatMessage,
 	RawChatMessage,
 } from '../types';
-import { getHttpUrl, includeProperty } from '../utils';
+import { includeProperty } from '../utils';
 import { HttpClient } from '../http/client';
 
 /**
  * Sends a message to the Thenvoi API
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param messageType - Type of message to send
+ * @param content - Message content
+ * @param senderId - ID of the message sender
+ * @param mentions - Optional array of mentions
+ * @returns API response data
  */
 export async function sendMessageToThenvoi(
-	executionContext: IExecuteFunctions,
-	credentials: ThenvoiCredentials,
+	httpClient: HttpClient,
 	chatId: string,
 	messageType: ChatMessageType,
 	content: string,
+	senderId: string,
 	mentions?: ChatMessageMention[],
-): Promise<IDataObject> {
-	const url = buildMessageUrl(credentials, chatId);
-	const body = buildMessagePayload(messageType, content, credentials.userId, mentions);
+): Promise<unknown> {
+	const body = buildMessagePayload(messageType, content, senderId, mentions);
 
-	const requestOptions: IHttpRequestOptions = {
-		method: 'POST',
-		url,
-		headers: {
-			'X-API-Key': credentials.apiKey,
-			'Content-Type': 'application/json',
-		},
-		body,
-		json: true,
-	};
-
-	return (await executionContext.helpers.httpRequest(requestOptions)) as IDataObject;
-}
-
-/**
- * Builds the API URL for sending a message
- */
-function buildMessageUrl(credentials: ThenvoiCredentials, chatId: string): string {
-	const baseUrl = getHttpUrl(credentials, credentials.useHttps);
-	return `${baseUrl}/chats/${chatId}/messages`;
+	return await httpClient.post(`/chats/${chatId}/messages`, body);
 }
 
 /**
@@ -54,13 +40,15 @@ function buildMessagePayload(
 	content: string,
 	senderId: string,
 	mentions?: ChatMessageMention[],
-): ThenvoiMessagePayload {
+): ThenvoiMessageRequest {
 	return {
-		content,
-		message_type: messageType,
-		sender_id: senderId,
-		sender_type: 'User',
-		...includeProperty('mentions', mentions),
+		message: {
+			content,
+			message_type: messageType,
+			sender_id: senderId,
+			sender_type: 'Agent',
+			mentions: mentions || [],
+		},
 	};
 }
 
@@ -94,7 +82,7 @@ export async function fetchChatMessages(
 	};
 
 	const response = await httpClient.get<{ data: RawChatMessage[] }>(
-		`/me/chats/${chatId}/messages`,
+		`/chats/${chatId}/messages`,
 		queryParams,
 	);
 
@@ -104,4 +92,64 @@ export async function fetchChatMessages(
 		inserted_at: new Date(message.inserted_at),
 		updated_at: new Date(message.updated_at),
 	})) as ChatMessage[];
+}
+
+/**
+ * Marks a message as being processed by a participant
+ *
+ * Creates a new processing attempt with a system-managed timestamp.
+ * The participant must be a member of the chat room.
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param messageId - ID of the message to mark as processing
+ * @returns API response data
+ */
+export async function markMessageAsProcessing(
+	httpClient: HttpClient,
+	chatId: string,
+	messageId: string,
+): Promise<unknown> {
+	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/processing`);
+}
+
+/**
+ * Marks a message as successfully processed by a participant
+ *
+ * Completes the current processing attempt with a system-managed timestamp.
+ * This endpoint requires an active processing attempt. If no processing attempt exists, it will return a 422 error.
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param messageId - ID of the message to mark as processed
+ * @returns API response data
+ */
+export async function markMessageAsProcessed(
+	httpClient: HttpClient,
+	chatId: string,
+	messageId: string,
+): Promise<unknown> {
+	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/processed`);
+}
+
+/**
+ * Marks message processing as failed
+ *
+ * Completes the current processing attempt by setting it to failed status with an error message.
+ * This endpoint requires an active processing attempt. If no processing attempt exists, it will return a 422 error.
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param messageId - ID of the message to mark as failed
+ * @param errorMessage - Error message describing why processing failed
+ * @returns API response data
+ */
+export async function markMessageAsFailed(
+	httpClient: HttpClient,
+	chatId: string,
+	messageId: string,
+	errorMessage: string,
+): Promise<unknown> {
+	const body = { error: errorMessage };
+	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/failed`, body);
 }

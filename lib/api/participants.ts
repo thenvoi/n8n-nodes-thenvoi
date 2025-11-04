@@ -1,6 +1,6 @@
-import { HttpClient } from '@lib/http/client';
-import { ParticipantType, ChatParticipant, ParticipantRole, ParticipantStatus } from '@lib/types';
-import { includeProperty } from '@lib/utils';
+import { HttpClient } from '../http/client';
+import { ParticipantType, ChatParticipant, ParticipantRole, ParticipantStatus } from '../types';
+import { includeProperty } from '../utils';
 
 /**
  * Raw participant structure as returned by the API
@@ -8,9 +8,9 @@ import { includeProperty } from '@lib/utils';
 interface RawParticipant {
 	id: string;
 	type: ParticipantType;
-	status?: string;
+	status: ParticipantStatus;
+	role: ParticipantRole;
 	email?: string | null;
-	role?: string;
 	first_name?: string | null;
 	last_name?: string | null;
 	agent_name?: string | null;
@@ -48,26 +48,31 @@ function transformParticipant(raw: RawParticipant): ChatParticipant {
 		type: raw.type,
 		avatar_url: raw.avatar_url || null,
 		email: raw.email || undefined,
-		role: raw.role as ParticipantRole | undefined,
-		status: raw.status as ParticipantStatus | undefined,
+		role: raw.role,
+		status: raw.status,
 	};
 }
 
 /**
  * Fetches participants that are currently in a specific chat room
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param participantType - Optional filter by participant type (Agent or User)
+ * @returns Array of chat participants
  */
 export async function fetchChatParticipants(
 	httpClient: HttpClient,
 	chatId: string,
 	participantType?: ParticipantType,
 ): Promise<ChatParticipant[]> {
-	const body: Record<string, string> = {
+	const queryParams: Record<string, string> = {
 		...includeProperty('participant_type', participantType),
 	};
 
 	const response = await httpClient.get<{ data: RawParticipant[] }>(
 		`/chats/${chatId}/participants`,
-		body,
+		queryParams,
 	);
 
 	const rawParticipants = response.data || [];

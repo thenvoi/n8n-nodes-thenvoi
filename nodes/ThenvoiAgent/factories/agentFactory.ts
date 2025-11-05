@@ -20,6 +20,7 @@ import { AgentNodeConfig, AgentType } from '../types';
 import { AgentBasicInfo } from '@lib/types';
 import { configureMemory } from './memoryConfig';
 import { createAgent } from './agentCreation';
+import { isGPT4o } from '../utils/agents/agentTypeDetection';
 import {
 	prepareSystemMessage,
 	augmentPromptWithAgents,
@@ -72,7 +73,7 @@ function assembleExecutor(
 		tools,
 		maxIterations: config.maxIterations,
 		returnIntermediateSteps: config.returnIntermediateSteps,
-		verbose: false,
+		verbose: true,
 		...(memory && {
 			memory,
 			memoryKey: 'chat_history',
@@ -105,7 +106,31 @@ export async function createAgentExecutor(
 		configureMemory(memory, ctx);
 
 		const hasMemory = !!memory;
-		const { agent, agentType } = await createAgent(model, tools, systemMessage, hasMemory, ctx);
+
+		// Force ReAct mode for GPT-4o when model thoughts are enabled
+		// GPT-4o doesn't generate thoughts before tool calls in native tool-calling mode,
+		// but ReAct mode may generate thoughts in the "Thought:" format
+		const useModelThoughts =
+			config.messageTypes.includes('thoughts') && config.thoughtMode === 'model';
+		const shouldForceReAct = useModelThoughts && isGPT4o(model);
+
+		if (shouldForceReAct) {
+			ctx.logger.info(
+				'Forcing ReAct mode for GPT-4o with model thoughts enabled (tool-calling mode does not generate thoughts)',
+				{
+					modelName: (model as any).modelName || (model as any).model || 'unknown',
+				},
+			);
+		}
+
+		const { agent, agentType } = await createAgent(
+			model,
+			tools,
+			systemMessage,
+			hasMemory,
+			ctx,
+			shouldForceReAct,
+		);
 
 		return assembleExecutor(agent, tools, memory, config, agentType, ctx);
 	} catch (error) {

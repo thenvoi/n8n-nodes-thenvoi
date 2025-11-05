@@ -10,7 +10,7 @@ const REACT_TEMPLATE_BASE = `You have access to the following tools:
 
 {tools}
 
-Use the following format:
+Use the following format STRICTLY. You MUST follow this format exactly:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
@@ -20,6 +20,12 @@ Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
+
+**CRITICAL FORMATTING RULES:**
+1. You MUST always end with "Final Answer:" followed by your response - this is REQUIRED
+2. Even if you sent messages using send_message, you MUST still end with "Final Answer:"
+3. Never skip the "Final Answer:" line - the parser requires it
+4. Your final response must be in the format: "Final Answer: [your response here]"
 
 Begin!
 

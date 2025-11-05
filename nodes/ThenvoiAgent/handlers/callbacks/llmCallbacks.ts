@@ -21,6 +21,7 @@ function extractThinkingFromKwargs(message: LLMGenerationMessage): string {
 
 /**
  * Extracts text content from message content
+ * Handles various content formats from different LLM providers
  */
 function extractContentFromMessage(message: LLMGenerationMessage): string {
 	const { content } = message;
@@ -40,10 +41,12 @@ function extractContentFromMessage(message: LLMGenerationMessage): string {
 					return part;
 				}
 				if (part.type === 'thinking' && part.thinking) {
-					// Extract thinking from ThinkingContentBlock
+					// Extract thinking from ThinkingContentBlock (Claude extended thinking)
 					return `Thinking: ${part.thinking}`;
 				}
-				return part.text || part.content || '';
+				// Handle text blocks - check multiple possible properties
+				// Some models might use different property names
+				return part.text || part.content || part.message || '';
 			})
 			.filter((text: string) => text.length > 0);
 
@@ -81,31 +84,116 @@ async function processModelThought(
 	generation: LLMGeneration,
 	runId: string,
 ): Promise<void> {
-	const generatedText = extractGeneratedText(generation);
-
-	ctx.executionContext.logger.debug('Attempting to extract model thought', {
+	// Comprehensive logging to debug GPT-4o output structure
+	const debugInfo: Record<string, any> = {
 		runId,
 		hasMessage: !!generation.message,
 		hasText: !!generation.text,
-		textLength: generatedText.length,
-		textPreview: generatedText.substring(0, 200),
-	});
+		generationKeys: Object.keys(generation),
+	};
 
-	if (!generatedText) {
-		ctx.executionContext.logger.debug('No text content in LLM output', { runId });
+	if (generation.message) {
+		debugInfo.messageKeys = Object.keys(generation.message);
+		debugInfo.messageContentType = typeof generation.message.content;
+		debugInfo.messageContentIsArray = Array.isArray(generation.message.content);
+
+		if (typeof generation.message.content === 'string') {
+			debugInfo.messageContentString = generation.message.content;
+		} else if (Array.isArray(generation.message.content)) {
+			debugInfo.messageContentArrayLength = generation.message.content.length;
+			debugInfo.messageContentArrayItems = generation.message.content.map(
+				(item: any, idx: number) => ({
+					index: idx,
+					type: typeof item,
+					isString: typeof item === 'string',
+					itemType: item?.type,
+					keys: typeof item === 'object' && item !== null ? Object.keys(item) : [],
+					text: item?.text,
+					content: item?.content,
+					message: item?.message,
+					thinking: item?.thinking,
+					fullItem: JSON.stringify(item).substring(0, 200), // Limit size but show structure
+				}),
+			);
+		}
+
+		if (generation.message.additional_kwargs) {
+			debugInfo.additionalKwargsKeys = Object.keys(generation.message.additional_kwargs);
+			debugInfo.additionalKwargs = JSON.stringify(generation.message.additional_kwargs).substring(
+				0,
+				500,
+			);
+		}
+	}
+
+	if (generation.text) {
+		debugInfo.textValue = generation.text;
+	}
+
+	const generatedText = extractGeneratedText(generation);
+	debugInfo.extractedTextLength = generatedText.length;
+	debugInfo.extractedTextPreview = generatedText.substring(0, 500);
+
+	// Check if this is a tool-calling scenario (no text but tool calls exist)
+	const additionalKwargs = generation.message?.additional_kwargs;
+	const hasToolCalls =
+		additionalKwargs &&
+		'tool_calls' in additionalKwargs &&
+		Array.isArray(additionalKwargs.tool_calls) &&
+		additionalKwargs.tool_calls.length > 0;
+
+	const finishReason = generation.generationInfo?.finish_reason;
+	const isToolCallingScenario = finishReason === 'tool_calls' || (hasToolCalls && !generatedText);
+
+	debugInfo.hasToolCalls = hasToolCalls;
+	debugInfo.finishReason = finishReason;
+	debugInfo.isToolCallingScenario = isToolCallingScenario;
+
+	ctx.executionContext.logger.info(
+		'DEBUG: LLM generation structure for thought extraction',
+		debugInfo,
+	);
+
+	// For tool-calling scenarios with no text, GPT-4o doesn't generate thoughts
+	// The model goes straight to tool calls without reasoning text
+	if (isToolCallingScenario && !generatedText) {
+		ctx.executionContext.logger.debug(
+			'Tool-calling scenario with no text - model thoughts not available (use synthetic thoughts instead)',
+			{
+				runId,
+				toolCallCount:
+					hasToolCalls && additionalKwargs && 'tool_calls' in additionalKwargs
+						? additionalKwargs.tool_calls?.length || 0
+						: 0,
+			},
+		);
 		return;
 	}
 
-	const thought = extractModelThought(generatedText);
+	if (!generatedText) {
+		ctx.executionContext.logger.debug('No text content in LLM output', {
+			runId,
+			hasMessage: !!generation.message,
+			hasText: !!generation.text,
+		});
+		return;
+	}
+
+	const thought = extractModelThought(generatedText, ctx.executionContext.logger);
 
 	if (thought) {
 		ctx.executionContext.logger.info('Extracted model thought', {
 			runId,
 			thoughtLength: thought.length,
+			thoughtPreview: thought.substring(0, 100),
 		});
 		ctx.messageQueue.enqueue('thought', thought);
 	} else {
-		ctx.executionContext.logger.debug('No thought pattern found in output', { runId });
+		ctx.executionContext.logger.debug('No thought pattern found in output', {
+			runId,
+			textPreview: generatedText.substring(0, 200),
+			textLength: generatedText.length,
+		});
 	}
 }
 

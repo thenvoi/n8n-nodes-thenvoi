@@ -4,7 +4,7 @@ import { StructuredTool } from '@langchain/core/tools';
 import { createToolCallingAgent, createReactAgent } from 'langchain/agents';
 import { Runnable } from '@langchain/core/runnables';
 import { ChatPromptTemplate, PromptTemplate } from '@langchain/core/prompts';
-import { supportsToolCalling } from '../utils/agents/agentTypeDetection';
+import { supportsToolCalling, isGPT4o } from '../utils/agents/agentTypeDetection';
 import { createToolCallingPrompt, createReactPrompt } from './promptFactory';
 import { AgentType } from '../types';
 
@@ -18,17 +18,36 @@ export interface AgentCreationResult {
 
 /**
  * Detects agent type based on model capabilities
+ *
+ * @param model - The chat model to detect
+ * @param ctx - Execution context for logging
+ * @param forceReAct - If true, forces ReAct mode even if model supports tool calling
  */
-export function detectAgentType(model: BaseChatModel, ctx: IExecuteFunctions): AgentType {
+export function detectAgentType(
+	model: BaseChatModel,
+	ctx: IExecuteFunctions,
+	forceReAct = false,
+): AgentType {
 	const hasToolCallingSupport = supportsToolCalling(model);
+	const isGPT4oModel = isGPT4o(model);
+
+	let agentType: AgentType;
+
+	if (forceReAct || !hasToolCallingSupport) {
+		agentType = 'react';
+	} else {
+		agentType = 'tool-calling';
+	}
 
 	ctx.logger.info('Agent type detection', {
 		hasToolCallingSupport,
 		modelClass: model.constructor.name,
-		agentType: hasToolCallingSupport ? 'tool-calling' : 'react',
+		isGPT4o: isGPT4oModel,
+		forceReAct,
+		agentType,
 	});
 
-	return hasToolCallingSupport ? 'tool-calling' : 'react';
+	return agentType;
 }
 
 /**
@@ -73,6 +92,13 @@ async function createReactAgentInstance(
 
 /**
  * Creates the appropriate agent based on model capabilities
+ *
+ * @param model - The chat model to use
+ * @param tools - Available tools for the agent
+ * @param systemMessage - System message/prompt for the agent
+ * @param hasMemory - Whether the agent has memory enabled
+ * @param ctx - Execution context for logging
+ * @param forceReAct - If true, forces ReAct mode even if model supports tool calling
  */
 export async function createAgent(
 	model: BaseChatModel,
@@ -80,8 +106,9 @@ export async function createAgent(
 	systemMessage: string,
 	hasMemory: boolean,
 	ctx: IExecuteFunctions,
+	forceReAct = false,
 ): Promise<AgentCreationResult> {
-	const agentType = detectAgentType(model, ctx);
+	const agentType = detectAgentType(model, ctx, forceReAct);
 
 	const agent =
 		agentType === 'tool-calling'

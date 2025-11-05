@@ -55,6 +55,16 @@ export interface LLMGenerationMessage {
 		thinking?: string;
 		reasoning?: string;
 		thought?: string;
+		tool_calls?: Array<{
+			index?: number;
+			id?: string;
+			type?: string;
+			function?: {
+				name?: string;
+				arguments?: string;
+			};
+		}>;
+		[key: string]: unknown; // Allow other properties
 	};
 }
 
@@ -64,4 +74,8 @@ export interface LLMGenerationMessage {
 export interface LLMGeneration {
 	text?: string;
 	message?: LLMGenerationMessage;
+	generationInfo?: {
+		finish_reason?: string;
+		[key: string]: unknown; // Allow other properties
+	};
 }

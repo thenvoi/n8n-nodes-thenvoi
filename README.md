@@ -18,12 +18,16 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 - **Full AI Agent functionality** - Complete replacement for n8n's built-in AI Agent
 - **Real-time streaming** - Automatic streaming of tool calls, results, thoughts, and task updates to Thenvoi
 - **LangChain integration** - Built-in callback handler captures all agent activity
-- **Capability system** - Extensible architecture for adding new features without modifying core logic
+- **Capability system** - Extensible architecture with priority-based lifecycle hooks (Setup, Prepare, Success/Error, Finalize)
 - **Configurable streaming** - Control what gets streamed (task updates, thoughts, tool calls, tool results)
 - **Modern agent support** - Works with tool-calling agents (OpenAI, Claude, Gemini, etc.) and ReAct agents
 - **Memory support** - Full support for conversation memory
 - **Multiple message types** - Support for task updates, thoughts, tool calls, and tool results
 - **Thought modes** - Choose between synthetic (auto-generated) or model-generated reasoning
+- **Agent collaboration** - Agents can dynamically add other Thenvoi agents to the chat for specialized help
+- **Chat context tools** - Built-in tools for agents to fetch chat history, participants, agent info, and chat room details
+- **Mention detection** - Automatic detection and processing of @mentions in agent responses
+- **Phase-based execution** - Structured pipeline (Initialize Capabilities → Setup → Prepare → Execute → Success/Error → Finalize)
 
 ### Thenvoi Trigger (Event Listening)
 - **Real-time event listening** via WebSocket connections
@@ -39,10 +43,84 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 
 ### Setting up Credentials
 
-1. In your n8n workflow, add a "Thenvoi Trigger" node
+Both Thenvoi Agent and Thenvoi Trigger nodes require Thenvoi API credentials:
+
+1. In your n8n workflow, add a "Thenvoi Agent" or "Thenvoi Trigger" node
 2. Configure the Thenvoi API credentials:
    - **API Key**: Your Thenvoi API key
-   - **Server URL**: The WebSocket URL of your Thenvoi server (default: `wss://staging.thenvoi.com/api/v2/socket`)
+   - **Server URL**: The base API server URL without protocol (default: `platform.demo.thenvoi.com/api/v1`)
+   - **Use HTTPS**: Whether to use HTTPS for HTTP requests (default: enabled; WebSocket always uses WSS)
+   - **Agent ID**: Your agent ID for personalized operations and channel subscriptions
+
+### Using the Thenvoi Agent
+
+The Thenvoi Agent node enables AI agents to interact with Thenvoi chat rooms, stream their activity in real-time, and collaborate with other agents.
+
+#### Configuration Options
+
+1. **Chat ID** (required) - The ID of the Thenvoi chat room to stream agent activity to
+2. **Message ID** (required) - The ID of the message to reply to (used for message processing status tracking)
+3. **Prompt** - The system prompt that defines the agent behavior (default: "You are a helpful AI assistant.")
+4. **Max Iterations** - Maximum number of iterations the agent can perform before stopping (default: 20)
+5. **Message Types to Send** - Select which types of messages to stream (default: all enabled):
+   - **Task Updates** - Send task status updates (in progress, completed, failed)
+   - **Thoughts** - Send reasoning/thought messages during agent execution
+   - **Tool Calls** - Send messages when tools are invoked
+   - **Tool Results** - Send messages with tool execution results
+6. **Thought Mode** (shown when "Thoughts" is enabled) - Choose how reasoning messages are generated (default: Synthetic):
+   - **Synthetic** - Automatically generate reasoning messages based on agent actions (fast, consistent)
+   - **Model Generated** - Let the LLM explicitly state its reasoning (natural, model-dependent)
+7. **Options**:
+   - **Return Intermediate Steps** - Whether to return the agent intermediate steps in the output
+
+#### Built-in Capabilities
+
+The agent includes three built-in capabilities that provide advanced functionality:
+
+1. **Messaging Capability**
+   - Streams all agent activity to Thenvoi chat in real-time
+   - Handles task updates, thoughts, tool calls, tool results, and final responses
+   - Automatically detects and processes @mentions in agent responses
+   - Manages message queueing and ensures all messages are sent
+   - Updates message processing status (processing, processed, failed) for tracking
+
+2. **Agent Collaboration Capability**
+   - Enables agents to discover available Thenvoi agents
+   - Provides `AddAgentTool` for dynamically adding other agents to the chat
+   - Augments agent prompts with information about available and current agents in the chat
+   - Automatically updates participant lists when agents are added
+
+3. **Chat Context Capability**
+   - Provides tools for agents to fetch chat context on-demand:
+     - **GetChatMessagesTool** - Retrieve chat message history (with memory-checking guidance)
+     - **GetChatParticipantsTool** - Get list of participants (users and agents) in the chat
+     - **GetAgentInfoTool** - Get information about available agents
+     - **GetChatInfoTool** - Get chat room information and details
+     - **SendMessageTool** - Send messages directly to the chat (for agent-initiated communication)
+
+#### Node Connections
+
+- **Main Input** - Input data (e.g., user message from the Thenvoi Trigger node)
+- **Model** (required) - Connect an AI Language Model node (OpenAI, Anthropic, Gemini, etc.)
+- **Memory** (optional) - Connect an AI Memory node for conversation memory
+- **Tools** (optional) - Connect multiple AI Tool nodes for extended functionality
+
+#### Example Workflow
+
+1. Add a "Thenvoi Trigger" node to your workflow
+2. Configure it to listen for "Message Created" events in a specific chat room
+3. Add a "Thenvoi AI Agent" node to your workflow
+4. Connect the output of the Thenvoi Trigger node to the input of the Thenvoi Agent node
+5. Connect an AI Language Model node (e.g., OpenAI GPT-4)
+6. Optionally connect Memory and Tool nodes
+7. Configure the agent:
+   - Set the Chat ID of the Thenvoi chat room
+   - Set the Message ID of the message to reply to
+   - Customize the system prompt for your use case
+   - Select which message types to stream
+   - Choose thought generation mode
+
+That's it! The agent will automatically stream its activity to Thenvoi, update message processing status, and can use built-in tools to collaborate and fetch context
 
 ### Using the Thenvoi Trigger
 
@@ -54,7 +132,6 @@ The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi c
    - Configure the Chat Room ID
 
 2. **All Rooms** - Listen to all available chat rooms
-   - Filter by room types (direct, group, task) - optional
    - Enable auto-subscribe for new rooms - optional
 
 3. **Filtered Rooms** - Listen to rooms matching a filter pattern
@@ -80,7 +157,7 @@ The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi c
 - **Message Created**: Triggers when a new message is posted in the specified chat room
   - Additional filters available for message content, user mentions, etc.
 
-### Example Workflow
+#### Example Workflow
 
 1. Add a "Thenvoi Trigger" node to your workflow
 2. Configure it to listen for "Message Created" events in a specific chat room
@@ -99,7 +176,7 @@ You need the following installed on your development machine:
 - Node.js and npm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
 - Install n8n with:
 
-  ```
+  ```bash
   npm install n8n -g
   ```
 
@@ -214,14 +291,16 @@ The project follows a clean, modular architecture with clear separation of conce
 
 - **Shared Library (`lib/`)**: Reusable code that can be used across multiple nodes, including API clients, socket management, type definitions, and utility functions
 - **Module Aliases**: Uses `@lib` and `@credentials` aliases for clean imports
-- **Capability System**: Extensible architecture for ThenvoiAgent with priority-based lifecycle hooks (Setup, Prepare, Execute, Success/Error, Finalize)
-- **Execution Pipeline**: Clear phase-based execution flow with proper resource management and cleanup
+- **Capability System**: Extensible architecture for ThenvoiAgent with priority-based lifecycle hooks (Setup, Prepare, Success/Error, Finalize). Capabilities execute sequentially based on priority (lower executes first)
+- **Execution Pipeline**: Clear phase-based execution flow: Initialize Capabilities → Setup → Prepare → Execute → Success/Error → Finalize, with proper resource management and cleanup
 - **Separation of Concerns**: Clear boundaries between HTTP operations, WebSocket management, agent logic, and node-specific features
 - **Event Handler System**: Extensible event handler architecture with base classes and specific implementations (ThenvoiTrigger)
 - **Modular Factories**: Specialized factories for agent creation, memory configuration, and prompt preparation
 - **Type Safety**: Comprehensive TypeScript type definitions organized by domain
 
-## Adding New Event Types
+## Extending the Nodes
+
+### Adding New Event Types (ThenvoiTrigger)
 
 To add support for new event types for ThenvoiTrigger node:
 
@@ -239,6 +318,38 @@ handlers/events/
       ├── handler.ts       # Main event handler implementation
       └── utils.ts         # Event-specific utility functions (optional)
 ```
+
+### Adding New Capabilities (ThenvoiAgent)
+
+To add new capabilities to the ThenvoiAgent node:
+
+1. Create a new capability class in `nodes/ThenvoiAgent/capabilities/yourCapability/`
+2. Implement the `Capability` interface from `capabilities/base/Capability.ts`
+3. Define a priority using `CapabilityPriority` enum (lower values execute first)
+4. Implement lifecycle methods as needed:
+   - `onSetup()` - Initialize resources, create tools/callbacks, fetch data
+   - `onPrepare()` - Inspect or modify the agent executor after creation
+   - `onSuccess()` - Handle successful execution results
+   - `onError()` - Handle execution failures
+   - `onFinalize()` - Cleanup resources (runs after success or error)
+5. Register the capability in `execution.ts` (`createCapabilitiesRegistry` function)
+6. Export from `capabilities/index.ts`
+
+Example structure for a new capability:
+
+```plaintext
+capabilities/
+  └── yourCapability/
+      ├── YourCapability.ts    # Capability implementation
+      └── utils.ts             # Capability-specific utilities (optional)
+```
+
+**Capability Priority Guidelines:**
+- `CRITICAL (0)` - Must run first (e.g., auth, setup)
+- `HIGH (25)` - Important but not critical (e.g., messaging, collaboration)
+- `NORMAL (50)` - Default priority (e.g., context tools)
+- `LOW (75)` - Can run later
+- `CLEANUP (100)` - Should run last
 
 ## Configuration
 

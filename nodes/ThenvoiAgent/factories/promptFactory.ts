@@ -79,16 +79,30 @@ export function createToolCallingPrompt(
 }
 
 /**
+ * Escapes curly braces in a string for use in LangChain templates
+ *
+ * LangChain uses {variableName} for template variables, so literal braces
+ * must be escaped as {{ and }} to prevent template parsing errors.
+ */
+function escapeTemplateBraces(text: string): string {
+	return text.replace(/\{/g, '{{').replace(/\}/g, '}}');
+}
+
+/**
  * Creates a prompt template for ReAct agents
  *
  * ReAct agents use prompt-based tool selection for models without
  * native function calling. The agent follows a "Thought-Action-Observation"
  * loop until it reaches a final answer.
+ *
+ * The system message is escaped to handle any literal curly braces that
+ * might be present in user-provided prompts (e.g., code examples, JSON).
  */
 export function createReactPrompt(systemMessage: string, hasMemory: boolean): PromptTemplate {
+	const escapedSystemMessage = escapeTemplateBraces(systemMessage);
 	const template = hasMemory
-		? REACT_TEMPLATE_WITH_MEMORY.replace('{systemMessage}', systemMessage)
-		: REACT_TEMPLATE_WITHOUT_MEMORY.replace('{systemMessage}', systemMessage);
+		? REACT_TEMPLATE_WITH_MEMORY.replace('{systemMessage}', escapedSystemMessage)
+		: REACT_TEMPLATE_WITHOUT_MEMORY.replace('{systemMessage}', escapedSystemMessage);
 
 	return PromptTemplate.fromTemplate(template);
 }

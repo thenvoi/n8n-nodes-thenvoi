@@ -4,7 +4,7 @@ import { NODE_PARAMETER_PROPERTIES } from '../constants/nodeProperties';
 export const nodeDescription: INodeTypeDescription = {
 	displayName: 'Thenvoi AI Agent',
 	name: 'thenvoiAgent',
-	icon: 'file:assets/thenvoi.svg',
+	icon: 'file:../../../dist/nodes/ThenvoiAgent/assets/thenvoi.svg',
 	group: ['ai'],
 	version: 1,
 	description: 'AI Agent with Thenvoi callback streaming - works like n8n AI Agent',

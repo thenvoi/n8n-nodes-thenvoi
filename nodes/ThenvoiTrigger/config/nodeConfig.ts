@@ -10,7 +10,7 @@ eventHandlerRegistry.register(new MessageCreatedHandler());
 export const nodeDescription: INodeTypeDescription = {
 	displayName: 'Thenvoi Trigger',
 	name: 'thenvoiTrigger',
-	icon: 'file:assets/thenvoi.svg',
+	icon: 'file:../../../dist/nodes/ThenvoiTrigger/assets/thenvoi.svg',
 	group: ['trigger'],
 	version: 1,
 	subtitle: '={{$parameter["event"]}} - {{$parameter["roomMode"]}}',

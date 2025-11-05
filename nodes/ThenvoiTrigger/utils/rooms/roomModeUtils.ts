@@ -32,11 +32,10 @@ export async function fetchRooms(
 	agentId: string,
 	logger: Logger,
 	filterPattern?: string,
-	roomTypes?: string[],
 ): Promise<RoomInfo[]> {
 	const rooms = await fetchAllRooms(httpClient, agentId, logger);
 
-	return filterRooms(rooms, filterPattern, roomTypes);
+	return filterRooms(rooms, filterPattern);
 }
 
 /**
@@ -68,13 +67,7 @@ export async function getRoomIdsForMode(
 		},
 		[RoomMode.FILTERED]: async () => {
 			const filteredConfig = config as FilteredRoomsConfig;
-			const rooms = await fetchRooms(
-				httpClient,
-				agentId,
-				logger,
-				filteredConfig.roomFilter,
-				filteredConfig.roomTypes,
-			);
+			const rooms = await fetchRooms(httpClient, agentId, logger, filteredConfig.roomFilter);
 			return rooms.map((room) => room.id);
 		},
 	};

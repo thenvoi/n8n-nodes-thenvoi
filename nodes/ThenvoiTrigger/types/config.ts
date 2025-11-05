@@ -24,12 +24,11 @@ export type AllRoomsConfig = BaseConfigProperties & {
 };
 
 /**
- * Filtered rooms mode configuration - requires roomFilter, includes roomTypes and autoSubscribe options
+ * Filtered rooms mode configuration - requires roomFilter, includes autoSubscribe option
  */
 export type FilteredRoomsConfig = BaseConfigProperties & {
 	roomMode: typeof RoomMode.FILTERED;
 	roomFilter: string;
-	roomTypes?: string[];
 	autoSubscribe?: boolean;
 };
 

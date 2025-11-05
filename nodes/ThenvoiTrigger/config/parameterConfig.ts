@@ -1,6 +1,5 @@
 import { INodeProperties, ITriggerFunctions, NodePropertyTypes } from 'n8n-workflow';
 import { RoomMode, RoomModeType } from '../types';
-import { RoomType } from '@lib/types';
 
 /**
  * Type for all possible conditions that can be used to determine parameter visibility
@@ -45,17 +44,6 @@ export const OPTIONAL_PARAMETER_CONFIG: Record<string, ParameterConfig> = {
 		displayName: 'Room Title Filter (Regex)',
 		description:
 			'Filter rooms by title using regex pattern (case-insensitive). Examples: "^support" for titles starting with "support", "team$" for titles ending with "team", or "bug|issue" for titles containing either word',
-	},
-	roomTypes: {
-		conditions: { roomMode: [RoomMode.FILTERED] },
-		type: 'multiOptions',
-		displayName: 'Room Types',
-		description: 'Filter by room types (leave empty for all types)',
-		options: Object.values(RoomType).map((type) => ({
-			name: type.charAt(0).toUpperCase() + type.slice(1),
-			value: type,
-		})),
-		default: [],
 	},
 	autoSubscribe: {
 		conditions: { roomMode: [RoomMode.ALL, RoomMode.FILTERED] },

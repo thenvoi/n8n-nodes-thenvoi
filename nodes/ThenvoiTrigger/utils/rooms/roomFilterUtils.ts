@@ -1,7 +1,7 @@
 import { RoomInfo } from '@lib/types';
 
 /**
- * Room filtering utilities for pattern and type-based filtering
+ * Room filtering utilities for pattern-based filtering
  */
 
 // ===== UTILITIES =====
@@ -15,31 +15,15 @@ function roomTitleMatchesPattern(room: RoomInfo, filterPattern: string): boolean
 	return regex.test(room.title);
 }
 
-/**
- * Checks if a room type matches the filter criteria
- */
-function roomTypeMatchesFilter(room: RoomInfo, roomTypes: string[]): boolean {
-	return roomTypes.includes(room.type);
-}
-
 // ===== PUBLIC API =====
 
 /**
  * Checks if a single room matches the filter criteria
  * This is more efficient than filtering all rooms for a single room check
  */
-export function roomMatchesFilters(
-	room: RoomInfo,
-	filterPattern?: string,
-	roomTypes?: string[],
-): boolean {
+export function roomMatchesFilters(room: RoomInfo, filterPattern?: string): boolean {
 	// Check title filter
 	if (filterPattern && !roomTitleMatchesPattern(room, filterPattern)) {
-		return false;
-	}
-
-	// Check room type filter
-	if (roomTypes && roomTypes.length > 0 && !roomTypeMatchesFilter(room, roomTypes)) {
 		return false;
 	}
 
@@ -47,12 +31,8 @@ export function roomMatchesFilters(
 }
 
 /**
- * Filters an array of rooms based on pattern and type criteria
+ * Filters an array of rooms based on pattern criteria
  */
-export function filterRooms(
-	rooms: RoomInfo[],
-	filterPattern?: string,
-	roomTypes?: string[],
-): RoomInfo[] {
-	return rooms.filter((room) => roomMatchesFilters(room, filterPattern, roomTypes));
+export function filterRooms(rooms: RoomInfo[], filterPattern?: string): RoomInfo[] {
+	return rooms.filter((room) => roomMatchesFilters(room, filterPattern));
 }

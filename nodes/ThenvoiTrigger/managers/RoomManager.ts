@@ -101,7 +101,7 @@ export class RoomManager {
 	}
 
 	private shouldSubscribeToRoom(room: RoomInfo, config: FilteredRoomsConfig): boolean {
-		return roomMatchesFilters(room, config.roomFilter, config.roomTypes);
+		return roomMatchesFilters(room, config.roomFilter);
 	}
 
 	private async unsubscribeFromRoom(roomId: string): Promise<void> {

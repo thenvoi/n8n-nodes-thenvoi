@@ -36,7 +36,6 @@ function createFilteredRoomsConfig(
 		roomMode: RoomMode.FILTERED,
 		event: eventType,
 		roomFilter: conditionalParams.roomFilter as string,
-		roomTypes: conditionalParams.roomTypes as string[],
 		autoSubscribe: conditionalParams.autoSubscribe as boolean,
 	} as const;
 }

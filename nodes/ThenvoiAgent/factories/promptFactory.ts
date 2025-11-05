@@ -57,14 +57,19 @@ ${REACT_TEMPLATE_BASE}`;
  *
  * This format is required by LangChain's tool-calling agents and matches
  * the message structure expected by modern LLM APIs.
+ *
+ * Note: The system message is escaped to handle literal curly braces,
+ * as ChatPromptTemplate also parses message content as templates.
  */
 export function createToolCallingPrompt(
 	systemMessage: string,
 	hasMemory: boolean,
 ): ChatPromptTemplate {
+	const escapedSystemMessage = escapeTemplateBraces(systemMessage);
+
 	if (hasMemory) {
 		return ChatPromptTemplate.fromMessages([
-			['system', systemMessage],
+			['system', escapedSystemMessage],
 			new MessagesPlaceholder('chat_history'),
 			['human', '{input}'],
 			new MessagesPlaceholder('agent_scratchpad'),
@@ -72,7 +77,7 @@ export function createToolCallingPrompt(
 	}
 
 	return ChatPromptTemplate.fromMessages([
-		['system', systemMessage],
+		['system', escapedSystemMessage],
 		['human', '{input}'],
 		new MessagesPlaceholder('agent_scratchpad'),
 	]);
@@ -83,8 +88,14 @@ export function createToolCallingPrompt(
  *
  * LangChain uses {variableName} for template variables, so literal braces
  * must be escaped as {{ and }} to prevent template parsing errors.
+ *
+ * This function escapes all single braces to ensure they are treated as literal text.
+ * If braces are already escaped ({{ or }}), they will be double-escaped ({{{{ or }}}}),
+ * which will still render correctly as {{ and }} in the final output.
  */
 function escapeTemplateBraces(text: string): string {
+	// Escape all single braces - simple and reliable
+	// This handles both single braces and already-escaped braces correctly
 	return text.replace(/\{/g, '{{').replace(/\}/g, '}}');
 }
 

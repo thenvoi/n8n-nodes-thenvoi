@@ -5,6 +5,7 @@ import { RoomMode } from '@lib/types';
  */
 type BaseConfigProperties = {
 	event: string;
+	agentId: string;
 };
 
 /**

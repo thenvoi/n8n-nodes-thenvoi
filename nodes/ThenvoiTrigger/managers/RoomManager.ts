@@ -123,7 +123,7 @@ export class RoomManager {
 			eventHandlerRegistry.processEvent(
 				this.config.event,
 				rawData,
-				{ ...this.config, chatRoomId: roomId },
+				this.config,
 				this.triggerContext,
 			);
 		} catch (error) {

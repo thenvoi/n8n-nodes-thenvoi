@@ -8,33 +8,39 @@ import { TriggerConfig, RoomMode, RoomModeType } from '../types';
  */
 function createSingleRoomConfig(
 	eventType: string,
+	agentId: string,
 	conditionalParams: Partial<Record<keyof typeof OPTIONAL_PARAMETER_CONFIG, unknown>>,
 ) {
 	return {
 		roomMode: RoomMode.SINGLE,
 		event: eventType,
+		agentId,
 		chatRoomId: conditionalParams.chatRoomId as string,
 	} as const;
 }
 
 function createAllRoomsConfig(
 	eventType: string,
+	agentId: string,
 	conditionalParams: Partial<Record<keyof typeof OPTIONAL_PARAMETER_CONFIG, unknown>>,
 ) {
 	return {
 		roomMode: RoomMode.ALL,
 		event: eventType,
+		agentId,
 		autoSubscribe: conditionalParams.autoSubscribe as boolean,
 	} as const;
 }
 
 function createFilteredRoomsConfig(
 	eventType: string,
+	agentId: string,
 	conditionalParams: Partial<Record<keyof typeof OPTIONAL_PARAMETER_CONFIG, unknown>>,
 ) {
 	return {
 		roomMode: RoomMode.FILTERED,
 		event: eventType,
+		agentId,
 		roomFilter: conditionalParams.roomFilter as string,
 		autoSubscribe: conditionalParams.autoSubscribe as boolean,
 	} as const;
@@ -45,14 +51,15 @@ function createFilteredRoomsConfig(
  */
 function createBaseConfig(
 	eventType: string,
+	agentId: string,
 	roomMode: RoomModeType,
 	conditionalParams: Partial<Record<keyof typeof OPTIONAL_PARAMETER_CONFIG, unknown>>,
 	triggerContext: ITriggerFunctions,
 ): TriggerConfig {
 	const configFactories = {
-		[RoomMode.SINGLE]: () => createSingleRoomConfig(eventType, conditionalParams),
-		[RoomMode.ALL]: () => createAllRoomsConfig(eventType, conditionalParams),
-		[RoomMode.FILTERED]: () => createFilteredRoomsConfig(eventType, conditionalParams),
+		[RoomMode.SINGLE]: () => createSingleRoomConfig(eventType, agentId, conditionalParams),
+		[RoomMode.ALL]: () => createAllRoomsConfig(eventType, agentId, conditionalParams),
+		[RoomMode.FILTERED]: () => createFilteredRoomsConfig(eventType, agentId, conditionalParams),
 	};
 
 	const factory = configFactories[roomMode];
@@ -86,11 +93,21 @@ function addEventSpecificParameters(
 /**
  * Gets the trigger configuration from node parameters
  */
-export function getTriggerConfig(triggerContext: ITriggerFunctions): TriggerConfig {
+export function getTriggerConfig(
+	triggerContext: ITriggerFunctions,
+	agentId: string,
+): TriggerConfig {
 	const eventType = triggerContext.getNodeParameter('event') as string;
 	const roomMode = triggerContext.getNodeParameter('roomMode') as RoomModeType;
 	const conditionalParams = extractConditionalParameters({ roomMode }, triggerContext);
 
-	const baseConfig = createBaseConfig(eventType, roomMode, conditionalParams, triggerContext);
+	const baseConfig = createBaseConfig(
+		eventType,
+		agentId,
+		roomMode,
+		conditionalParams,
+		triggerContext,
+	);
+
 	return addEventSpecificParameters(baseConfig, eventType, triggerContext);
 }

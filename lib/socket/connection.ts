@@ -50,32 +50,82 @@ function createSocketOptions(config: SocketConfig, logger: Logger) {
 }
 
 /**
- * Sets up socket event listeners for connection monitoring
+ * Handles socket open event, distinguishing between initial connection and reconnection
  */
-function setupSocketEventListeners(socket: Socket, logger: Logger): void {
+function handleSocketOpen(
+	socket: Socket,
+	logger: Logger,
+	isInitialConnection: boolean,
+	onInitialConnect?: (socket: Socket) => void,
+	onReconnect?: () => void | Promise<void>,
+): void {
+	if (isInitialConnection) {
+		logger.info('SocketManager: Socket connected');
+		onInitialConnect?.(socket);
+	} else {
+		logger.info('SocketManager: Socket reconnected');
+		if (onReconnect) {
+			// Call reconnection callback asynchronously to avoid blocking socket
+			Promise.resolve(onReconnect()).catch((error) => {
+				logError(logger, 'SocketManager: Reconnection callback failed', error);
+			});
+		}
+	}
+}
+
+/**
+ * Sets up socket lifecycle event listeners
+ */
+function setupSocketLifecycleListeners(
+	socket: Socket,
+	logger: Logger,
+	onInitialConnect?: (socket: Socket) => void,
+	onReconnect?: () => void | Promise<void>,
+): void {
+	let isInitialConnection = true;
+
+	socket.onOpen(() => {
+		handleSocketOpen(socket, logger, isInitialConnection, onInitialConnect, onReconnect);
+		if (isInitialConnection) {
+			isInitialConnection = false;
+		}
+	});
+
 	socket.onClose(() => {
 		logger.info('SocketManager: Socket connection closed');
+	});
+
+	socket.onError((error: string | number | Event) => {
+		logError(logger, 'SocketManager: WebSocket connection error', error);
 	});
 }
 
 /**
- * Sets up connection event handlers for a socket
+ * Creates a promise that resolves when the socket connects or rejects on error
  */
-function setupConnectionHandlers(
+function createConnectionPromise(
 	socket: Socket,
 	logger: Logger,
-	resolve: (socket: Socket) => void,
-	reject: (error: Error) => void,
-): void {
-	socket.onOpen(() => {
-		logger.info('SocketManager: Socket connected');
-		resolve(socket);
-	});
+	onReconnect?: () => void | Promise<void>,
+): Promise<Socket> {
+	return new Promise<Socket>((resolve, reject) => {
+		let isResolved = false;
 
-	socket.onError((error: string | number | Event) => {
-		const errorMessage = getErrorMessage(error);
-		logError(logger, 'SocketManager: WebSocket connection error', error);
-		reject(new Error(`Socket connection failed: ${errorMessage}`));
+		const onInitialConnect = (connectedSocket: Socket) => {
+			isResolved = true;
+			resolve(connectedSocket);
+		};
+
+		setupSocketLifecycleListeners(socket, logger, onInitialConnect, onReconnect);
+
+		socket.onError((error: string | number | Event) => {
+			if (!isResolved) {
+				const errorMessage = getErrorMessage(error);
+				reject(new Error(`Socket connection failed: ${errorMessage}`));
+			}
+		});
+
+		socket.connect();
 	});
 }
 
@@ -91,20 +141,19 @@ export async function createSocket(config: SocketConfig, logger: Logger): Promis
 	const socketOptions = createSocketOptions(config, logger);
 	const socket = new Socket(socketUrl, socketOptions);
 
-	setupSocketEventListeners(socket, logger);
-
-	// Wait for connection to be established
-	return waitForConnection(socket, logger);
+	// Wait for initial connection to be established (lifecycle listeners set up inside)
+	return waitForConnection(socket, logger, config.onReconnect);
 }
 
 /**
  * Waits for a socket to connect
  */
-export async function waitForConnection(socket: Socket, logger: Logger): Promise<Socket> {
-	const connectionPromise = new Promise<Socket>((resolve, reject) => {
-		setupConnectionHandlers(socket, logger, resolve, reject);
-		socket.connect();
-	});
+export async function waitForConnection(
+	socket: Socket,
+	logger: Logger,
+	onReconnect?: () => void | Promise<void>,
+): Promise<Socket> {
+	const connectionPromise = createConnectionPromise(socket, logger, onReconnect);
 
 	return raceWithTimeout(
 		connectionPromise,

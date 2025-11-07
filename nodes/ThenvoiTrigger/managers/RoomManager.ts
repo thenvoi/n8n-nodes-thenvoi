@@ -13,37 +13,66 @@ import {
 	subscribeToRoom,
 	subscribeToRooms,
 } from '../utils/rooms/roomSubscriptions';
+import { createSocket } from '@lib/socket';
 
 /**
  * Manages room subscriptions and event handling for all room modes
  */
 export class RoomManager {
-	private socket: Socket;
+	private socket!: Socket;
 	private logger: Logger;
 	private config: TriggerConfig;
 	private triggerContext: ITriggerFunctions;
 	private httpClient: HttpClient;
 	private agentId: string;
+	private credentials: ThenvoiCredentials;
 	private subscriptions = new Map<string, RoomSubscription>();
+	private autoSubscribeActive = false;
+	private isReconnecting = false;
 
 	constructor(
-		socket: Socket,
 		config: TriggerConfig,
 		triggerContext: ITriggerFunctions,
 		credentials: ThenvoiCredentials,
 	) {
-		this.socket = socket;
 		this.config = config;
 		this.logger = triggerContext.logger;
 		this.triggerContext = triggerContext;
 		this.httpClient = new HttpClient(credentials, this.logger);
 		this.agentId = credentials.agentId;
+		this.credentials = credentials;
 
 		this.subscribeToNewRoom = this.subscribeToNewRoom.bind(this);
 		this.unsubscribeFromRoom = this.unsubscribeFromRoom.bind(this);
+		this.handleReconnection = this.handleReconnection.bind(this);
+	}
+
+	/**
+	 * Creates and initializes the socket with reconnection callback
+	 */
+	async initializeSocket(): Promise<Socket> {
+		this.socket = await createSocket(
+			{
+				serverUrl: this.credentials.serverUrl,
+				apiKey: this.credentials.apiKey,
+				agentId: this.credentials.agentId,
+				onReconnect: () => this.handleReconnection(),
+			},
+			this.logger,
+		);
+
+		return this.socket;
 	}
 
 	async initialize(): Promise<void> {
+		await this.subscribeToAllRooms();
+		this.initializeAutoSubscribe();
+	}
+
+	/**
+	 * Fetches rooms based on room mode and subscribes to them
+	 */
+	private async subscribeToAllRooms(): Promise<void> {
 		// Get rooms to subscribe based on room mode
 		const roomIds = await getRoomIdsForMode(
 			this.config,
@@ -61,12 +90,11 @@ export class RoomManager {
 			(roomId: string, rawData: unknown) => this.handleRoomEvent(roomId, rawData),
 			this.logger,
 		);
-
-		this.initializeAutoSubscribe();
 	}
 
 	private initializeAutoSubscribe(): void {
 		if (supportsAutoSubscribe(this.config) && this.config.autoSubscribe) {
+			this.autoSubscribeActive = true;
 			setupAutoSubscribe(
 				this.socket,
 				this.agentId,
@@ -74,6 +102,45 @@ export class RoomManager {
 				this.subscribeToNewRoom,
 				this.unsubscribeFromRoom,
 			);
+		}
+	}
+
+	/**
+	 * Handles socket reconnection by orchestrating channel reconnection
+	 * Public method to be used as socket reconnection callback
+	 */
+	async handleReconnection(): Promise<void> {
+		if (this.isReconnecting) {
+			this.logger.debug('Reconnection already in progress, skipping...');
+			return;
+		}
+
+		this.isReconnecting = true;
+		this.logger.info('Socket reconnected, fetching current rooms and rejoining channels...');
+
+		try {
+			await this.reconnectChannels();
+		} catch (error) {
+			logError(this.logger, 'Failed to rejoin some channels after reconnection', error);
+		} finally {
+			this.isReconnecting = false;
+		}
+	}
+
+	/**
+	 * Reconnects all channels by clearing old subscriptions and re-subscribing to current rooms
+	 */
+	private async reconnectChannels(): Promise<void> {
+		// Clear old channel references (they're invalid after disconnect)
+		this.subscriptions.clear();
+
+		// Fetch and subscribe to current rooms (may have changed during disconnect)
+		await this.subscribeToAllRooms();
+		this.logger.info(`Rejoined ${this.subscriptions.size} room channels after reconnection`);
+
+		// Rejoin auto-subscribe channel if it was active
+		if (this.autoSubscribeActive) {
+			this.initializeAutoSubscribe();
 		}
 	}
 

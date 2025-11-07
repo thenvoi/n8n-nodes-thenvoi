@@ -1,11 +1,11 @@
 import { ITriggerFunctions, ITriggerResponse, NodeOperationError } from 'n8n-workflow';
 import { nodeDescription } from './config/nodeConfig';
-import { handleRoomMode } from './handlers/events/roomModes/roomModeController';
+import { initializeRoomModeTrigger } from './handlers/events/roomModes/roomModeController';
 import { ThenvoiCredentials } from '@lib/types';
 import { getTriggerConfig } from './utils/configFactory';
 import { getSafeErrorMessage, logError } from '@lib/utils';
-import { createSocket } from '@lib/socket';
 import { validateConfig, validateCredentials } from './utils/validation';
+import { RoomManager } from './managers/RoomManager';
 
 export class ThenvoiTrigger {
 	description = nodeDescription;
@@ -18,9 +18,8 @@ export class ThenvoiTrigger {
 			const config = getTriggerConfig(this, credentials.agentId);
 			validateConfig(config, this);
 
-			const socket = await createSocket(credentials, this.logger);
-
-			return await handleRoomMode(socket, config, credentials, this);
+			const roomManager = new RoomManager(config, this, credentials);
+			return await initializeRoomModeTrigger(roomManager);
 		} catch (error) {
 			logError(this.logger, 'Thenvoi Trigger: Failed to initialize', error);
 

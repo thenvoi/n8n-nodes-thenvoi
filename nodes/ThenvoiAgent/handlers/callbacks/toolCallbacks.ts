@@ -1,19 +1,16 @@
 import { Serialized } from '@langchain/core/load/serializable';
 import { CallbackContext } from '../../types/agentCapabilities';
-import { formatToolCall, formatToolResult } from '../../utils/messages/toolFormatters';
+import {
+	formatToolCall,
+	formatToolResult,
+	extractToolName,
+} from '../../utils/messages/toolFormatters';
 import {
 	generateToolStartThought,
 	generateToolEndThought,
 	generateErrorThought,
 } from '../../utils/thoughts/syntheticThoughts';
 import { getSafeErrorMessage } from '@lib/utils';
-
-/**
- * Extracts tool name from serialized tool
- */
-function getToolName(tool: Serialized): string {
-	return tool.name || tool.id?.[tool.id.length - 1] || 'unknown';
-}
 
 /**
  * Sends tool call message to Thenvoi
@@ -71,8 +68,7 @@ export async function handleToolStart(
 	input: string,
 	runId: string,
 ): Promise<void> {
-	const toolName = getToolName(tool);
-
+	const toolName = extractToolName(tool);
 	if (!ctx.toolsUsed.includes(toolName)) {
 		ctx.toolsUsed.push(toolName);
 	}
@@ -128,7 +124,7 @@ export async function handleToolError(
 
 	ctx.executionContext.logger.info('Tool execution error', {
 		runId,
-		toolName: tool ? getToolName(tool) : 'unknown',
+		toolName: tool ? extractToolName(tool) : 'unknown',
 		error: errorMessage,
 	});
 

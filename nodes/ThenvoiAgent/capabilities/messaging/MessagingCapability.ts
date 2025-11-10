@@ -20,7 +20,7 @@ import { ChatParticipant, ChatMessageMention } from '@lib/types';
 import { HttpClient } from '@lib/http/client';
 import { fetchChatParticipants } from '@lib/api';
 import { updateMessageProcessedStatus, updateMessageFailedStatus } from '../../utils/messages';
-import { SendMessageTool } from '../../tools';
+import { SendMessageTool, SEND_MESSAGE_TOOL_ID } from '../../tools/SendMessageTool';
 
 export class MessagingCapability implements Capability {
 	readonly name = 'messaging';
@@ -137,7 +137,7 @@ export class MessagingCapability implements Capability {
 		if (!this.handler) return;
 
 		const toolsUsed = this.handler.getToolsUsed();
-		const sentMessagesViaTool = toolsUsed.includes('send_message');
+		const sentMessagesViaTool = toolsUsed.includes(SEND_MESSAGE_TOOL_ID);
 
 		// Only send final output if no messages were sent via tool
 		// This prevents redundant messages when agent already sent what it needed

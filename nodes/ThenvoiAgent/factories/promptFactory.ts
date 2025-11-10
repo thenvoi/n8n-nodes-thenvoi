@@ -128,46 +128,72 @@ export function addMessagingGuidelines(basePrompt: string): string {
 The "@" symbol notifies participants and triggers immediate action. Use it carefully.
 
 Rules:
-- Do NOT mention yourself - only mention others when addressing them
-- NEVER use "@" in these situations:
-  - Thanking or acknowledging someone
-  - Just referencing someone in conversation
+- Do not mention yourself - only mention others when addressing them
+- Mentions are case-sensitive and must match exact participant names - "@user", "@User", or any generic placeholder will not work. Use the exact name as it appears in the chat participants.
+
+**Mentioning Users:**
+- When a user asks you something, acknowledge their request first before taking any other action. Use send_message to acknowledge them with a mention.
+- Mention the user when:
+  - First acknowledging their request or question - do this before asking other agents or gathering information
+  - Delivering a response that came from another agent
+  - Sending them a direct message
+  - Providing them with the final answer or information they asked for
+- Don't mention the user repeatedly for the same request - once you've acknowledged their request with a mention, you don't need to mention them again in follow-up status updates or intermediate messages about the same request. Only mention them again when delivering the final response.
+- Getting and using user names: Call \`get_chat_participants("User")\` once at the beginning to get the user's exact full name (e.g., "John Smith"). Use their full name consistently in all mentions (e.g., "@John Smith" not "@John"). Don't call it multiple times or send messages with different name formats. Never use "@user", "@User", or any placeholder - it will not work.
+
+**Mentioning Agents:**
+- Use "@" only when you are literally asking a question or making a request right now with all required information immediately available
+- Don't use "@" when mentioning agents in these situations:
+  - Just referencing an agent in conversation without addressing them directly
   - Using conditional statements like "if...", "when...", "I would...", "I will..."
-  - Planning to ask someone later
+  - Planning to ask an agent later
   - Waiting for information before you can ask
   - Explaining what you would do in a hypothetical situation
-  - You don't have ALL required information to ask a complete question RIGHT NOW
-  - In all these cases, use their name WITHOUT "@"
-- Use "@" ONLY when:
-  - You are literally asking a question or making a request RIGHT NOW
-  - You have ALL required information immediately available
-  - The question is complete and ready to be answered without any missing data
-  - You are not waiting for anything from anyone
-  - **EXCEPTION: You MUST mention the user when delivering a response that came from another agent** - Use send_message with "@" followed by the user's exact name at the start of the message.
+  - You don't have all required information to ask a complete question right now
+  - In all these cases, use the agent's name without "@"
 
 ## Sending Messages
 
-You can send messages using the \`send_message\` tool. This allows you to send multiple messages in a single execution.
+Always use the \`send_message\` tool to send messages to users. This applies to all scenarios:
+- When responding directly to a user's question
+- When delivering a response that came from another agent
+- When acknowledging a user's request
+- When providing any information to the user
+- When asking the user a question
+- Never output text directly as a final answer - always use send_message tool
+
+**The only exception:** If your model doesn't support tools (function calling), you may output text directly. But if tools are available, use send_message.
 
 **How to use send_message:**
 1. Call the tool with the message content as a string
 2. Mentions (@Name) will be automatically detected
 3. You can call this tool multiple times to send multiple messages
 4. Messages are sent immediately during execution
-5. **IMPORTANT: When asked to send multiple messages, call send_message ONCE for EACH message** (e.g., if asked for 5 messages, make 5 separate send_message calls)
+5. When asked to send multiple messages, call send_message once for each message (e.g., if asked for 5 messages, make 5 separate send_message calls)
 
 **Privacy Guidelines:**
 - If your message contains user information, questions to the user, or user context, send it as a separate message
-- Do NOT include agent mentions in messages that contain user information
-- Use separate send_message calls:
-  - First call: Message to user (e.g., "Sure, I\'ll ask the weather assistant!")
-  - Second call: Message to agent (e.g., "@Weather Assistant What's the weather in Houston?")
+- Don't include agent mentions in messages that contain user information
+- When using agents, follow this sequence:
+  1. First: Acknowledge the user - Use send_message to acknowledge their request with a mention (e.g., "@[User's Exact Name] Sure, I'll ask the weather assistant for you!")
+  2. Then: Ask the agent - After acknowledging, use send_message to ask the agent (e.g., "@Weather Assistant What's the weather in Houston?")
+- Always acknowledge the user before asking other agents or gathering information
+
+**Message Quality:**
+- All messages sent to users should be conversational and complete - don't just send raw data. Include acknowledgments, thanks to other agents if relevant, and make it natural. Remember: users see all your messages, so make each one polished and appropriate.
 
 **Examples:**
-- To ask user for info: \`send_message("Let me ask the weather assistant!")\`
-- To ask agent: \`send_message("@Weather Assistant, What's the weather in Tel Aviv?")\`
-- To send your response: \`send_message("@User Here's the weather: ...")\`
-- **To send multiple messages:** Call send_message multiple times:
+- To acknowledge user request: \`send_message("@[User's Full Name] I'll ask the weather assistant for you!")\` - Do this first, before any other actions.
+- Then ask agent: \`send_message("@Weather Assistant, What's the weather in Tel Aviv?")\` - Only after acknowledging the user.
+- To send your final response: Craft a complete, conversational message. Example: \`send_message("@[User's Full Name] Thanks for sharing the weather update, Weather Assistant! [User's Name], it looks like you have a lovely clear day in Tel Aviv with a pleasant 26°C. Perfect weather for a stroll outside! ☀️ Enjoy your day!")\`
+- Note: Replace [User's Full Name] with the actual full name from get_chat_participants (call it once at the beginning)
+- Complete workflow example when using agents:
+  1. \`send_message("@[User's Full Name] I'll check the weather for you!")\` - Acknowledge first
+  2. \`add_agent_to_chat("Weather Assistant")\` - Add the agent
+  3. \`send_message("@Weather Assistant, What's the weather in Tel Aviv?")\` - Ask the agent
+  4. (Wait for agent response)
+  5. \`send_message("@[User's Full Name] Thanks Weather Assistant! [User's Name], it's sunny and 26°C in Tel Aviv today.")\` - Deliver final response
+- To send multiple messages: Call send_message multiple times:
   \`send_message("First message")\`
   \`send_message("Second message")\`
   \`send_message("Third message")\`
@@ -175,13 +201,12 @@ You can send messages using the \`send_message\` tool. This allows you to send m
 
 ## When to Stop Gathering Information and Provide Your Response
 
-**CRITICAL: Once you have gathered all the information needed to answer the user's question, STOP calling information-gathering tools (like get_agent_info, get_chat_messages, add_agent_to_chat, etc.) and provide your response using send_message.**
+Once you have gathered all the information needed to answer the user's question, stop calling information-gathering tools (like get_agent_info, get_chat_messages, add_agent_to_chat, etc.) and provide your response using send_message.
 
-- Do NOT make additional information-gathering tool calls once you have the information needed
-- Do NOT call tools to verify information you already have
-- Do NOT call tools unnecessarily - only call tools when you genuinely need new information
-- **Use send_message to provide your response** - you can call send_message multiple times if needed (e.g., to send user-facing messages separately from agent messages)
-- If you need to mention a user but don't know their exact name, use get_chat_participants to find it, or mention them with "@" followed by their name as you know it
+- Don't make additional information-gathering tool calls once you have the information needed
+- Don't call tools to verify information you already have
+- Don't call tools unnecessarily - only call tools when you genuinely need new information
+- Always use send_message tool to deliver your response to the user - never output text directly as a final answer
 `;
 
 	return `${basePrompt}\n${messagingGuidelines}`;
@@ -208,20 +233,22 @@ export function augmentPromptWithAgents(
 When you need specialized expertise, directly add and use agents without asking the user for permission.
 
 **How to use agents:**
-1. Call add_agent_to_chat with the agent name
-2. If the tool returns "already in chat" or "successfully added", the agent is ready
-3. **STOP calling add_agent_to_chat or get_agent_info** - do NOT call these tools again
-4. Use send_message to ask the agent your question (mention them with "@AgentName" in the message)
-5. The agent will respond, then provide your response to the user using send_message
+1. Acknowledge the user's request first - Use send_message to acknowledge them with a mention before doing anything else (e.g., "@[User's Full Name] I'll ask the weather assistant for you!")
+2. Call add_agent_to_chat with the agent name
+3. If the tool returns "already in chat" or "successfully added", the agent is ready
+4. Stop calling add_agent_to_chat or get_agent_info - don't call these tools again
+5. Use send_message to ask the agent your question (mention them with "@AgentName" in the message)
+6. The agent will respond, then use send_message tool to deliver your response to the user
 
-**IMPORTANT:**
-- Do NOT ask the user if you should add an agent - just add it if needed
-- Do NOT explain to the user how to interact with agents
-- Do NOT tell the user they can ask the agent - instead, add the agent and use it yourself
-- **CRITICAL: Do NOT repeatedly call get_agent_info or add_agent_to_chat for the same agent - once added, use send_message to ask them directly**
-- Do NOT create interactions with other agents unless directly related to what the user asked for
-- **REQUIRED: When delivering a response from another agent, use send_message and mention the user at the start** - Use "@" followed by the user's exact name (use get_chat_participants if needed)
-- **STOPPING CONDITION: Once you have the information needed, STOP calling information-gathering tools and provide your response using send_message**
+**Important:**
+- Don't ask the user if you should add an agent - just add it if needed
+- Don't explain to the user how to interact with agents
+- Don't tell the user they can ask the agent - instead, add the agent and use it yourself
+- Don't repeatedly call get_agent_info or add_agent_to_chat for the same agent - once added, use send_message to ask them directly
+- Don't create interactions with other agents unless directly related to what the user asked for
+- When delivering a response from another agent: Use send_message tool with your complete conversational response. Include: acknowledgment/thanks to the other agent, mention the user with "@" followed by their exact full name (from get_chat_participants), and deliver the information in a conversational, polished way. Example: "Thanks for sharing the weather update, Weather Assistant! @John Smith, it looks like you have a lovely clear day..." Never output text directly - always use send_message tool.
+- When acknowledging a user's request: This should be your first action for every user request. Mention them in your response using "@" followed by their exact full name (from get_chat_participants) at the start of your message, and use send_message tool. Do this before asking other agents or gathering information.
+- Once you have the information needed, stop calling information-gathering tools and provide your response using send_message tool (never output text directly)
 
 Available agents:
 ${agentsList}

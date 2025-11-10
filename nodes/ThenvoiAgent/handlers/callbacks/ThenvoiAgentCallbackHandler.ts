@@ -11,6 +11,7 @@ import { createMessageQueue } from '../../utils/messages/messageQueue';
 import { handleLLMStart, handleLLMEnd, handleLLMError } from './llmCallbacks';
 import { handleToolStart, handleToolEnd, handleToolError } from './toolCallbacks';
 import { handleChainStart, handleChainEnd } from './chainCallbacks';
+import { SEND_MESSAGE_TOOL_ID } from '../../tools/SendMessageTool';
 
 /**
  * LangChain callback handler that sends events to Thenvoi chat in real-time
@@ -127,6 +128,13 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	async sendFinalResponse(finalAnswer: string, mentions?: ChatMessageMention[]): Promise<void> {
 		await this.waitForPendingOperations();
+
+		// Safety check: If send_message tool was used, don't send final response
+		// This is a safeguard in case sendFinalResponse is called from somewhere else
+		const toolsUsed = this.getToolsUsed();
+		if (toolsUsed.includes(SEND_MESSAGE_TOOL_ID)) {
+			return;
+		}
 
 		// Defensive string conversion for various LangChain output formats
 		// Some models return objects/arrays that need normalization

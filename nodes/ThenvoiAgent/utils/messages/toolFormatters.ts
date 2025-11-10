@@ -4,7 +4,7 @@ import { ToolCallData } from '../../types/callbackHandler';
 /**
  * Extracts tool name from LangChain serialized tool
  */
-function extractToolName(tool: Serialized): string {
+export function extractToolName(tool: Serialized): string {
 	if (tool.name) {
 		return tool.name;
 	}

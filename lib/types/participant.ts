@@ -19,6 +19,7 @@ export interface ChatParticipant {
 	email?: string;
 	role?: ParticipantRole;
 	status?: ParticipantStatus;
+	description?: string; // For agents: description of what they do
 }
 
 /**

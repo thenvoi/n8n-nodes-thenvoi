@@ -14,7 +14,7 @@
  */
 
 import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, AgentBasicInfo } from '@lib/types';
+import { ThenvoiCredentials, AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
 import { AgentNodeConfig, AgentExecutionResult } from './types';
 import { AgentComponents, CallbackHandlers } from './types/langchain';
 import { getConnectedModel, getConnectedTools, getConnectedMemory } from './utils/nodeConnections';
@@ -23,7 +23,6 @@ import { executeAgent } from './utils/agents/agentExecutor';
 import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
 import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
 import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
-import { ChatContextCapability } from './capabilities/context/ChatContextCapability';
 import { StructuredTool } from '@langchain/core/tools';
 import { HttpClient } from '@lib/http/client';
 import { updateMessageProcessingStatus } from './utils/messages';
@@ -80,10 +79,14 @@ async function setupPhase(
 	// Combine connected tools with capability tools
 	const allTools = [...connectedTools, ...capabilityTools];
 
-	// Extract available agents from capability metadata for prompt augmentation
+	// Extract context data from capability metadata for prompt augmentation
 	const collaborationResult = setupResults.find((r) => r.metadata?.availableAgents);
 	const availableAgents = Array.isArray(collaborationResult?.metadata?.availableAgents)
 		? (collaborationResult.metadata.availableAgents as AgentBasicInfo[])
+		: [];
+	const chatRoom = collaborationResult?.metadata?.chatRoom as RoomInfo | undefined;
+	const currentParticipants = Array.isArray(collaborationResult?.metadata?.currentParticipants)
+		? (collaborationResult.metadata.currentParticipants as ChatParticipant[])
 		: [];
 
 	ctx.logger.info('Agent components retrieved', {
@@ -93,9 +96,20 @@ async function setupPhase(
 		totalToolCount: allTools.length,
 		hasMemory: !!memory,
 		availableAgentsCount: availableAgents.length,
+		hasChatRoom: !!chatRoom,
+		currentParticipantsCount: currentParticipants.length,
 	});
 
-	const executor = await createAgentExecutor(ctx, model, allTools, memory, config, availableAgents);
+	const executor = await createAgentExecutor(
+		ctx,
+		model,
+		allTools,
+		memory,
+		config,
+		availableAgents,
+		chatRoom,
+		currentParticipants,
+	);
 
 	return { model, tools: allTools, memory, executor };
 }
@@ -214,7 +228,6 @@ function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry
 
 	registry.register(new AgentCollaborationCapability());
 	registry.register(new MessagingCapability());
-	registry.register(new ChatContextCapability());
 
 	return registry;
 }

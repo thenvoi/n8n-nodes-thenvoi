@@ -33,6 +33,14 @@ export class HttpClient {
 	}
 
 	/**
+	 * Makes a DELETE request to the Thenvoi API
+	 */
+	async delete<T>(endpoint: string): Promise<T> {
+		const url = this.buildUrl(endpoint);
+		return this.request<T>(url, 'DELETE', endpoint);
+	}
+
+	/**
 	 * Makes an HTTP request with common error handling and response parsing
 	 */
 	private async request<T>(

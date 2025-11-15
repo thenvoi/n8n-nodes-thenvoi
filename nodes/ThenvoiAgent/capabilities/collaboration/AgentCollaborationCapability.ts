@@ -10,9 +10,16 @@
 
 import { Capability, CapabilityContext, SetupResult, CapabilityPriority } from '../base/Capability';
 import { HttpClient } from '@lib/http/client';
-import { AgentBasicInfo, ChatParticipant } from '@lib/types';
-import { fetchAvailableAgents, fetchChatParticipants } from '@lib/api';
-import { AddAgentTool, AddAgentToolConfig } from '../../tools';
+import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
+import { fetchAvailableAgents, fetchChatParticipants, fetchChatRoom } from '@lib/api';
+import {
+	AddParticipantTool,
+	AddParticipantToolConfig,
+	ListAvailableParticipantsTool,
+	ListAvailableParticipantsToolConfig,
+	RemoveParticipantTool,
+	RemoveParticipantToolConfig,
+} from '../../tools';
 import { filterAgents } from '../../utils/participants';
 import { getErrorMessage } from '@lib/utils/errors';
 import { MessagingCapability } from '../messaging/MessagingCapability';
@@ -23,19 +30,20 @@ export class AgentCollaborationCapability implements Capability {
 
 	private availableAgents: AgentBasicInfo[] = [];
 	private currentParticipants: ChatParticipant[] = [];
-	private tool: AddAgentTool | null = null;
+	private chatRoom: RoomInfo | null = null;
+	private addParticipantTool: AddParticipantTool | null = null;
+	private listAvailableParticipantsTool: ListAvailableParticipantsTool | null = null;
+	private removeParticipantTool: RemoveParticipantTool | null = null;
 
 	async onSetup(ctx: CapabilityContext): Promise<SetupResult> {
 		try {
 			await this.fetchCollaborationData(ctx.httpClient, ctx.config.chatId, ctx);
 
-			const toolConfig = this.createToolConfiguration(ctx.httpClient, ctx.config.chatId, ctx);
-			this.tool = new AddAgentTool(toolConfig);
-
+			const tools = this.createTools(ctx.httpClient, ctx.config.chatId, ctx);
 			const metadata = this.buildSetupMetadata();
 
 			return {
-				tools: [this.tool],
+				tools,
 				callbacks: [],
 				metadata,
 			};
@@ -54,13 +62,13 @@ export class AgentCollaborationCapability implements Capability {
 	}
 
 	/**
-	 * Fetches available agents and current chat participants in parallel
+	 * Fetches available agents, current chat participants, and chat room info in parallel
 	 *
 	 * Updates internal state with fetched data and logs initialization details.
-	 * This data is required for both the tool and context augmentation.
+	 * This data is required for tools and context augmentation.
 	 *
 	 * @param httpClient - HTTP client for API requests
-	 * @param chatId - ID of the chat to fetch participants from
+	 * @param chatId - ID of the chat to fetch data from
 	 * @param ctx - Capability context for logging
 	 */
 	private async fetchCollaborationData(
@@ -68,15 +76,17 @@ export class AgentCollaborationCapability implements Capability {
 		chatId: string,
 		ctx: CapabilityContext,
 	): Promise<void> {
-		[this.availableAgents, this.currentParticipants] = await Promise.all([
+		[this.availableAgents, this.currentParticipants, this.chatRoom] = await Promise.all([
 			fetchAvailableAgents(httpClient),
 			fetchChatParticipants(httpClient, chatId),
+			fetchChatRoom(httpClient, chatId),
 		]);
 
 		const currentAgents = filterAgents(this.currentParticipants);
 
 		ctx.execution.logger.info('Agent collaboration capability initialized', {
 			chatId,
+			chatTitle: this.chatRoom.title,
 			availableAgentsCount: this.availableAgents.length,
 			currentParticipantsCount: this.currentParticipants.length,
 			currentAgentsCount: currentAgents.length,
@@ -84,62 +94,86 @@ export class AgentCollaborationCapability implements Capability {
 	}
 
 	/**
-	 * Creates configuration object for AddAgentTool
+	 * Creates all collaboration tools
 	 *
-	 * Includes all necessary dependencies and callback for updating internal state
-	 * when an agent is added via the tool.
+	 * Instantiates AddParticipantTool, ListAvailableParticipantsTool, and RemoveParticipantTool
+	 * with their required configurations and callbacks.
 	 *
 	 * @param httpClient - HTTP client for API requests
-	 * @param chatId - ID of the chat where agents can be added
-	 * @param ctx - Capability context for creating callback
-	 * @returns Configuration object for AddAgentTool
+	 * @param chatId - ID of the chat where participants can be managed
+	 * @param ctx - Capability context for creating callbacks
+	 * @returns Array of instantiated tools
 	 */
-	private createToolConfiguration(
+	private createTools(
 		httpClient: HttpClient,
 		chatId: string,
 		ctx: CapabilityContext,
-	): AddAgentToolConfig {
-		return {
+	): [AddParticipantTool, ListAvailableParticipantsTool, RemoveParticipantTool] {
+		const addParticipantConfig: AddParticipantToolConfig = {
 			httpClient,
 			chatId,
 			availableAgents: this.availableAgents,
 			currentParticipants: this.currentParticipants,
-			onAgentAdded: this.createAgentAddedCallback(ctx),
+			onParticipantAdded: this.createParticipantAddedCallback(ctx),
 		};
+
+		const listAvailableConfig: ListAvailableParticipantsToolConfig = {
+			httpClient,
+			chatId,
+		};
+
+		const removeParticipantConfig: RemoveParticipantToolConfig = {
+			httpClient,
+			chatId,
+			currentParticipants: this.currentParticipants,
+			onParticipantRemoved: this.createParticipantRemovedCallback(ctx),
+		};
+
+		this.addParticipantTool = new AddParticipantTool(addParticipantConfig);
+		this.listAvailableParticipantsTool = new ListAvailableParticipantsTool(listAvailableConfig);
+		this.removeParticipantTool = new RemoveParticipantTool(removeParticipantConfig);
+
+		return [
+			this.addParticipantTool,
+			this.listAvailableParticipantsTool,
+			this.removeParticipantTool,
+		];
 	}
 
 	/**
 	 * Builds metadata object for setup result
 	 *
 	 * Metadata is used by the execution orchestrator to augment prompts
-	 * with available agent information.
+	 * with available agent information, chat room context, and participants.
 	 *
-	 * @returns Metadata object with collaboration status and agent lists
+	 * @returns Metadata object with collaboration status, agent lists, chat room, and participants
 	 */
 	private buildSetupMetadata(): Record<string, unknown> {
 		return {
 			collaborationEnabled: true,
 			availableAgents: this.availableAgents,
 			currentAgents: filterAgents(this.currentParticipants),
+			chatRoom: this.chatRoom,
+			currentParticipants: this.currentParticipants,
 		};
 	}
 
 	/**
-	 * Creates callback handler for when an agent is added via tool
+	 * Creates callback handler for when a participant is added via tool
 	 *
-	 * Updates internal participants list to keep state in sync when agents
+	 * Updates internal participants list to keep state in sync when participants
 	 * are dynamically added during execution. Also notifies MessagingCapability
 	 * if available so mentions work immediately. Prevents duplicate entries
 	 * and logs the addition for debugging.
 	 *
 	 * @param ctx - Capability context for logging and registry access
-	 * @returns Callback function that receives the added agent
+	 * @returns Callback function that receives the added participant
 	 */
-	private createAgentAddedCallback(ctx: CapabilityContext) {
-		return (agent: ChatParticipant): void => {
-			const wasAlreadyInList = this.currentParticipants.some((p) => p.id === agent.id);
+	private createParticipantAddedCallback(ctx: CapabilityContext) {
+		return (participant: ChatParticipant): void => {
+			const wasAlreadyInList = this.currentParticipants.some((p) => p.id === participant.id);
 			if (!wasAlreadyInList) {
-				this.currentParticipants.push(agent);
+				this.currentParticipants.push(participant);
 			}
 
 			// Notify MessagingCapability so it can update its participants list
@@ -149,14 +183,43 @@ export class AgentCollaborationCapability implements Capability {
 				| undefined;
 
 			if (messagingCapability?.addParticipant) {
-				messagingCapability.addParticipant(agent);
+				messagingCapability.addParticipant(participant);
 			}
 
-			ctx.execution.logger.info('Agent added via tool', {
-				agentId: agent.id,
-				agentName: agent.name,
+			ctx.execution.logger.info('Participant added via tool', {
+				participantId: participant.id,
+				participantName: participant.name,
+				participantType: participant.type,
 				wasAlreadyInList,
-				currentAgentsCount: filterAgents(this.currentParticipants).length,
+				currentParticipantsCount: this.currentParticipants.length,
+			});
+		};
+	}
+
+	/**
+	 * Creates callback handler for when a participant is removed via tool
+	 *
+	 * Updates internal participants list to keep state in sync when participants
+	 * are removed during execution. Logs the removal for debugging.
+	 *
+	 * @param ctx - Capability context for logging
+	 * @returns Callback function that receives the removed participant ID
+	 */
+	private createParticipantRemovedCallback(ctx: CapabilityContext) {
+		return (participantId: string): void => {
+			const participant = this.currentParticipants.find((p) => p.id === participantId);
+
+			// Note: The tool already removes from its own list, but we also track it here
+			const index = this.currentParticipants.findIndex((p) => p.id === participantId);
+			if (index !== -1) {
+				this.currentParticipants.splice(index, 1);
+			}
+
+			ctx.execution.logger.info('Participant removed via tool', {
+				participantId,
+				participantName: participant?.name || 'Unknown',
+				participantType: participant?.type || 'Unknown',
+				currentParticipantsCount: this.currentParticipants.length,
 			});
 		};
 	}

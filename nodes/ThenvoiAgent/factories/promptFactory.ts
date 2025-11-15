@@ -1,7 +1,7 @@
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { augmentPromptForModelThoughts } from '../utils/thoughts/thoughtExtraction';
-import { AgentBasicInfo } from '@lib/types';
+import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
 
 /**
  * Base ReAct template structure shared between memory and non-memory versions
@@ -255,6 +255,72 @@ ${agentsList}
 `;
 
 	return `${basePrompt}\n${agentContext}`;
+}
+
+/**
+ * Augments system message with current chat room context
+ */
+export function augmentPromptWithChatContext(basePrompt: string, chatRoom: RoomInfo): string {
+	const formattedDate = chatRoom.inserted_at
+		? new Date(chatRoom.inserted_at).toLocaleString()
+		: 'Unknown';
+
+	const chatContext = `
+## CURRENT CHAT ROOM
+
+You are operating in the following chat room:
+
+- **Chat ID**: ${chatRoom.id}
+- **Title**: ${chatRoom.title}
+- **Type**: ${chatRoom.type}
+- **Status**: ${chatRoom.status}
+- **Created**: ${formattedDate}
+${chatRoom.metadata ? `- **Metadata**: ${JSON.stringify(chatRoom.metadata)}` : ''}
+`;
+
+	return `${basePrompt}\n${chatContext}`;
+}
+
+/**
+ * Augments system message with current chat participants context
+ */
+export function augmentPromptWithParticipants(
+	basePrompt: string,
+	participants: ChatParticipant[],
+): string {
+	if (participants.length === 0) {
+		return `${basePrompt}\n\n## CHAT PARTICIPANTS\n\nNo participants in this chat yet.`;
+	}
+
+	const participantsList = participants
+		.map((participant) => {
+			const parts = [
+				`- **${participant.name}**`,
+				`(ID: ${participant.id})`,
+				`- Type: ${participant.type}`,
+				`- Role: ${participant.role}`,
+			];
+
+			// Add description for agents if available
+			if (participant.type === 'Agent' && participant.description) {
+				parts.push(`- Description: ${participant.description}`);
+			}
+
+			return parts.join(' ');
+		})
+		.join('\n');
+
+	const participantsContext = `
+## CHAT PARTICIPANTS
+
+Current participants in this chat room:
+
+${participantsList}
+
+Use participant IDs when calling tools like remove_participant_from_chat.
+`;
+
+	return `${basePrompt}\n${participantsContext}`;
 }
 
 /**

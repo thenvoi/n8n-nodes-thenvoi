@@ -15,6 +15,7 @@ interface RawParticipant {
 	last_name?: string | null;
 	agent_name?: string | null;
 	avatar_url?: string | null;
+	description?: string | null; // For agents: description of what they do
 }
 
 /**
@@ -50,6 +51,7 @@ function transformParticipant(raw: RawParticipant): ChatParticipant {
 		email: raw.email || undefined,
 		role: raw.role,
 		status: raw.status,
+		description: raw.description || undefined,
 	};
 }
 
@@ -77,4 +79,66 @@ export async function fetchChatParticipants(
 
 	const rawParticipants = response.data || [];
 	return rawParticipants.map(transformParticipant);
+}
+
+/**
+ * Fetches available participants that can be added to a specific chat room
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param participantType - Filter by participant type (Agent or User)
+ * @returns Array of available participants
+ */
+export async function fetchAvailableParticipants(
+	httpClient: HttpClient,
+	chatId: string,
+	participantType: ParticipantType,
+): Promise<ChatParticipant[]> {
+	const queryParams: Record<string, string> = {
+		participant_type: participantType,
+	};
+
+	const response = await httpClient.get<{ data: RawParticipant[] }>(
+		`/chats/${chatId}/available-participants`,
+		queryParams,
+	);
+
+	const rawParticipants = response.data || [];
+	return rawParticipants.map(transformParticipant);
+}
+
+/**
+ * Fetches all available participants (both agents and users) that can be added to a chat room
+ *
+ * Fetches Agent and User participants in parallel and combines the results.
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @returns Array of all available participants (agents and users)
+ */
+export async function fetchAllAvailableParticipants(
+	httpClient: HttpClient,
+	chatId: string,
+): Promise<ChatParticipant[]> {
+	const [agents, users] = await Promise.all([
+		fetchAvailableParticipants(httpClient, chatId, 'Agent'),
+		fetchAvailableParticipants(httpClient, chatId, 'User'),
+	]);
+
+	return [...agents, ...users];
+}
+
+/**
+ * Removes a participant from a chat room
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param participantId - ID of the participant to remove
+ */
+export async function removeParticipantFromChat(
+	httpClient: HttpClient,
+	chatId: string,
+	participantId: string,
+): Promise<void> {
+	await httpClient.delete(`/chats/${chatId}/participants/${participantId}`);
 }

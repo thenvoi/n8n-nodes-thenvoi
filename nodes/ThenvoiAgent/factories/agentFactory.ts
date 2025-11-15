@@ -17,41 +17,55 @@ import { BaseMemory } from 'langchain/memory';
 import { AgentExecutor } from 'langchain/agents';
 import { Runnable } from '@langchain/core/runnables';
 import { AgentNodeConfig, AgentType } from '../types';
-import { AgentBasicInfo } from '@lib/types';
+import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
 import { configureMemory } from './memoryConfig';
 import { createAgent } from './agentCreation';
 import {
 	prepareSystemMessage,
 	augmentPromptWithAgents,
+	augmentPromptWithChatContext,
+	augmentPromptWithParticipants,
 	addMessagingGuidelines,
 } from './promptFactory';
 /**
- * Prepares the system message with optional model thought augmentation and agent context
+ * Prepares the system message with optional model thought augmentation and context injection
  */
 function prepareAgentPrompt(
 	config: AgentNodeConfig,
 	ctx: IExecuteFunctions,
 	availableAgents: AgentBasicInfo[],
+	chatRoom?: RoomInfo,
+	currentParticipants: ChatParticipant[] = [],
 ): string {
 	const useModelThoughts =
 		config.messageTypes.includes('thoughts') && config.thoughtMode === 'model';
 
 	let systemMessage = prepareSystemMessage(config.prompt, useModelThoughts);
 
+	// Augment with chat room context if available
+	if (chatRoom) {
+		systemMessage = augmentPromptWithChatContext(systemMessage, chatRoom);
+	}
+
+	// Augment with current participants if available
+	if (currentParticipants.length > 0) {
+		systemMessage = augmentPromptWithParticipants(systemMessage, currentParticipants);
+	}
+
 	// Augment with available agents for collaboration
 	systemMessage = augmentPromptWithAgents(systemMessage, availableAgents);
 
-	// Add messaging guidelines at the end (after agents section) for maximum effectiveness
+	// Add messaging guidelines at the end (after all context sections) for maximum effectiveness
 	systemMessage = addMessagingGuidelines(systemMessage);
 
-	if (useModelThoughts || availableAgents.length > 0) {
-		ctx.logger.info('Prompt augmented', {
-			originalLength: config.prompt.length,
-			augmentedLength: systemMessage.length,
-			modelThoughts: useModelThoughts,
-			availableAgentsCount: availableAgents.length,
-		});
-	}
+	ctx.logger.info('Prompt augmented', {
+		originalLength: config.prompt.length,
+		augmentedLength: systemMessage.length,
+		modelThoughts: useModelThoughts,
+		hasChatRoom: !!chatRoom,
+		currentParticipantsCount: currentParticipants.length,
+		availableAgentsCount: availableAgents.length,
+	});
 
 	return systemMessage;
 }
@@ -99,9 +113,17 @@ export async function createAgentExecutor(
 	memory: BaseMemory | undefined,
 	config: AgentNodeConfig,
 	availableAgents: AgentBasicInfo[] = [],
+	chatRoom?: RoomInfo,
+	currentParticipants: ChatParticipant[] = [],
 ): Promise<AgentExecutor> {
 	try {
-		const systemMessage = prepareAgentPrompt(config, ctx, availableAgents);
+		const systemMessage = prepareAgentPrompt(
+			config,
+			ctx,
+			availableAgents,
+			chatRoom,
+			currentParticipants,
+		);
 		configureMemory(memory, ctx);
 
 		const hasMemory = !!memory;

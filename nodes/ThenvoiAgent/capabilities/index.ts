@@ -2,4 +2,3 @@ export { Capability, CapabilityContext, SetupResult, CapabilityPriority } from '
 export { CapabilityRegistry } from './base/CapabilityRegistry';
 export { MessagingCapability } from './messaging/MessagingCapability';
 export { AgentCollaborationCapability } from './collaboration/AgentCollaborationCapability';
-export { ChatContextCapability } from './context/ChatContextCapability';

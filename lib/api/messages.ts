@@ -7,6 +7,8 @@ import {
 } from '../types';
 import { includeProperty } from '../utils';
 import { HttpClient } from '../http/client';
+import { fetchPaginated } from '../utils/pagination';
+import { Logger } from 'n8n-workflow';
 
 /**
  * Sends a message to the Thenvoi API
@@ -92,6 +94,40 @@ export async function fetchChatMessages(
 		inserted_at: new Date(message.inserted_at),
 		updated_at: new Date(message.updated_at),
 	})) as ChatMessage[];
+}
+
+/**
+ * Fetches chat messages with limit and pagination
+ *
+ * Uses generic pagination utility to handle page fetching.
+ * Only fetches specified message type (default: 'text').
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - Chat room ID
+ * @param limit - Maximum messages to fetch
+ * @param logger - Logger for pagination progress
+ * @param messageType - Message type filter (default: 'text')
+ * @returns Array of chat messages (up to limit)
+ */
+export async function fetchChatMessagesWithLimit(
+	httpClient: HttpClient,
+	chatId: string,
+	limit: number,
+	logger: Logger,
+	messageType: ChatMessageType = 'text',
+): Promise<ChatMessage[]> {
+	return fetchPaginated({
+		fetchPage: (page, perPage) =>
+			fetchChatMessages(httpClient, chatId, {
+				page,
+				per_page: perPage,
+				message_type: messageType,
+			}),
+		perPage: 50,
+		limit,
+		logger,
+		resourceName: 'messages',
+	});
 }
 
 /**

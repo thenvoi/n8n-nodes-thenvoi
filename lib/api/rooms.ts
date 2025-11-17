@@ -1,6 +1,7 @@
 import { RoomInfo } from '../types';
 import { Logger } from 'n8n-workflow';
 import { HttpClient } from '../http/client';
+import { fetchPaginated } from '../utils/pagination';
 
 /**
  * Fetches a single page of rooms for an agent
@@ -40,33 +41,12 @@ export async function fetchAllRooms(
 	agentId: string,
 	logger: Logger,
 ): Promise<RoomInfo[]> {
-	const allRooms: RoomInfo[] = [];
-	let page = 1;
-	const pageSize = 100;
-
-	while (true) {
-		const rooms = await fetchRoomsPage(httpClient, agentId, page, pageSize);
-
-		logger.info('Fetched rooms on page', { page, roomCount: rooms.length });
-
-		allRooms.push(...rooms);
-
-		if (isLastPage(rooms, pageSize)) {
-			break;
-		}
-
-		page++;
-	}
-
-	logger.info(`Fetched ${allRooms.length} rooms across ${page} pages`);
-	return allRooms;
-}
-
-/**
- * Determines if the current page is the last page
- */
-function isLastPage(rooms: RoomInfo[], perPage: number): boolean {
-	return rooms.length === 0 || rooms.length < perPage;
+	return fetchPaginated({
+		fetchPage: (page, perPage) => fetchRoomsPage(httpClient, agentId, page, perPage),
+		perPage: 100,
+		logger,
+		resourceName: 'rooms',
+	});
 }
 
 /**

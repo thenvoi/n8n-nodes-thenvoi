@@ -1,5 +1,11 @@
 import { HttpClient } from '../http/client';
-import { ParticipantType, ChatParticipant, ParticipantRole, ParticipantStatus } from '../types';
+import {
+	AvailableParticipant,
+	ChatParticipant,
+	ParticipantRole,
+	ParticipantStatus,
+	ParticipantType,
+} from '../types';
 import { includeProperty } from '../utils';
 
 /**
@@ -93,18 +99,17 @@ export async function fetchAvailableParticipants(
 	httpClient: HttpClient,
 	chatId: string,
 	participantType: ParticipantType,
-): Promise<ChatParticipant[]> {
+): Promise<AvailableParticipant[]> {
 	const queryParams: Record<string, string> = {
 		participant_type: participantType,
 	};
 
-	const response = await httpClient.get<{ data: RawParticipant[] }>(
+	const response = await httpClient.get<{ data: AvailableParticipant[] }>(
 		`/chats/${chatId}/available-participants`,
 		queryParams,
 	);
 
-	const rawParticipants = response.data || [];
-	return rawParticipants.map(transformParticipant);
+	return response.data || [];
 }
 
 /**
@@ -119,7 +124,7 @@ export async function fetchAvailableParticipants(
 export async function fetchAllAvailableParticipants(
 	httpClient: HttpClient,
 	chatId: string,
-): Promise<ChatParticipant[]> {
+): Promise<AvailableParticipant[]> {
 	const [agents, users] = await Promise.all([
 		fetchAvailableParticipants(httpClient, chatId, 'Agent'),
 		fetchAvailableParticipants(httpClient, chatId, 'User'),

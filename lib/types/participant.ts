@@ -22,6 +22,13 @@ export interface ChatParticipant {
 	description?: string; // For agents: description of what they do
 }
 
+export interface AvailableParticipant {
+	id: string;
+	name: string;
+	type: ParticipantType;
+	description: string | null;
+}
+
 /**
  * Payload for adding a participant to a chat
  */

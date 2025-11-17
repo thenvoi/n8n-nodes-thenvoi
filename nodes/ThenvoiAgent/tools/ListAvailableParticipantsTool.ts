@@ -11,9 +11,9 @@
  */
 
 import { Tool } from '@langchain/core/tools';
-import { ChatParticipant } from '@lib/types';
-import { HttpClient } from '@lib/http/client';
 import { fetchAllAvailableParticipants } from '@lib/api';
+import { HttpClient } from '@lib/http/client';
+import { AvailableParticipant } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
 
 /**
@@ -69,7 +69,7 @@ export class ListAvailableParticipantsTool extends Tool {
 	 * @returns Array of formatted participant objects with description
 	 */
 	private formatParticipants(
-		participants: ChatParticipant[],
+		participants: AvailableParticipant[],
 	): Array<{ id: string; name: string; type: string; description: string }> {
 		return participants.map((participant) => ({
 			id: participant.id,

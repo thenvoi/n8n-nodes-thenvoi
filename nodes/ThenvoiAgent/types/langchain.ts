@@ -1,8 +1,8 @@
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { StructuredTool } from '@langchain/core/tools';
-import { BaseMemory } from 'langchain/memory';
 import { AgentExecutor } from 'langchain/agents';
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
+import { ThenvoiMemory } from '../memory/ThenvoiMemory';
 
 /**
  * Agent components retrieved from node connections
@@ -10,7 +10,7 @@ import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 export interface AgentComponents {
 	model: BaseChatModel;
 	tools: StructuredTool[];
-	memory: BaseMemory | undefined;
+	memory: ThenvoiMemory | undefined;
 	executor: AgentExecutor;
 }
 

@@ -17,7 +17,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "npx rimraf dist && tsc && tsc-alias && gulp build:icons",
+    "build": "npx rimraf dist && tsc && tsc-alias && gulp build",
     "dev": "concurrently \"tsc --watch\" \"tsc-alias --watch\"",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",

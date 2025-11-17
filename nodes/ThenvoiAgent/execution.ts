@@ -14,10 +14,10 @@
  */
 
 import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
-import { AgentNodeConfig, AgentExecutionResult } from './types';
+import { ThenvoiCredentials } from '@lib/types';
+import { AgentNodeConfig, AgentExecutionResult, DynamicPromptContext } from './types';
 import { AgentComponents, CallbackHandlers } from './types/langchain';
-import { getConnectedModel, getConnectedTools, getConnectedMemory } from './utils/nodeConnections';
+import { getConnectedModel, getConnectedTools } from './utils/nodeConnections';
 import { createAgentExecutor } from './factories/agentFactory';
 import { executeAgent } from './utils/agents/agentExecutor';
 import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
@@ -26,6 +26,10 @@ import { AgentCollaborationCapability } from './capabilities/collaboration/Agent
 import { StructuredTool } from '@langchain/core/tools';
 import { HttpClient } from '@lib/http/client';
 import { updateMessageProcessingStatus } from './utils/messages';
+import { fetchChatRoom, fetchChatParticipants } from '@lib/api';
+import { ThenvoiMemory } from './memory/ThenvoiMemory';
+import { setupMemory } from './factories/memoryConfig';
+import { getRecentMessages } from './utils/messages/messageHistory';
 
 /**
  * Initialize capabilities phase - runs capability setup to get tools and metadata
@@ -57,61 +61,56 @@ async function initializeCapabilitiesPhase(
  * Setup phase - retrieves all connected components and creates executor
  *
  * Retrieves model, tools, and memory from node connections, combines them with
- * capability-provided tools, and creates the agent executor. Also extracts
- * available agent metadata for prompt augmentation.
+ * capability-provided tools, and creates the agent executor. Also fetches
+ * dynamic context data for prompt injection.
  *
  * @param ctx - n8n execution context
  * @param config - Agent node configuration
  * @param capabilityTools - Tools provided by capabilities
- * @param setupResults - Setup results from capabilities (for metadata extraction)
- * @returns Agent components including model, tools, memory, and executor
+ * @param setupResults - Setup results from capabilities
+ * @param httpClient - HTTP client for API requests
+ * @param memory - Configured memory instance
+ * @returns Agent components and dynamic context
  */
 async function setupPhase(
 	ctx: IExecuteFunctions,
 	config: AgentNodeConfig,
 	capabilityTools: StructuredTool[],
 	setupResults: SetupResult[],
-): Promise<AgentComponents> {
+	httpClient: HttpClient,
+	memory: ThenvoiMemory | undefined,
+): Promise<{ components: AgentComponents; dynamicContext: DynamicPromptContext }> {
 	const model = await getConnectedModel(ctx);
 	const connectedTools = await getConnectedTools(ctx);
-	const memory = await getConnectedMemory(ctx);
-
-	// Combine connected tools with capability tools
 	const allTools = [...connectedTools, ...capabilityTools];
 
-	// Extract context data from capability metadata for prompt augmentation
-	const collaborationResult = setupResults.find((r) => r.metadata?.availableAgents);
-	const availableAgents = Array.isArray(collaborationResult?.metadata?.availableAgents)
-		? (collaborationResult.metadata.availableAgents as AgentBasicInfo[])
-		: [];
-	const chatRoom = collaborationResult?.metadata?.chatRoom as RoomInfo | undefined;
-	const currentParticipants = Array.isArray(collaborationResult?.metadata?.currentParticipants)
-		? (collaborationResult.metadata.currentParticipants as ChatParticipant[])
-		: [];
+	// Fetch dynamic context data
+	const roomInfo = await fetchChatRoom(httpClient, config.chatId);
+	const participants = await fetchChatParticipants(httpClient, config.chatId);
+	const recentMessages = await getRecentMessages(config, memory, httpClient, ctx);
 
-	ctx.logger.info('Agent components retrieved', {
+	const dynamicContext: DynamicPromptContext = {
+		roomInfo,
+		participants,
+		recentMessages,
+		tools: allTools,
+	};
+
+	ctx.logger.info('Agent components and context retrieved', {
 		hasModel: !!model,
-		connectedToolCount: connectedTools.length,
-		capabilityToolCount: capabilityTools.length,
 		totalToolCount: allTools.length,
 		hasMemory: !!memory,
-		availableAgentsCount: availableAgents.length,
-		hasChatRoom: !!chatRoom,
-		currentParticipantsCount: currentParticipants.length,
+		participantsCount: participants.length,
+		recentMessagesCount: recentMessages.length,
+		historySource: config.messageHistorySource,
 	});
 
-	const executor = await createAgentExecutor(
-		ctx,
-		model,
-		allTools,
-		memory,
-		config,
-		availableAgents,
-		chatRoom,
-		currentParticipants,
-	);
+	const executor = await createAgentExecutor(ctx, model, allTools, memory, config, dynamicContext);
 
-	return { model, tools: allTools, memory, executor };
+	return {
+		components: { model, tools: allTools, memory, executor },
+		dynamicContext,
+	};
 }
 
 /**
@@ -250,6 +249,9 @@ export async function runAgent(
 		config.messageId,
 	);
 
+	// Setup memory based on configuration
+	const memory = await setupMemory(execution, config.messageHistorySource);
+
 	const registry = createCapabilitiesRegistry(config);
 
 	const capabilityContext: CapabilityContext = {
@@ -267,7 +269,16 @@ export async function runAgent(
 			registry,
 			capabilityContext,
 		);
-		const components = await setupPhase(execution, config, capabilityTools, setupResults);
+
+		const { components } = await setupPhase(
+			execution,
+			config,
+			capabilityTools,
+			setupResults,
+			httpClient,
+			memory,
+		);
+
 		const callbacks = await preparePhase(registry, capabilityContext, components, setupResults);
 		const result = await executePhase(components.executor, input, callbacks, execution);
 

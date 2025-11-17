@@ -1,7 +1,10 @@
-import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { augmentPromptForModelThoughts } from '../utils/thoughts/thoughtExtraction';
-import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
+import { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } from '@langchain/core/prompts';
+import * as fs from 'fs';
+import * as path from 'path';
+import { MessageHistorySource } from '../constants/nodeProperties';
+import { DynamicPromptContext } from '../types';
+import { formatDynamicContext } from '../utils/prompting/formatters';
+import { PROMPT_SECTIONS, PROMPT_PLACEHOLDERS } from '../constants/promptSections';
 
 /**
  * Base ReAct template structure shared between memory and non-memory versions
@@ -118,220 +121,135 @@ export function createReactPrompt(systemMessage: string, hasMemory: boolean): Pr
 	return PromptTemplate.fromTemplate(template);
 }
 
+// Template caching
+let cachedTemplate: string | null = null;
+
 /**
- * Augments system message with messaging guidelines including mentions, sending messages, and stopping conditions
+ * Loads base template from markdown file
+ * Template is single source of truth
  */
-export function addMessagingGuidelines(basePrompt: string): string {
-	const messagingGuidelines = `
-## Mention Guidelines
+function loadBaseTemplate(): string {
+	const templatePath = path.join(
+		__dirname,
+		'../../../docs/thenvoi_agent_system_prompt_template.md',
+	);
 
-The "@" symbol notifies participants and triggers immediate action. Use it carefully.
-
-Rules:
-- Do not mention yourself - only mention others when addressing them
-- Mentions are case-sensitive and must match exact participant names - "@user", "@User", or any generic placeholder will not work. Use the exact name as it appears in the chat participants.
-
-**Mentioning Users:**
-- When a user asks you something, acknowledge their request first before taking any other action. Use send_message to acknowledge them with a mention.
-- Mention the user when:
-  - First acknowledging their request or question - do this before asking other agents or gathering information
-  - Delivering a response that came from another agent
-  - Sending them a direct message
-  - Providing them with the final answer or information they asked for
-- Don't mention the user repeatedly for the same request - once you've acknowledged their request with a mention, you don't need to mention them again in follow-up status updates or intermediate messages about the same request. Only mention them again when delivering the final response.
-- Getting and using user names: Call \`get_chat_participants("User")\` once at the beginning to get the user's exact full name (e.g., "John Smith"). Use their full name consistently in all mentions (e.g., "@John Smith" not "@John"). Don't call it multiple times or send messages with different name formats. Never use "@user", "@User", or any placeholder - it will not work.
-
-**Mentioning Agents:**
-- Use "@" only when you are literally asking a question or making a request right now with all required information immediately available
-- Don't use "@" when mentioning agents in these situations:
-  - Just referencing an agent in conversation without addressing them directly
-  - Using conditional statements like "if...", "when...", "I would...", "I will..."
-  - Planning to ask an agent later
-  - Waiting for information before you can ask
-  - Explaining what you would do in a hypothetical situation
-  - You don't have all required information to ask a complete question right now
-  - In all these cases, use the agent's name without "@"
-
-## Sending Messages
-
-Always use the \`send_message\` tool to send messages to users. This applies to all scenarios:
-- When responding directly to a user's question
-- When delivering a response that came from another agent
-- When acknowledging a user's request
-- When providing any information to the user
-- When asking the user a question
-- Never output text directly as a final answer - always use send_message tool
-
-**The only exception:** If your model doesn't support tools (function calling), you may output text directly. But if tools are available, use send_message.
-
-**How to use send_message:**
-1. Call the tool with the message content as a string
-2. Mentions (@Name) will be automatically detected
-3. You can call this tool multiple times to send multiple messages
-4. Messages are sent immediately during execution
-5. When asked to send multiple messages, call send_message once for each message (e.g., if asked for 5 messages, make 5 separate send_message calls)
-
-**Privacy Guidelines:**
-- If your message contains user information, questions to the user, or user context, send it as a separate message
-- Don't include agent mentions in messages that contain user information
-- When using agents, follow this sequence:
-  1. First: Acknowledge the user - Use send_message to acknowledge their request with a mention (e.g., "@[User's Exact Name] Sure, I'll ask the weather assistant for you!")
-  2. Then: Ask the agent - After acknowledging, use send_message to ask the agent (e.g., "@Weather Assistant What's the weather in Houston?")
-- Always acknowledge the user before asking other agents or gathering information
-
-**Message Quality:**
-- All messages sent to users should be conversational and complete - don't just send raw data. Include acknowledgments, thanks to other agents if relevant, and make it natural. Remember: users see all your messages, so make each one polished and appropriate.
-
-**Examples:**
-- To acknowledge user request: \`send_message("@[User's Full Name] I'll ask the weather assistant for you!")\` - Do this first, before any other actions.
-- Then ask agent: \`send_message("@Weather Assistant, What's the weather in Tel Aviv?")\` - Only after acknowledging the user.
-- To send your final response: Craft a complete, conversational message. Example: \`send_message("@[User's Full Name] Thanks for sharing the weather update, Weather Assistant! [User's Name], it looks like you have a lovely clear day in Tel Aviv with a pleasant 26°C. Perfect weather for a stroll outside! ☀️ Enjoy your day!")\`
-- Note: Replace [User's Full Name] with the actual full name from get_chat_participants (call it once at the beginning)
-- Complete workflow example when using agents:
-  1. \`send_message("@[User's Full Name] I'll check the weather for you!")\` - Acknowledge first
-  2. \`add_agent_to_chat("Weather Assistant")\` - Add the agent
-  3. \`send_message("@Weather Assistant, What's the weather in Tel Aviv?")\` - Ask the agent
-  4. (Wait for agent response)
-  5. \`send_message("@[User's Full Name] Thanks Weather Assistant! [User's Name], it's sunny and 26°C in Tel Aviv today.")\` - Deliver final response
-- To send multiple messages: Call send_message multiple times:
-  \`send_message("First message")\`
-  \`send_message("Second message")\`
-  \`send_message("Third message")\`
-  (Each call sends a separate message)
-
-## When to Stop Gathering Information and Provide Your Response
-
-Once you have gathered all the information needed to answer the user's question, stop calling information-gathering tools (like get_agent_info, get_chat_messages, add_agent_to_chat, etc.) and provide your response using send_message.
-
-- Don't make additional information-gathering tool calls once you have the information needed
-- Don't call tools to verify information you already have
-- Don't call tools unnecessarily - only call tools when you genuinely need new information
-- Always use send_message tool to deliver your response to the user - never output text directly as a final answer
-`;
-
-	return `${basePrompt}\n${messagingGuidelines}`;
+	try {
+		return fs.readFileSync(templatePath, 'utf-8');
+	} catch (error) {
+		throw new Error(`Failed to load system prompt template: ${(error as Error).message}`);
+	}
 }
 
 /**
- * Augments system message with available agents context for collaboration
+ * Gets base template with caching for performance
  */
-export function augmentPromptWithAgents(
-	basePrompt: string,
-	availableAgents: AgentBasicInfo[],
+export function getBaseTemplate(): string {
+	if (!cachedTemplate) {
+		cachedTemplate = loadBaseTemplate();
+	}
+	return cachedTemplate;
+}
+
+/**
+ * Helper function to inject optional user content sections
+ * Returns empty string if content is not provided
+ */
+function injectUserContentSection(
+	prompt: string,
+	placeholder: string,
+	header: string,
+	content?: string,
 ): string {
-	if (availableAgents.length === 0) {
-		return basePrompt;
-	}
-
-	const agentsList = availableAgents
-		.map((agent) => `- ${agent.name}: ${agent.description}`)
-		.join('\n');
-
-	const agentContext = `
-## Available Agents for Collaboration
-
-When you need specialized expertise, directly add and use agents without asking the user for permission.
-
-**How to use agents:**
-1. Acknowledge the user's request first - Use send_message to acknowledge them with a mention before doing anything else (e.g., "@[User's Full Name] I'll ask the weather assistant for you!")
-2. Call add_agent_to_chat with the agent name
-3. If the tool returns "already in chat" or "successfully added", the agent is ready
-4. Stop calling add_agent_to_chat or get_agent_info - don't call these tools again
-5. Use send_message to ask the agent your question (mention them with "@AgentName" in the message)
-6. The agent will respond, then use send_message tool to deliver your response to the user
-
-**Important:**
-- Don't ask the user if you should add an agent - just add it if needed
-- Don't explain to the user how to interact with agents
-- Don't tell the user they can ask the agent - instead, add the agent and use it yourself
-- Don't repeatedly call get_agent_info or add_agent_to_chat for the same agent - once added, use send_message to ask them directly
-- Don't create interactions with other agents unless directly related to what the user asked for
-- When delivering a response from another agent: Use send_message tool with your complete conversational response. Include: acknowledgment/thanks to the other agent, mention the user with "@" followed by their exact full name (from get_chat_participants), and deliver the information in a conversational, polished way. Example: "Thanks for sharing the weather update, Weather Assistant! @John Smith, it looks like you have a lovely clear day..." Never output text directly - always use send_message tool.
-- When acknowledging a user's request: This should be your first action for every user request. Mention them in your response using "@" followed by their exact full name (from get_chat_participants) at the start of your message, and use send_message tool. Do this before asking other agents or gathering information.
-- Once you have the information needed, stop calling information-gathering tools and provide your response using send_message tool (never output text directly)
-
-Available agents:
-${agentsList}
-`;
-
-	return `${basePrompt}\n${agentContext}`;
+	const injectedContent = content ? `${header}\n\n${content}` : '';
+	return prompt.replace(placeholder, injectedContent);
 }
 
 /**
- * Augments system message with current chat room context
+ * Injects user customization content with headers
+ * Empty sections are skipped entirely (not inserted as empty strings)
+ *
+ * Headers used:
+ * - ## Agent Identity (for role)
+ * - ## Agent-Specific Guidelines (for guidelines)
+ * - ## Agent-Specific Examples (for examples)
  */
-export function augmentPromptWithChatContext(basePrompt: string, chatRoom: RoomInfo): string {
-	const formattedDate = chatRoom.inserted_at
-		? new Date(chatRoom.inserted_at).toLocaleString()
-		: 'Unknown';
-
-	const chatContext = `
-## CURRENT CHAT ROOM
-
-You are operating in the following chat room:
-
-- **Chat ID**: ${chatRoom.id}
-- **Title**: ${chatRoom.title}
-- **Type**: ${chatRoom.type}
-- **Status**: ${chatRoom.status}
-- **Created**: ${formattedDate}
-${chatRoom.metadata ? `- **Metadata**: ${JSON.stringify(chatRoom.metadata)}` : ''}
-`;
-
-	return `${basePrompt}\n${chatContext}`;
-}
-
-/**
- * Augments system message with current chat participants context
- */
-export function augmentPromptWithParticipants(
-	basePrompt: string,
-	participants: ChatParticipant[],
+export function injectUserContent(
+	template: string,
+	agentRole: string,
+	agentGuidelines?: string,
+	agentExamples?: string,
 ): string {
-	if (participants.length === 0) {
-		return `${basePrompt}\n\n## CHAT PARTICIPANTS\n\nNo participants in this chat yet.`;
-	}
+	let prompt = template;
 
-	const participantsList = participants
-		.map((participant) => {
-			const parts = [
-				`- **${participant.name}**`,
-				`(ID: ${participant.id})`,
-				`- Type: ${participant.type}`,
-				`- Role: ${participant.role}`,
-			];
+	// Inject role with header (required field)
+	const roleContent = `${PROMPT_SECTIONS.AGENT_IDENTITY}\n\n${agentRole}`;
+	prompt = prompt.replace(PROMPT_PLACEHOLDERS.USER_AGENT_ROLE, roleContent);
 
-			// Add description for agents if available
-			if (participant.type === 'Agent' && participant.description) {
-				parts.push(`- Description: ${participant.description}`);
-			}
-
-			return parts.join(' ');
-		})
-		.join('\n');
-
-	const participantsContext = `
-## CHAT PARTICIPANTS
-
-Current participants in this chat room:
-
-${participantsList}
-
-Use participant IDs when calling tools like remove_participant_from_chat.
-`;
-
-	return `${basePrompt}\n${participantsContext}`;
-}
-
-/**
- * Augments a system message with model thought instructions if needed
- */
-export function prepareSystemMessage(basePrompt: string, useModelThoughts: boolean): string {
-	let prompt = basePrompt;
-
-	if (useModelThoughts) {
-		prompt = augmentPromptForModelThoughts(prompt);
-	}
+	// Inject optional sections
+	prompt = injectUserContentSection(
+		prompt,
+		PROMPT_PLACEHOLDERS.USER_SPECIFIC_GUIDELINES,
+		PROMPT_SECTIONS.AGENT_GUIDELINES,
+		agentGuidelines,
+	);
+	prompt = injectUserContentSection(
+		prompt,
+		PROMPT_PLACEHOLDERS.USER_EXAMPLES,
+		PROMPT_SECTIONS.AGENT_EXAMPLES,
+		agentExamples,
+	);
 
 	return prompt;
+}
+
+/**
+ * Helper function to replace dynamic context sections
+ * Matches section header with placeholder comment and replaces entire section
+ */
+function replaceDynamicContextSection(
+	prompt: string,
+	sectionHeader: string,
+	content: string,
+): string {
+	const pattern = new RegExp(`${sectionHeader}\\s+\\[System will inject[^\\]]+\\][^#]*`);
+	return prompt.replace(pattern, `${content}\n\n`);
+}
+
+/**
+ * Injects dynamic context into template
+ * Replaces placeholder sections with formatted runtime data
+ */
+export function injectDynamicContext(
+	prompt: string,
+	context: DynamicPromptContext,
+	messageSource: MessageHistorySource,
+): string {
+	const formatted = formatDynamicContext(context, messageSource);
+
+	let injected = prompt;
+
+	// Replace dynamic sections
+	injected = replaceDynamicContextSection(
+		injected,
+		PROMPT_SECTIONS.CURRENT_CHAT_ROOM,
+		formatted.roomInfo,
+	);
+	injected = replaceDynamicContextSection(
+		injected,
+		PROMPT_SECTIONS.CHAT_PARTICIPANTS,
+		formatted.participants,
+	);
+	injected = replaceDynamicContextSection(
+		injected,
+		PROMPT_SECTIONS.RECENT_MESSAGES,
+		formatted.messages,
+	);
+	injected = replaceDynamicContextSection(
+		injected,
+		PROMPT_SECTIONS.AVAILABLE_TOOLS,
+		formatted.tools,
+	);
+
+	return injected;
 }

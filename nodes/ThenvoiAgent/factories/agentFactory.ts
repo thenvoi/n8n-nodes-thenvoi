@@ -13,61 +13,46 @@
 import { IExecuteFunctions, NodeOperationError } from 'n8n-workflow';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { StructuredTool } from '@langchain/core/tools';
-import { BaseMemory } from 'langchain/memory';
 import { AgentExecutor } from 'langchain/agents';
 import { Runnable } from '@langchain/core/runnables';
-import { AgentNodeConfig, AgentType } from '../types';
-import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
-import { configureMemory } from './memoryConfig';
+import { AgentNodeConfig, AgentType, DynamicPromptContext } from '../types';
+import { ThenvoiMemory } from '../memory/ThenvoiMemory';
 import { createAgent } from './agentCreation';
-import {
-	prepareSystemMessage,
-	augmentPromptWithAgents,
-	augmentPromptWithChatContext,
-	augmentPromptWithParticipants,
-	addMessagingGuidelines,
-} from './promptFactory';
+import { getBaseTemplate, injectUserContent, injectDynamicContext } from './promptFactory';
 /**
- * Prepares the system message with optional model thought augmentation and context injection
+ * Prepares complete system prompt from template + user content + dynamic context
  */
 function prepareAgentPrompt(
 	config: AgentNodeConfig,
 	ctx: IExecuteFunctions,
-	availableAgents: AgentBasicInfo[],
-	chatRoom?: RoomInfo,
-	currentParticipants: ChatParticipant[] = [],
+	dynamicContext: DynamicPromptContext,
 ): string {
-	const useModelThoughts =
-		config.messageTypes.includes('thoughts') && config.thoughtMode === 'model';
+	// Load base template (cached after first load)
+	const baseTemplate = getBaseTemplate();
 
-	let systemMessage = prepareSystemMessage(config.prompt, useModelThoughts);
+	// Inject user customization content
+	let prompt = injectUserContent(
+		baseTemplate,
+		config.agentRole,
+		config.agentGuidelines,
+		config.agentExamples,
+	);
 
-	// Augment with chat room context if available
-	if (chatRoom) {
-		systemMessage = augmentPromptWithChatContext(systemMessage, chatRoom);
-	}
+	// Inject dynamic context
+	prompt = injectDynamicContext(prompt, dynamicContext, config.messageHistorySource);
 
-	// Augment with current participants if available
-	if (currentParticipants.length > 0) {
-		systemMessage = augmentPromptWithParticipants(systemMessage, currentParticipants);
-	}
-
-	// Augment with available agents for collaboration
-	systemMessage = augmentPromptWithAgents(systemMessage, availableAgents);
-
-	// Add messaging guidelines at the end (after all context sections) for maximum effectiveness
-	systemMessage = addMessagingGuidelines(systemMessage);
-
-	ctx.logger.info('Prompt augmented', {
-		originalLength: config.prompt.length,
-		augmentedLength: systemMessage.length,
-		modelThoughts: useModelThoughts,
-		hasChatRoom: !!chatRoom,
-		currentParticipantsCount: currentParticipants.length,
-		availableAgentsCount: availableAgents.length,
+	ctx.logger.info('System prompt prepared', {
+		templateLength: baseTemplate.length,
+		finalLength: prompt.length,
+		hasGuidelines: !!config.agentGuidelines,
+		hasExamples: !!config.agentExamples,
+		participantsCount: dynamicContext.participants.length,
+		toolsCount: dynamicContext.tools.length,
+		historySource: config.messageHistorySource,
+		messageCount: dynamicContext.recentMessages.length,
 	});
 
-	return systemMessage;
+	return prompt;
 }
 
 /**
@@ -76,7 +61,7 @@ function prepareAgentPrompt(
 function assembleExecutor(
 	agent: Runnable,
 	tools: StructuredTool[],
-	memory: BaseMemory | undefined,
+	memory: ThenvoiMemory | undefined,
 	config: AgentNodeConfig,
 	agentType: AgentType,
 	ctx: IExecuteFunctions,
@@ -110,21 +95,12 @@ export async function createAgentExecutor(
 	ctx: IExecuteFunctions,
 	model: BaseChatModel,
 	tools: StructuredTool[],
-	memory: BaseMemory | undefined,
+	memory: ThenvoiMemory | undefined,
 	config: AgentNodeConfig,
-	availableAgents: AgentBasicInfo[] = [],
-	chatRoom?: RoomInfo,
-	currentParticipants: ChatParticipant[] = [],
+	dynamicContext: DynamicPromptContext,
 ): Promise<AgentExecutor> {
 	try {
-		const systemMessage = prepareAgentPrompt(
-			config,
-			ctx,
-			availableAgents,
-			chatRoom,
-			currentParticipants,
-		);
-		configureMemory(memory, ctx);
+		const systemMessage = prepareAgentPrompt(config, ctx, dynamicContext);
 
 		const hasMemory = !!memory;
 		const { agent, agentType } = await createAgent(model, tools, systemMessage, hasMemory, ctx);

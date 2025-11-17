@@ -56,7 +56,6 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 			streaming: {
 				toolCalls: options.sendToolCalls,
 				toolResults: options.sendToolResults,
-				syntheticThoughts: options.sendSyntheticThoughts,
 				modelThoughts: options.collectModelThoughts,
 				finalResponse: true,
 			},
@@ -124,6 +123,14 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	async waitForPendingOperations(): Promise<void> {
 		await this.ctx.messageQueue.wait();
+	}
+
+	/**
+	 * Sends agent's final thoughts/reasoning as a thought message
+	 */
+	async sendThought(thought: string): Promise<void> {
+		await this.waitForPendingOperations();
+		this.ctx.messageQueue.enqueue('thought', thought);
 	}
 
 	async sendFinalResponse(finalAnswer: string, mentions?: ChatMessageMention[]): Promise<void> {

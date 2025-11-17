@@ -5,11 +5,6 @@ import {
 	formatToolResult,
 	extractToolName,
 } from '../../utils/messages/toolFormatters';
-import {
-	generateToolStartThought,
-	generateToolEndThought,
-	generateErrorThought,
-} from '../../utils/thoughts/syntheticThoughts';
 import { getSafeErrorMessage } from '@lib/utils';
 
 /**
@@ -24,30 +19,6 @@ function sendToolCallMessage(
 	const toolCallContent = formatToolCall(tool, input, runId);
 	ctx.executionContext.logger.info('Sending tool call', { runId });
 	ctx.messageQueue.enqueue('tool_call', toolCallContent);
-}
-
-/**
- * Sends synthetic thought for tool action
- */
-function sendSyntheticThoughtForTool(
-	ctx: CallbackContext,
-	tool: Serialized,
-	phase: 'start' | 'end' | 'error',
-	runId: string,
-	data?: string | Error,
-): void {
-	let thought: string;
-
-	if (phase === 'start') {
-		thought = generateToolStartThought(tool, data as string);
-	} else if (phase === 'end') {
-		thought = generateToolEndThought(tool, data as string);
-	} else {
-		thought = generateErrorThought(tool, data as Error);
-	}
-
-	ctx.executionContext.logger.info(`Sending synthetic thought for tool ${phase}`, { runId });
-	ctx.messageQueue.enqueue('thought', thought);
 }
 
 /**
@@ -79,10 +50,6 @@ export async function handleToolStart(
 		inputLength: input?.length || 0,
 	});
 
-	if (ctx.options.sendSyntheticThoughts) {
-		sendSyntheticThoughtForTool(ctx, tool, 'start', runId, input);
-	}
-
 	if (ctx.options.sendToolCalls) {
 		sendToolCallMessage(ctx, tool, input, runId);
 	}
@@ -105,10 +72,6 @@ export async function handleToolEnd(
 	if (ctx.options.sendToolResults) {
 		sendToolResultMessage(ctx, output, runId);
 	}
-
-	if (ctx.options.sendSyntheticThoughts && tool) {
-		sendSyntheticThoughtForTool(ctx, tool, 'end', runId, output);
-	}
 }
 
 /**
@@ -127,10 +90,6 @@ export async function handleToolError(
 		toolName: tool ? extractToolName(tool) : 'unknown',
 		error: errorMessage,
 	});
-
-	if (ctx.options.sendSyntheticThoughts && tool) {
-		sendSyntheticThoughtForTool(ctx, tool, 'error', runId, error);
-	}
 
 	ctx.messageQueue.enqueue('error', errorMessage);
 }

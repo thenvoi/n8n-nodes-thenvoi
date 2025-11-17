@@ -103,7 +103,8 @@ async function processModelThought(
 			runId,
 			thoughtLength: thought.length,
 		});
-		ctx.messageQueue.enqueue('thought', thought);
+		// TODO: Intermediate thoughts disabled - only final thoughts are sent
+		// ctx.messageQueue.enqueue('thought', thought);
 	} else {
 		ctx.executionContext.logger.debug('No thought pattern found in output', { runId });
 	}

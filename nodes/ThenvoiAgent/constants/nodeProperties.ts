@@ -70,69 +70,6 @@ export const MESSAGE_TYPES_NODE_PROPERTY: INodeProperties = {
 };
 
 // ============================================================================
-// THOUGHT MODE
-// ============================================================================
-
-/**
- * Defines the available thought generation modes.
- * Using `as const` to infer literal types for `value`.
- */
-const THOUGHT_MODE_OPTIONS = [
-	{
-		name: 'Model Generated',
-		value: 'model',
-		description: 'Let the LLM explicitly state its reasoning (natural, model-dependent)',
-	},
-	{
-		name: 'Synthetic',
-		value: 'synthetic',
-		description:
-			'Automatically generate reasoning messages based on agent actions (fast, consistent)',
-	},
-] as const;
-
-/**
- * Type representing the value of a thought mode option.
- * Automatically inferred from THOUGHT_MODE_OPTIONS.
- */
-export type ThoughtModeValue = (typeof THOUGHT_MODE_OPTIONS)[number]['value'];
-
-/**
- * Interface for a single thought mode option.
- */
-export type ThoughtModeOption = INodePropertyOptions;
-
-/**
- * Default thought mode.
- */
-export const DEFAULT_THOUGHT_MODE: ThoughtModeValue = 'synthetic';
-
-/**
- * n8n node property for thought mode.
- * Properly typed to avoid casting.
- * Note: Default is empty string because this field is conditionally shown via displayOptions.
- * The actual default value (synthetic) is applied in the config extraction logic.
- */
-const THOUGHT_MODE_NODE_PROPERTY: INodeProperties = {
-	displayName: 'Thought Mode',
-	name: 'thoughtMode',
-	type: 'options',
-	options: THOUGHT_MODE_OPTIONS.map((opt) => ({
-		name: opt.name,
-		value: opt.value,
-		description: opt.description,
-	})),
-	required: true,
-	default: '',
-	description: 'How to generate reasoning/thought messages',
-	displayOptions: {
-		show: {
-			messageTypes: ['thoughts'],
-		},
-	},
-};
-
-// ============================================================================
 // OPTIONAL PARAMETERS (OPTIONS COLLECTION)
 // ============================================================================
 
@@ -176,20 +113,28 @@ const OPTIONS_NODE_PROPERTY: INodeProperties = {
  */
 export const NODE_PARAMETER_NAMES = {
 	CHAT_ID: 'chatId',
-	PROMPT: 'prompt',
+	AGENT_ROLE: 'agentRole',
+	AGENT_GUIDELINES: 'agentGuidelines',
+	AGENT_EXAMPLES: 'agentExamples',
+	MESSAGE_HISTORY_SOURCE: 'messageHistorySource',
+	MESSAGE_HISTORY_LIMIT: 'messageHistoryLimit',
 	MAX_ITERATIONS: 'maxIterations',
 	MESSAGE_TYPES: 'messageTypes',
-	THOUGHT_MODE: 'thoughtMode',
 	MESSAGE_ID: 'messageId',
 	OPTIONS: 'options',
 } as const;
 
 /**
+ * Message history source type
+ */
+export type MessageHistorySource = 'memory' | 'api';
+
+/**
  * Default values for required parameters.
  */
 export const DEFAULT_PARAMETERS = {
-	PROMPT: 'You are a helpful AI assistant.',
 	MAX_ITERATIONS: 20,
+	MESSAGE_HISTORY_LIMIT: 50,
 } as const;
 
 /**
@@ -205,15 +150,74 @@ const CHAT_ID_PROPERTY: INodeProperties = {
 	description: 'The ID of the Thenvoi chat room to stream agent activity to',
 };
 
-const PROMPT_PROPERTY: INodeProperties = {
-	displayName: 'Prompt',
-	name: NODE_PARAMETER_NAMES.PROMPT,
+const AGENT_ROLE_PROPERTY: INodeProperties = {
+	displayName: 'Agent Role',
+	name: NODE_PARAMETER_NAMES.AGENT_ROLE,
 	type: 'string',
-	default: 'You are a helpful AI assistant.',
+	default: '',
+	required: true,
 	typeOptions: {
-		rows: 4,
+		rows: 6,
 	},
-	description: 'The system prompt that defines the agent behavior and instructions',
+	placeholder: 'You are WeatherBot, a friendly weather information assistant...',
+	description: "Define your agent's identity, capabilities, and personality",
+};
+
+const AGENT_GUIDELINES_PROPERTY: INodeProperties = {
+	displayName: 'Agent Guidelines',
+	name: NODE_PARAMETER_NAMES.AGENT_GUIDELINES,
+	type: 'string',
+	default: '',
+	typeOptions: {
+		rows: 6,
+	},
+	placeholder: '- Always provide temperature in Celsius...',
+	description: 'Optional: Domain-specific rules and guidelines',
+};
+
+const AGENT_EXAMPLES_PROPERTY: INodeProperties = {
+	displayName: 'Agent Examples',
+	name: NODE_PARAMETER_NAMES.AGENT_EXAMPLES,
+	type: 'string',
+	default: '',
+	typeOptions: {
+		rows: 8,
+	},
+	placeholder: '### Example: Weather Query\n\nUser: @WeatherBot...',
+	description: 'Optional: Example interactions showing desired behavior',
+};
+
+const MESSAGE_HISTORY_SOURCE_PROPERTY: INodeProperties = {
+	displayName: 'Message History Source',
+	name: NODE_PARAMETER_NAMES.MESSAGE_HISTORY_SOURCE,
+	type: 'options',
+	options: [
+		{
+			name: 'From Memory',
+			value: 'memory',
+			description: 'Load conversation history from connected memory node',
+		},
+		{
+			name: 'From API',
+			value: 'api',
+			description: 'Fetch recent messages from Thenvoi API',
+		},
+	],
+	default: 'memory',
+	description: 'Where to load conversation history from for context',
+};
+
+const MESSAGE_HISTORY_LIMIT_PROPERTY: INodeProperties = {
+	displayName: 'Message History Limit',
+	name: NODE_PARAMETER_NAMES.MESSAGE_HISTORY_LIMIT,
+	type: 'number',
+	default: 50,
+	description: 'Maximum number of recent messages to load from API',
+	displayOptions: {
+		show: {
+			messageHistorySource: ['api'],
+		},
+	},
 };
 
 const MAX_ITERATIONS_PROPERTY: INodeProperties = {
@@ -236,10 +240,13 @@ const MESSAGE_ID_PROPERTY: INodeProperties = {
 
 export const NODE_PARAMETER_PROPERTIES = [
 	CHAT_ID_PROPERTY,
-	PROMPT_PROPERTY,
+	AGENT_ROLE_PROPERTY,
+	AGENT_GUIDELINES_PROPERTY,
+	AGENT_EXAMPLES_PROPERTY,
+	MESSAGE_HISTORY_SOURCE_PROPERTY,
+	MESSAGE_HISTORY_LIMIT_PROPERTY,
 	MAX_ITERATIONS_PROPERTY,
 	MESSAGE_TYPES_NODE_PROPERTY,
-	THOUGHT_MODE_NODE_PROPERTY,
 	MESSAGE_ID_PROPERTY,
 	OPTIONS_NODE_PROPERTY,
 ];

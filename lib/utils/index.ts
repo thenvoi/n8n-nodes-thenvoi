@@ -4,3 +4,4 @@ export * from './timeout';
 export * from './dataParser';
 export * from './objects';
 export * from './strings';
+export * from './pagination';

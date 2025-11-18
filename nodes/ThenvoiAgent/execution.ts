@@ -30,6 +30,8 @@ import { fetchChatRoom, fetchChatParticipants } from '@lib/api';
 import { ThenvoiMemory } from './memory/ThenvoiMemory';
 import { setupMemory } from './factories/memoryConfig';
 import { getRecentMessages } from './utils/messages/messageHistory';
+import { ThenvoiAgentCallbackHandler } from './handlers/callbacks';
+import { buildToolNameRegistry } from './utils/messages/toolFormatters';
 
 /**
  * Initialize capabilities phase - runs capability setup to get tools and metadata
@@ -114,6 +116,32 @@ async function setupPhase(
 }
 
 /**
+ * Configures tool name registry on callback handlers
+ *
+ * Builds a registry mapping tool class names to their declared names from
+ * actual tool instances, then sets it on callback handlers that support it.
+ * This enables correct tool name extraction from serialized tool objects.
+ *
+ * @param tools - Array of tool instances to build registry from
+ * @param callbacks - Callback handlers to configure
+ * @returns The built tool name registry
+ */
+function configureToolNameRegistry(
+	tools: StructuredTool[],
+	callbacks: CallbackHandlers,
+): ReturnType<typeof buildToolNameRegistry> {
+	const toolNameRegistry = buildToolNameRegistry(tools);
+
+	for (const callback of callbacks) {
+		if (callback instanceof ThenvoiAgentCallbackHandler) {
+			callback.setToolNameRegistry(toolNameRegistry);
+		}
+	}
+
+	return toolNameRegistry;
+}
+
+/**
  * Prepare phase - finalizes capabilities and gets callbacks
  *
  * Executes the prepare lifecycle method for all capabilities, allowing them
@@ -136,8 +164,11 @@ async function preparePhase(
 
 	const callbacks = setupResults.flatMap((result) => result.callbacks || []);
 
+	const toolNameRegistry = configureToolNameRegistry(components.tools, callbacks);
+
 	capabilityContext.execution.logger.info('Capabilities prepared', {
 		callbackCount: callbacks.length,
+		toolRegistrySize: toolNameRegistry.size,
 	});
 
 	return callbacks;

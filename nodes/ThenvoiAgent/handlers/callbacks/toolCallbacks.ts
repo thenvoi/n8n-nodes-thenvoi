@@ -16,7 +16,7 @@ function sendToolCallMessage(
 	input: string,
 	runId: string,
 ): void {
-	const toolCallContent = formatToolCall(tool, input, runId);
+	const toolCallContent = formatToolCall(tool, input, runId, ctx.toolNameRegistry);
 	ctx.executionContext.logger.info('Sending tool call', { runId });
 	ctx.messageQueue.enqueue('tool_call', toolCallContent);
 }
@@ -39,7 +39,7 @@ export async function handleToolStart(
 	input: string,
 	runId: string,
 ): Promise<void> {
-	const toolName = extractToolName(tool);
+	const toolName = extractToolName(tool, ctx.toolNameRegistry);
 	if (!ctx.toolsUsed.includes(toolName)) {
 		ctx.toolsUsed.push(toolName);
 	}
@@ -87,7 +87,7 @@ export async function handleToolError(
 
 	ctx.executionContext.logger.info('Tool execution error', {
 		runId,
-		toolName: tool ? extractToolName(tool) : 'unknown',
+		toolName: tool ? extractToolName(tool, ctx.toolNameRegistry) : 'unknown',
 		error: errorMessage,
 	});
 

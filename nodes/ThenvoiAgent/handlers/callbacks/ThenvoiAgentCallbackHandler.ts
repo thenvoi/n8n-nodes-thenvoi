@@ -5,7 +5,7 @@ import { IExecuteFunctions } from 'n8n-workflow';
 import { ThenvoiCredentials, ChatMessageMention } from '@lib/types';
 import { HttpClient } from '@lib/http/client';
 import { CallbackOptions } from '../../types/callbackHandler';
-import { CallbackContext } from '../../types/agentCapabilities';
+import { CallbackContext, ToolNameRegistry } from '../../types/agentCapabilities';
 import { TaskStatus } from '../../types/common';
 import { createMessageQueue } from '../../utils/messages/messageQueue';
 import { handleLLMStart, handleLLMEnd, handleLLMError } from './llmCallbacks';
@@ -110,6 +110,18 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	getToolsUsed(): string[] {
 		return this.ctx.toolsUsed;
+	}
+
+	/**
+	 * Sets the tool name registry for looking up tool names from serialized tools
+	 *
+	 * Called after all tools are available to build a registry mapping class names
+	 * to their declared tool names.
+	 *
+	 * @param registry - Registry mapping tool class names to tool names
+	 */
+	setToolNameRegistry(registry: ToolNameRegistry): void {
+		this.ctx.toolNameRegistry = registry;
 	}
 
 	/**

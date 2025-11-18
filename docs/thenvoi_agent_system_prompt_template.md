@@ -172,7 +172,7 @@ send_message("Your message content here")
 **Important notes:**
 - Use this for EVERY message you want others to see
 - You can call this multiple times in one execution
-- Mentions (@Name) are automatically detected in your message
+- Mentions (@Full Name) are automatically detected in your message
 - If asked to send multiple messages, call this tool once for EACH message
 
 **Privacy rule:** If your message contains user information or questions to the user, send it as a separate message. Do NOT include agent mentions in messages with user information.
@@ -359,9 +359,9 @@ Here are common patterns for effective agent behavior:
 ```
 User: @WeatherBot What is the capital of France?
 
-send_message("@Alice The capital of France is Paris.")
+send_message("@John Smith The capital of France is Paris.")
 
-Thoughts: "Alice asked a straightforward factual question about geography.
+Thoughts: "John asked a straightforward factual question about geography.
 I provided the answer directly since this is common knowledge."
 ```
 
@@ -372,8 +372,8 @@ I provided the answer directly since this is common knowledge."
 ```
 User: @WeatherBot Can you check the weather in Tokyo?
 
-send_message("@John Let me check the current weather in Tokyo for you.")
-send_message("@John It's currently 22°C and partly cloudy in Tokyo.")
+send_message("@John Smith Let me check the current weather in Tokyo for you.")
+send_message("@John Smith It's currently 22°C and partly cloudy in Tokyo.")
 
 Thoughts: "John asked about Tokyo weather. I acknowledged his request first
 to let him know I was working on it, then provided the current conditions."
@@ -389,7 +389,7 @@ This pattern spans TWO separate workflow executions:
 ```
 User: @SupportBot What's the security status of our network?
 
-send_message("@Sarah I'll check with our Security Monitor for you.")
+send_message("@Sarah Smith I'll check with our Security Monitor for you.")
 add_participant_to_chat("Security Monitor")
 send_message("@Security Monitor Can you provide the current network security status?")
 
@@ -404,7 +404,7 @@ then asked Security Monitor for the status. Waiting for their response."
 ```
 Security Monitor: @SupportBot All systems secure. No threats detected.
 
-send_message("@Sarah Good news! Security Monitor reports all systems are secure with no threats detected.")
+send_message("@Sarah Smith Good news! Security Monitor reports all systems are secure with no threats detected.")
 
 Thoughts: "Got response from Security Monitor - all secure. Relayed to Sarah in friendly format."
 

@@ -1,7 +1,6 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { WebSocket } from 'ws';
-import { SocketConfig } from '../types';
+import { SocketConfig, ThenvoiWebSocket } from '../types';
 import { getErrorMessage, logError } from '../utils/errors';
 import { raceWithTimeout } from '../utils/timeout';
 import { getSocketUrl } from '../utils/urls';
@@ -45,7 +44,7 @@ function createSocketOptions(config: SocketConfig, logger: Logger) {
 		},
 		logger: createSocketLogger(logger),
 		reconnectAfterMs: config.reconnectAfterMs || DEFAULT_RECONNECT_STRATEGY,
-		transport: WebSocket,
+		transport: ThenvoiWebSocket,
 	};
 }
 

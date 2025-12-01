@@ -12,11 +12,11 @@
  */
 
 import { Tool } from '@langchain/core/tools';
-import { AgentBasicInfo, ChatParticipant } from '@lib/types';
-import { HttpClient } from '@lib/http/client';
 import { addAgentToChat } from '@lib/api';
-import { isAgentParticipant, createAgentParticipantObject } from '../utils/participants';
+import { HttpClient } from '@lib/http/client';
+import { AgentBasicInfo, ChatParticipant } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
+import { createAgentParticipantObject, isAgentParticipant } from '../utils/participants';
 
 /**
  * Tool configuration dependencies
@@ -35,7 +35,7 @@ export interface AddParticipantToolConfig {
 export class AddParticipantTool extends Tool {
 	name = 'add_participant_to_chat';
 	description =
-		'Add a new participant (agent or user) to the current chat room. Check CHAT PARTICIPANTS section before adding to avoid duplicates. Use list_available_participants to get participant IDs. Input should be the exact name of the participant to add. IMPORTANT: Only call this ONCE per participant. If the participant is already in chat or successfully added, do NOT call this tool again - instead mention them with "@ParticipantName" in your response to communicate with them.';
+		'Add a new participant (agent or user) to the current chat room. Check CHAT PARTICIPANTS section before adding to avoid duplicates. Use list_available_participants to get participant IDs or names. Input should be either the participant ID (UUID) or the exact name of the participant to add. IMPORTANT: Only call this ONCE per participant. If the participant is already in chat or successfully added, do NOT call this tool again.';
 
 	private httpClient: HttpClient;
 	private chatId: string;
@@ -55,14 +55,18 @@ export class AddParticipantTool extends Tool {
 	/**
 	 * Executes the tool - validates and adds the participant to chat
 	 *
-	 * @param participant_name - The exact name of the participant to add (case-sensitive)
+	 * Accepts either participant ID (UUID) or name. Tries ID first, then falls back to name.
+	 *
+	 * @param participant_identifier - Either the participant ID (UUID) or the exact name (case-sensitive)
 	 * @returns JSON string with result data, or error message string
 	 */
-	async _call(participant_name: string): Promise<string> {
-		const agent = this.findAgentByName(participant_name);
+	async _call(participant_identifier: string): Promise<string> {
+		// Try to find by ID first (UUID format), then fall back to name
+		const agent =
+			this.findAgentById(participant_identifier) || this.findAgentByName(participant_identifier);
 		if (!agent) {
 			return JSON.stringify({
-				error: this.buildParticipantNotFoundError(participant_name),
+				error: this.buildParticipantNotFoundError(participant_identifier),
 				availableAgents: this.availableAgents.map((a) => ({ id: a.id, name: a.name })),
 			});
 		}
@@ -86,6 +90,16 @@ export class AddParticipantTool extends Tool {
 		} catch (error) {
 			return formatToolErrorResponse(error, 'adding participant to chat');
 		}
+	}
+
+	/**
+	 * Finds an agent by ID in the available agents list
+	 *
+	 * @param participantId - The ID (UUID) to search for
+	 * @returns The agent if found, undefined otherwise
+	 */
+	private findAgentById(participantId: string): AgentBasicInfo | undefined {
+		return this.availableAgents.find((a) => a.id === participantId);
 	}
 
 	/**

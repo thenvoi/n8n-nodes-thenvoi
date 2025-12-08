@@ -19,7 +19,7 @@ export async function getMessagesFromMemory(memory: ThenvoiMemory): Promise<Base
 		}
 
 		return [];
-	} catch (error) {
+	} catch {
 		return [];
 	}
 }

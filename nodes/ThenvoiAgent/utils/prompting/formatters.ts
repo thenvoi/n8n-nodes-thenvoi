@@ -3,19 +3,47 @@
  *
  * Utilities for formatting dynamic context data for prompt injection.
  * Each formatter is focused on a single responsibility.
- *
- * Following CODE_STYLE_PREFERENCES.MD:
- * - SRP: Each function formats one specific section
- * - Pure functions: No side effects
- * - Clear naming: Function names describe their purpose
- * - Type safety: Proper interfaces for all inputs
  */
 
-import { DynamicPromptContext } from '../../types';
-import { ChatParticipant, RoomInfo, ChatMessage } from '@lib/types';
+import { BaseMessage } from '@langchain/core/messages';
 import { StructuredTool } from '@langchain/core/tools';
-import { BaseMessage, HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
+import { ChatMessage, ChatParticipant, ParticipantType, RoomInfo, SenderInfo } from '@lib/types';
 import { PROMPT_SECTIONS } from '../../constants/promptSections';
+import { DynamicPromptContext } from '../../types';
+import type {
+	MessageAdditionalKwargs,
+	StructuredMessageData,
+	StructuredToolCall,
+} from '../../types/memory';
+import { isAIMessage, isHumanMessage } from '../messages/messageTypeUtils';
+
+/**
+ * Sender info for formatting purposes
+ * sender_id is optional since AI messages don't have sender IDs stored
+ */
+type FormatterSenderInfo = Omit<SenderInfo, 'sender_id'> & Partial<Pick<SenderInfo, 'sender_id'>>;
+
+/**
+ * Formatted message object for JSON output
+ */
+interface FormattedMessage {
+	sender_id?: string;
+	sender_name: string;
+	sender_type: ParticipantType;
+	content?: string;
+	messagesSent?: string[];
+	toolCalls?: StructuredToolCall[];
+	thoughts?: string;
+}
+
+/**
+ * Type guard to check if additional_kwargs has sender info
+ */
+function hasAdditionalKwargs(
+	msg: BaseMessage,
+): msg is BaseMessage & { additional_kwargs: MessageAdditionalKwargs } {
+	return msg.additional_kwargs !== undefined;
+}
 
 /**
  * Formats chat room information section
@@ -65,45 +93,152 @@ export function formatParticipants(participants: ChatParticipant[]): string {
 }
 
 /**
- * Formats a single BaseMessage (from memory)
+ * Gets sender info from a message
+ *
+ * For self messages:
+ * - Always "Me" with type "agent" since AI messages in memory are from the current agent
+ *
+ * For normal chat messages:
+ * - Use sender_id, sender_name, sender_type from additional_kwargs (from memory)
+ * - sender_type determines if it's a user or another agent
+ *
+ * @param msg - The message to get sender info for
  */
-function formatBaseMessage(message: BaseMessage): string {
-	const getType = (msg: BaseMessage): string => {
-		if (msg instanceof HumanMessage) return 'User';
-		if (msg instanceof AIMessage) return 'Assistant';
-		if (msg instanceof SystemMessage) return 'System';
-		return 'Unknown';
+function getSenderInfo(msg: BaseMessage): FormatterSenderInfo {
+	// AI messages in memory are always from the current agent
+	if (isAIMessage(msg)) {
+		return {
+			sender_name: 'Me',
+			sender_type: 'Agent',
+		};
+	}
+
+	// For HumanMessages, check if sender info is stored in additional_kwargs
+	if (hasAdditionalKwargs(msg)) {
+		const {
+			sender_id: senderId,
+			sender_name: senderName,
+			sender_type: senderType,
+		} = msg.additional_kwargs;
+
+		if (senderName) {
+			return {
+				sender_id: senderId,
+				sender_name: senderName,
+				sender_type: senderType ?? 'User',
+			};
+		}
+	}
+
+	// Fallback for messages without stored sender info
+	return {
+		sender_name: isHumanMessage(msg) ? 'User' : 'Unknown',
+		sender_type: 'User',
 	};
-
-	const type = getType(message);
-	const content =
-		typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-
-	return `**[${type}]**: ${content}`;
 }
 
 /**
- * Formats a single ChatMessage (from API)
+ * Creates base message object with sender info
+ *
+ * @param senderInfo - Sender information
+ * @returns Base formatted message with sender fields
  */
-function formatChatMessage(message: ChatMessage): string {
-	const timestamp = message.inserted_at.toISOString();
-	return `**[${timestamp}] ${message.sender_name}**: ${message.content}`;
+function createBaseSenderObject(
+	senderInfo: FormatterSenderInfo,
+): Pick<FormattedMessage, 'sender_id' | 'sender_name' | 'sender_type'> {
+	return {
+		...(senderInfo.sender_id ? { sender_id: senderInfo.sender_id } : {}),
+		sender_name: senderInfo.sender_name,
+		sender_type: senderInfo.sender_type,
+	};
 }
 
 /**
- * Formats messages from memory (BaseMessage[])
+ * Formats an AI message with structured data (thoughts, tool calls, messages sent)
+ *
+ * @param senderInfo - Sender information for the message
+ * @param structuredData - Structured data from memory (thoughts, toolCalls, messagesSent)
+ * @returns Formatted message object with structured data fields
+ */
+function formatAIMessageWithStructuredData(
+	senderInfo: FormatterSenderInfo,
+	structuredData: StructuredMessageData,
+): FormattedMessage {
+	return {
+		...createBaseSenderObject(senderInfo),
+		...(structuredData.messagesSent && structuredData.messagesSent.length > 0
+			? { messagesSent: structuredData.messagesSent }
+			: {}),
+		...(structuredData.toolCalls && structuredData.toolCalls.length > 0
+			? { toolCalls: structuredData.toolCalls }
+			: {}),
+		...(structuredData.thoughts && structuredData.thoughts.trim().length > 0
+			? { thoughts: structuredData.thoughts }
+			: {}),
+	};
+}
+
+/**
+ * Formats a basic message with content
+ *
+ * @param senderInfo - Sender information for the message
+ * @param content - Message content (string or complex type)
+ * @returns Formatted message object with content field
+ */
+function formatBasicMessage(
+	senderInfo: FormatterSenderInfo,
+	content: BaseMessage['content'],
+): FormattedMessage {
+	return {
+		...createBaseSenderObject(senderInfo),
+		content: typeof content === 'string' ? content : JSON.stringify(content),
+	};
+}
+
+/**
+ * Formats a single memory message to JSON-serializable format
+ *
+ * @param message - BaseMessage from memory
+ * @returns Formatted message object
+ */
+function formatSingleMemoryMessage(message: BaseMessage): FormattedMessage {
+	const senderInfo = getSenderInfo(message);
+
+	// Check for AI message with structured data
+	if (isAIMessage(message) && hasAdditionalKwargs(message)) {
+		const structuredData = message.additional_kwargs.thenvoi_structured_data;
+		if (structuredData) {
+			return formatAIMessageWithStructuredData(senderInfo, structuredData);
+		}
+	}
+
+	return formatBasicMessage(senderInfo, message.content);
+}
+
+/**
+ * Formats messages from memory (BaseMessage[]) as JSON
+ *
+ * Sender info is read from additional_kwargs (stored when saving to memory):
+ * - sender_id: ID of the sender
+ * - sender_name: Name of the sender (or "Me" for current agent)
+ * - sender_type: "user" or "agent"
+ *
+ * AI messages are always from the current agent, so they show as "Me" with type "agent".
+ *
+ * @param messages - Array of BaseMessage objects from memory
  */
 export function formatMessagesFromMemory(messages: BaseMessage[]): string {
 	if (messages.length === 0) {
 		return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\nNo recent messages in this conversation.`;
 	}
 
-	const formatted = messages.map((m) => formatBaseMessage(m)).join('\n\n');
-	return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\n${formatted}`;
+	const jsonMessages = messages.map(formatSingleMemoryMessage);
+
+	return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\n\`\`\`json\n${JSON.stringify(jsonMessages, null, 2)}\n\`\`\``;
 }
 
 /**
- * Formats messages from API (ChatMessage[])
+ * Formats messages from API (ChatMessage[]) as JSON
  * Uses order returned by API (no sorting)
  */
 export function formatMessagesFromAPI(messages: ChatMessage[]): string {
@@ -111,8 +246,15 @@ export function formatMessagesFromAPI(messages: ChatMessage[]): string {
 		return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\nNo recent messages in this conversation.`;
 	}
 
-	const formatted = messages.map((m) => formatChatMessage(m)).join('\n\n');
-	return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\n${formatted}`;
+	const jsonMessages = messages.map((m) => ({
+		sender_id: m.sender_id,
+		sender_name: m.sender_name,
+		sender_type: m.sender_type,
+		content: m.content,
+		timestamp: m.inserted_at.toISOString(),
+	}));
+
+	return `${PROMPT_SECTIONS.RECENT_MESSAGES}\n\n\`\`\`json\n${JSON.stringify(jsonMessages, null, 2)}\n\`\`\``;
 }
 
 /**
@@ -130,7 +272,10 @@ export function formatTools(tools: StructuredTool[]): string {
 
 /**
  * Formats all dynamic context sections
- * Uses appropriate message formatter based on source
+ * Uses appropriate message formatter based on source (always JSON format)
+ *
+ * @param context - Dynamic prompt context
+ * @param messageSource - Source of messages ('memory' or 'api')
  */
 export function formatDynamicContext(
 	context: DynamicPromptContext,

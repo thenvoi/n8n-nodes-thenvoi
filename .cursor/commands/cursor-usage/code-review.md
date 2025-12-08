@@ -1,18 +1,16 @@
-# Code Review Prompt Template
-
-Use this prompt to perform comprehensive code reviews against the code style preferences. This template is designed to be dynamic and evolve with the code style preferences file.
+I want you to review the code and make sure it follows the code style preferences.
 
 ## Instructions
 
-1. **Read the code style preferences**: Start by reading `code-style-preferences.md` to understand the current standards and best practices.
+1. **Read the code style preferences**: Start by reading the code-style-preferences rule to understand the current standards and best practices.
 
-2. **Review the codebase**: Analyze the specified code (file, directory, or entire codebase) against the code style preferences.
+2. **Review the codebase**: Analyze the specified code (file, directory, or entire codebase) against the code style preferences. (if no specific code is provided, review the uncommited changes in the current branch)
 
-3. **Identify violations**: Find code that violates existing preferences in `code-style-preferences.md`.
+3. **Identify violations**: Find code that violates existing preferences in the code-style-preferences rule.
 
-4. **Detect patterns**: Identify common patterns, practices, or issues in the code that are NOT currently covered in `code-style-preferences.md`.
+4. **Detect patterns**: Identify common patterns, practices, or issues in the code that are NOT currently covered in the code-style-preferences rule.
 
-5. **Suggest improvements**: Propose additions or improvements to `code-style-preferences.md` based on:
+5. **Suggest improvements**: Propose additions or improvements to code-style-preferences rule based on:
    - Patterns you find that should be standardized
    - Best practices from the industry that align with the project's philosophy
    - Issues that recur and could be prevented with better guidelines
@@ -24,7 +22,7 @@ Use this prompt to perform comprehensive code reviews against the code style pre
 
 For each file or module:
 
-1. **Code Style Compliance**: Check against all sections in `code-style-preferences.md`
+1. **Code Style Compliance**: Check against all sections in code-style-preferences rule
    - Function design and extraction
    - Type safety and usage
    - Error handling patterns
@@ -49,7 +47,7 @@ For each file or module:
 
 4. **Pattern Detection**: Look for patterns that could be:
    - Standardized in the codebase
-   - Added to code style preferences
+   - Added to code-style-preferences rule
    - Documented as best practices
    - Refactored for consistency
 
@@ -62,7 +60,7 @@ Structure your findings as follows:
 For each violation, provide:
 - **File**: Path to the file
 - **Issue**: Description of the violation
-- **Relevant Preference**: Quote from `code-style-preferences.md`
+- **Relevant Preference**: Quote from code-style-preferences rule
 - **Recommendation**: How to fix it
 - **Code Reference**: Specific lines or functions affected
 
@@ -85,11 +83,11 @@ Documentation gaps:
 
 ### 4. Patterns for Code Style Preferences
 
-Patterns found that should be added to `code-style-preferences.md`:
+Patterns found that should be added to code-style-preferences rule:
 - **Pattern**: Description of the pattern
 - **Frequency**: How often it appears
 - **Current State**: What happens now (inconsistent, unhandled, etc.)
-- **Proposed Addition**: What should be added to `code-style-preferences.md`
+- **Proposed Addition**: What should be added to code-style-preferences rule
 - **Examples**: Code examples showing the pattern
 
 ### 5. General Best Practices Recommendations
@@ -100,32 +98,10 @@ Best practices not in preferences but should be considered:
 - **Examples**: Where it could be applied
 - **Consideration**: Should this be added to preferences?
 
-## Example Usage
+## Action Items
 
-```
-Please review the codebase in `nodes/ThenvoiAgent/` using the code review prompt template.
+After the review, you must:
 
-Follow the review process:
-1. Read code-style-preferences.md
-2. Review the code against preferences
-3. Identify violations and quality issues
-4. Detect patterns not covered in preferences
-5. Suggest improvements to code-style-preferences.md
-6. Report findings in the structured format
-
-Focus on:
-- Function complexity and extraction opportunities
-- Logging optimization
-- Documentation completeness
-- Utility function placement
-- Type safety improvements
-```
-
-## Notes
-
-- This template is designed to be reusable - it references `code-style-preferences.md` dynamically
-- The preferences file evolves over time, and this review process helps improve it
-- Focus on actionable recommendations, not just identification of issues
-- Consider the context and trade-offs when making recommendations
-- Balance between strict adherence and practical considerations
-
+1. **Create a plan of action** for the changes that need to be made to the codebase.
+2. **Update any relevant documentation files** to reflect the changes.
+3. If you have any further questions, please ask me.

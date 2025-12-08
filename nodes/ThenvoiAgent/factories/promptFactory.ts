@@ -30,19 +30,11 @@ Question: {input}
 Thought: {agent_scratchpad}`;
 
 /**
- * ReAct template for agents without memory
+ * ReAct template
+ *
+ * Note: Chat history is injected via RECENT_MESSAGES section in system message.
  */
-const REACT_TEMPLATE_WITHOUT_MEMORY = `{systemMessage}
-
-${REACT_TEMPLATE_BASE}`;
-
-/**
- * ReAct template for agents with memory
- */
-const REACT_TEMPLATE_WITH_MEMORY = `{systemMessage}
-
-Previous conversation:
-{chat_history}
+const REACT_TEMPLATE = `{systemMessage}
 
 ${REACT_TEMPLATE_BASE}`;
 
@@ -54,31 +46,14 @@ ${REACT_TEMPLATE_BASE}`;
  *
  * Prompt structure:
  * 1. System message - Defines agent behavior and instructions
- * 2. Chat history (if memory enabled) - Previous conversation context
- * 3. Human input - Current user message
- * 4. Agent scratchpad - Internal tool calls and reasoning
- *
- * This format is required by LangChain's tool-calling agents and matches
- * the message structure expected by modern LLM APIs.
+ * 2. Human input - Current user message
+ * 3. Agent scratchpad - Internal tool calls and reasoning
  *
  * Note: The system message is escaped to handle literal curly braces,
  * as ChatPromptTemplate also parses message content as templates.
  */
-export function createToolCallingPrompt(
-	systemMessage: string,
-	hasMemory: boolean,
-): ChatPromptTemplate {
+export function createToolCallingPrompt(systemMessage: string): ChatPromptTemplate {
 	const escapedSystemMessage = escapeTemplateBraces(systemMessage);
-
-	if (hasMemory) {
-		return ChatPromptTemplate.fromMessages([
-			['system', escapedSystemMessage],
-			new MessagesPlaceholder('chat_history'),
-			['human', '{input}'],
-			new MessagesPlaceholder('agent_scratchpad'),
-		]);
-	}
-
 	return ChatPromptTemplate.fromMessages([
 		['system', escapedSystemMessage],
 		['human', '{input}'],
@@ -112,11 +87,9 @@ function escapeTemplateBraces(text: string): string {
  * The system message is escaped to handle any literal curly braces that
  * might be present in user-provided prompts (e.g., code examples, JSON).
  */
-export function createReactPrompt(systemMessage: string, hasMemory: boolean): PromptTemplate {
+export function createReactPrompt(systemMessage: string): PromptTemplate {
 	const escapedSystemMessage = escapeTemplateBraces(systemMessage);
-	const template = hasMemory
-		? REACT_TEMPLATE_WITH_MEMORY.replace('{systemMessage}', escapedSystemMessage)
-		: REACT_TEMPLATE_WITHOUT_MEMORY.replace('{systemMessage}', escapedSystemMessage);
+	const template = REACT_TEMPLATE.replace('{systemMessage}', escapedSystemMessage);
 
 	return PromptTemplate.fromTemplate(template);
 }
@@ -131,7 +104,7 @@ let cachedTemplate: string | null = null;
 function loadBaseTemplate(): string {
 	const templatePath = path.join(
 		__dirname,
-		'../../../docs/thenvoi_agent_system_prompt_template.md',
+		'../../../docs/n8n/agent-node/prompt/thenvoi_agent_system_prompt_template.md',
 	);
 
 	try {

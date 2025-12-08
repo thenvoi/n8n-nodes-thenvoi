@@ -26,7 +26,7 @@ export interface AgentExecutionResult {
 	intermediateSteps?: Array<{
 		action: {
 			tool: string;
-			toolInput: string;
+			toolInput: string | Record<string, unknown>;
 			log: string;
 		};
 		observation: string;

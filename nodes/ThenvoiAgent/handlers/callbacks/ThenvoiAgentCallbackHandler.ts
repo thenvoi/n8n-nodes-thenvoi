@@ -1,16 +1,21 @@
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { Serialized } from '@langchain/core/load/serializable';
 import { LLMResult } from '@langchain/core/outputs';
-import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, ChatMessageMention } from '@lib/types';
+import { ChainValues } from '@langchain/core/utils/types';
 import { HttpClient } from '@lib/http/client';
+import { ChatMessageMention, ThenvoiCredentials } from '@lib/types';
+import { IExecuteFunctions } from 'n8n-workflow';
+import { ThenvoiMemory } from '../../memory/ThenvoiMemory';
+import { SEND_MESSAGE_TOOL_ID } from '../../tools/SendMessageTool';
+import { CallbackContext, ToolNameRegistry } from '../../types/agentCapabilities';
 import { CallbackOptions } from '../../types/callbackHandler';
-import { CallbackContext } from '../../types/agentCapabilities';
 import { TaskStatus } from '../../types/common';
+import type { IntermediateStep } from '../../types/memory';
 import { createMessageQueue } from '../../utils/messages/messageQueue';
-import { handleLLMStart, handleLLMEnd, handleLLMError } from './llmCallbacks';
-import { handleToolStart, handleToolEnd, handleToolError } from './toolCallbacks';
-import { handleChainStart, handleChainEnd } from './chainCallbacks';
+import { handleChainEnd, handleChainStart } from './chainCallbacks';
+import { captureIntermediateStep } from './intermediateStepUtils';
+import { handleLLMEnd, handleLLMError, handleLLMStart } from './llmCallbacks';
+import { handleToolEnd, handleToolError, handleToolStart } from './toolCallbacks';
 
 /**
  * LangChain callback handler that sends events to Thenvoi chat in real-time
@@ -28,16 +33,21 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	private ctx: CallbackContext;
 	private taskId: string;
+	private memory?: ThenvoiMemory;
+	private intermediateSteps: IntermediateStep[] = [];
+	private currentToolInput: string = '';
 
 	constructor(
 		chatId: string,
 		credentials: ThenvoiCredentials,
 		executionContext: IExecuteFunctions,
 		options: CallbackOptions,
+		memory?: ThenvoiMemory,
 	) {
 		super();
 
 		this.taskId = this.generateTaskId();
+		this.memory = memory;
 
 		const httpClient = new HttpClient(credentials, executionContext.logger);
 
@@ -55,7 +65,6 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 			streaming: {
 				toolCalls: options.sendToolCalls,
 				toolResults: options.sendToolResults,
-				syntheticThoughts: options.sendSyntheticThoughts,
 				modelThoughts: options.collectModelThoughts,
 				finalResponse: true,
 			},
@@ -76,12 +85,26 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	async handleToolStart(tool: Serialized, input: string, runId: string): Promise<void> {
 		this.ctx.currentTool = tool;
+		this.currentToolInput = input; // Store input for intermediate steps
 		await handleToolStart(this.ctx, tool, input, runId);
 	}
 
 	async handleToolEnd(output: string, runId: string): Promise<void> {
 		await handleToolEnd(this.ctx, this.ctx.currentTool, output, runId);
+
+		if (this.ctx.currentTool) {
+			const step = captureIntermediateStep(
+				this.ctx.currentTool,
+				this.currentToolInput,
+				output,
+				this.ctx.toolNameRegistry,
+			);
+			this.intermediateSteps.push(step);
+			this.updateMemoryWithSteps();
+		}
+
 		this.ctx.currentTool = null;
+		this.currentToolInput = '';
 	}
 
 	async handleToolError(error: Error, runId: string): Promise<void> {
@@ -89,15 +112,11 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		this.ctx.currentTool = null;
 	}
 
-	async handleChainStart(
-		chain: Serialized,
-		inputs: Record<string, any>,
-		runId: string,
-	): Promise<void> {
+	async handleChainStart(chain: Serialized, inputs: ChainValues, runId: string): Promise<void> {
 		await handleChainStart(this.ctx, chain, inputs, runId);
 	}
 
-	async handleChainEnd(outputs: Record<string, any>, runId: string): Promise<void> {
+	async handleChainEnd(outputs: ChainValues, runId: string): Promise<void> {
 		await handleChainEnd(this.ctx, outputs, runId);
 	}
 
@@ -106,10 +125,48 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 			runId,
 			inputLength: input?.length || 0,
 		});
+		// Reset intermediate steps for new execution
+		this.intermediateSteps = [];
+	}
+
+	/**
+	 * Gets the captured intermediate steps
+	 * Called by agentExecutor to set them in memory before saveContext
+	 */
+	getIntermediateSteps(): IntermediateStep[] {
+		return this.intermediateSteps;
+	}
+
+	/**
+	 * Sets the memory instance to update intermediate steps directly
+	 */
+	setMemory(memory: ThenvoiMemory): void {
+		this.memory = memory;
+	}
+
+	/**
+	 * Updates memory with current intermediate steps if memory is available
+	 */
+	private updateMemoryWithSteps(): void {
+		if (this.memory) {
+			this.memory.setIntermediateSteps(this.intermediateSteps);
+		}
 	}
 
 	getToolsUsed(): string[] {
 		return this.ctx.toolsUsed;
+	}
+
+	/**
+	 * Sets the tool name registry for looking up tool names from serialized tools
+	 *
+	 * Called after all tools are available to build a registry mapping class names
+	 * to their declared tool names.
+	 *
+	 * @param registry - Registry mapping tool class names to tool names
+	 */
+	setToolNameRegistry(registry: ToolNameRegistry): void {
+		this.ctx.toolNameRegistry = registry;
 	}
 
 	/**
@@ -125,8 +182,23 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		await this.ctx.messageQueue.wait();
 	}
 
+	/**
+	 * Sends agent's final thoughts/reasoning as a thought message
+	 */
+	async sendThought(thought: string): Promise<void> {
+		await this.waitForPendingOperations();
+		this.ctx.messageQueue.enqueue('thought', thought);
+	}
+
 	async sendFinalResponse(finalAnswer: string, mentions?: ChatMessageMention[]): Promise<void> {
 		await this.waitForPendingOperations();
+
+		// Safety check: If send_message tool was used, don't send final response
+		// This is a safeguard in case sendFinalResponse is called from somewhere else
+		const toolsUsed = this.getToolsUsed();
+		if (toolsUsed.includes(SEND_MESSAGE_TOOL_ID)) {
+			return;
+		}
 
 		// Defensive string conversion for various LangChain output formats
 		// Some models return objects/arrays that need normalization

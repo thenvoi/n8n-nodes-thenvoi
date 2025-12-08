@@ -1,5 +1,5 @@
 import { IDataObject, INodeProperties, ITriggerFunctions } from 'n8n-workflow';
-import { EventHandlerConfig, TriggerConfig } from '../../../types';
+import { TriggerConfig } from '../../../types';
 import { parseDateString } from '@lib/utils';
 import { logError } from '@lib/utils';
 import { validateRegexPattern } from '../../../utils/validation';
@@ -38,19 +38,6 @@ export abstract class BaseEventHandler<
 	 * If provided, the base class will validate message_type before calling shouldTriggerWorkflow
 	 */
 	protected acceptedMessageTypes?: string[];
-
-	/**
-	 * Event handler configuration - set during initialization
-	 */
-	protected config?: EventHandlerConfig;
-
-	// Public interface methods
-	/**
-	 * Initialize the handler with configuration
-	 */
-	initialize(config: EventHandlerConfig): void {
-		this.config = config;
-	}
 
 	// Abstract methods - must be implemented by subclasses
 	/**

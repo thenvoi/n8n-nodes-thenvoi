@@ -156,9 +156,9 @@ alwaysApply: true
 - Prefer `unknown` over `any` for truly unknown values
 - Use branded types for domain-specific values (e.g., `type UserId = string & { __brand: 'UserId' }`)
 - Leverage conditional types for complex type transformations
-- Use template literal types for string manipulation
+- Use template literal types for string manipulation and string-based APIs
 - Prefer union types over enums for simple value sets
-- Use const assertions with `as const` for literal types
+- Use const assertions with `as const` for literal types and preventing mutations
 - Use `satisfies` operator to maintain type safety without widening
 
 ### Type Organization
@@ -169,6 +169,7 @@ alwaysApply: true
 - Don't duplicate types when they can be derived from existing ones
 - Use single source of truth for types
 - Always verify external library types before creating custom interfaces
+- **Prefer library-provided types over custom types** - use library types as the foundation, and use library-provided types over custom abstractions when available
 - Export types alongside implementations when they're part of the public API
 - Group related types in the same file or adjacent files
 - In `types/` folders, `index.ts` should only contain exports, not type definitions
@@ -178,7 +179,6 @@ alwaysApply: true
 
 - Question interfaces that don't match actual usage patterns
 - Remove unused or incorrect type definitions promptly
-- Use library-provided types over custom abstractions when available
 - Don't create interfaces that don't match the actual API structure
 - Use type predicates for runtime type checking
 - Implement proper type narrowing in conditional blocks
@@ -229,6 +229,13 @@ alwaysApply: true
 - Use branded types to prevent mixing different domain values
 - Leverage TypeScript's control flow analysis for type narrowing
 
+### Runtime Type Checking Patterns
+
+- Prefer `instanceof` checks when looking for a known class (e.g., `obj instanceof MyHandler`)
+- Avoid duck typing with `any` casts (e.g., `typeof (obj as any).method === 'function'`)
+- If multiple classes might provide the same capability, define an interface and use a type guard function
+- Let TypeScript's control flow analysis narrow types automatically after `instanceof` checks
+
 ### String Operations
 
 - Be explicit about case sensitivity in string matching - don't use case-insensitive matching by default unless there's a clear reason
@@ -244,7 +251,6 @@ alwaysApply: true
 - Leverage mapped types for dynamic type generation
 - Use conditional types for type-level logic
 - Implement proper generic constraints with `extends`
-- Use template literal types for string-based APIs
 - Prefer `satisfies` operator over type assertions when possible
 - Use `infer` keyword for extracting types from complex structures
 - Leverage recursive types for nested data structures
@@ -255,22 +261,27 @@ alwaysApply: true
 - Prefer `import type` for type-only imports
 - Use `export type` for type-only exports
 - Group imports logically: external libraries → internal modules → types
-- Use barrel exports (`index.ts`) for clean public APIs
 - When a barrel export re-exports from a single file, use `export *` instead of listing all exports
 - Simplify barrel exports when consolidating multiple files into one
 - Avoid circular dependencies between modules
 - Use dynamic imports for code splitting when appropriate
+- Only export functions/types that are actually used elsewhere - don't export "just in case"
+- Regularly audit exports and remove unused ones
+- Internal helper functions should not be exported unless they provide value to external callers
+
+### File Operations
+
+- When renaming files, delete the original file - don't leave duplicates
+- After renaming, update all imports to reference the new file name
+- Check barrel exports (`index.ts`) when renaming to ensure they reference the correct file
 
 ### Performance and Optimization
 
 - Use `const` assertions to prevent unnecessary type widening
 - Leverage `readonly` modifiers for immutable data structures
-- Use `as const` for literal types and preventing mutations
 - Prefer `Object.freeze()` for runtime immutability when needed
 - Use proper generic variance (`in`, `out`, `in out`) for complex types
 - Avoid unnecessary type computations in hot paths
-- Use `satisfies` operator to maintain type safety without widening
-- Prefer `interface` over `type` for object shapes (better performance)
 - Use `keyof typeof` for deriving types from objects
 - Avoid complex conditional types in frequently used code paths
 - Use `branded types` for compile-time type safety without runtime overhead
@@ -362,7 +373,6 @@ alwaysApply: true
 - Group related utilities in focused files
 - Use consistent patterns for similar functionality
 - Avoid duplicating error handling logic
-- Consolidate similar functions with optional parameters
 
 ## Utility Functions
 
@@ -381,9 +391,10 @@ alwaysApply: true
 - Group related utilities in subfolders when appropriate
 - Keep utility functions focused and reusable
 - Avoid scattering utilities throughout the codebase
-- Place general-purpose utilities (e.g., string manipulation, regex operations) in shared utils location (e.g., `lib/utils/`)
+- Place general-purpose utilities (e.g., string manipulation, array operations, regex) in shared utils location (e.g., `lib/utils/`)
 - Place domain-specific utilities close to where they're used
 - Question utility placement: "Is this general-purpose or domain-specific?"
+- Don't put general-purpose helpers inside classes - extract them to shared utility files
 
 ## Refactoring Approach
 
@@ -424,6 +435,7 @@ alwaysApply: true
 - Add JSDoc comments to all public methods explaining purpose and return values
 - Document private methods when they contain complex logic or non-obvious behavior
 - Add inline comments explaining "why" for non-obvious code paths, not just "what"
+- When changing code, update adjacent comments to reflect the new behavior
 
 ## Logging
 
@@ -438,6 +450,7 @@ alwaysApply: true
 - Don't log at the same level multiple times for the same operation in different places
 - Log failures, not success of every operation
 - Consider log verbosity: too many logs make it hard to find important information
+- Remove temporary log debugging statements before committing - they bypass log levels and structured logging
 
 ### Logging Patterns
 

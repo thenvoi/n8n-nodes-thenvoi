@@ -26,12 +26,7 @@ export class MessageCreatedHandler extends BaseEventHandler<
 		config: MessageCreatedConfig,
 		context: ITriggerFunctions,
 	): boolean {
-		// Check for mentions - message type validation is handled by base class
-		if (!this.config?.userId) {
-			context.logger.error('MessageCreatedHandler: userId not initialized');
-			return false;
-		}
-		return containsMention(data, this.config.userId, context.logger);
+		return containsMention(data, config.agentId, context.logger);
 	}
 
 	/**
@@ -42,10 +37,6 @@ export class MessageCreatedHandler extends BaseEventHandler<
 		config: MessageCreatedConfig,
 		context: ITriggerFunctions,
 	): N8NMessageResponse {
-		if (!this.config?.userId) {
-			context.logger.error('MessageCreatedHandler: userId not initialized');
-			throw new Error('MessageCreatedHandler: userId not initialized');
-		}
-		return createMessageResponse(data, this.config.userId);
+		return createMessageResponse(data, config.agentId);
 	}
 }

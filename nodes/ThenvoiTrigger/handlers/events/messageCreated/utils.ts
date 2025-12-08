@@ -2,14 +2,13 @@ import { Logger } from 'n8n-workflow';
 import { ChatMessage, N8NMessageResponse } from '@lib/types';
 
 /**
- * Checks if a message contains a mention to the specified user using metadata
+ * Checks if a message contains a mention to the specified agent using metadata
  */
-export function containsMention(data: ChatMessage, userId: string, logger?: Logger): boolean {
-	if (!data || !data.metadata || !userId) {
-		logger?.debug('MentionFilter: Invalid data or userId', {
+export function containsMention(data: ChatMessage, agentId: string, logger?: Logger): boolean {
+	if (!data || !data.metadata) {
+		logger?.debug('MentionFilter: Invalid data', {
 			hasData: !!data,
 			hasMetadata: !!data?.metadata,
-			hasUserId: !!userId,
 		});
 		return false;
 	}
@@ -22,11 +21,11 @@ export function containsMention(data: ChatMessage, userId: string, logger?: Logg
 		return false;
 	}
 
-	// Check if the specified userId is in the mentions array
-	const hasMention = data.metadata.mentions.some((mention) => mention.id === userId);
+	// Check if the specified agentId is in the mentions array
+	const hasMention = data.metadata.mentions.some((mention) => mention.id === agentId);
 
 	logger?.debug('MentionFilter: Checking mention using metadata', {
-		userId,
+		agentId,
 		mentions: data.metadata.mentions,
 		hasMention,
 	});
@@ -40,14 +39,14 @@ export function containsMention(data: ChatMessage, userId: string, logger?: Logg
 export function removeMentionsFromContent(
 	content: string,
 	data: ChatMessage,
-	userId: string,
+	agentId: string,
 ): string {
-	if (!content || !data?.metadata?.mentions || !userId) {
+	if (!content || !data?.metadata?.mentions || !agentId) {
 		return content;
 	}
 
 	// Find the mention in metadata to get the exact username format
-	const mention = data.metadata.mentions.find((m) => m.id === userId);
+	const mention = data.metadata.mentions.find((m) => m.id === agentId);
 
 	if (!mention) {
 		return content;
@@ -66,9 +65,9 @@ export function removeMentionsFromContent(
 /**
  * Creates simplified message data for n8n workflow
  */
-export function createMessageResponse(data: ChatMessage, userId: string): N8NMessageResponse {
+export function createMessageResponse(data: ChatMessage, agentId: string): N8NMessageResponse {
 	// Remove mentions from content
-	const contentWithoutMention = removeMentionsFromContent(data.content, data, userId);
+	const contentWithoutMention = removeMentionsFromContent(data.content, data, agentId);
 
 	return {
 		id: data.id,

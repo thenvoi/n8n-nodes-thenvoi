@@ -1,6 +1,6 @@
-import { INodeProperties } from 'n8n-workflow';
+import { INodeProperties, ITriggerFunctions } from 'n8n-workflow';
 import { IEventHandler } from './base/IEventHandler';
-import { EventHandlerConfig } from '../../types';
+import { TriggerConfig } from '../../types';
 import { baseParameters } from '../../config/baseParameters';
 import { createEventParameter } from '../../utils/events/eventParameterUtils';
 
@@ -57,7 +57,7 @@ export class EventHandlerRegistry {
 	/**
 	 * Validates configuration for a specific event type
 	 */
-	validateConfig(eventType: string, config: any, context: any): void {
+	validateConfig(eventType: string, config: TriggerConfig, context: ITriggerFunctions): void {
 		const handler = this.getHandler(eventType);
 		handler.validateConfig(config, context);
 	}
@@ -65,26 +65,14 @@ export class EventHandlerRegistry {
 	/**
 	 * Processes an event using the appropriate handler
 	 */
-	processEvent(eventType: string, rawData: unknown, config: any, context: any): void {
+	processEvent(
+		eventType: string,
+		rawData: unknown,
+		config: TriggerConfig,
+		context: ITriggerFunctions,
+	): void {
 		const handler = this.getHandler(eventType);
 		handler.processEvent(rawData, config, context);
-	}
-
-	/**
-	 * Initialize a handler with configuration
-	 */
-	initializeHandler(eventType: string, config: EventHandlerConfig): void {
-		const handler = this.getHandler(eventType);
-		handler.initialize(config);
-	}
-
-	/**
-	 * Initialize event handler for a specific event type with user credentials
-	 * This is a convenience method for the main trigger node
-	 */
-	static initializeEventHandler(eventType: string, userId: string): void {
-		const config: EventHandlerConfig = { userId };
-		eventHandlerRegistry.initializeHandler(eventType, config);
 	}
 
 	/**

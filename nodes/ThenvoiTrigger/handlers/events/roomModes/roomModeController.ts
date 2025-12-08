@@ -1,19 +1,13 @@
-import { ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
-import { Socket } from 'phoenix';
-import { ThenvoiCredentials } from '@lib/types';
-import { TriggerConfig } from '../../../../ThenvoiTrigger/types';
+import { ITriggerResponse } from 'n8n-workflow';
 import { RoomManager } from '../../../managers/RoomManager';
 
 /**
- * Controller that manages the complete room mode lifecycle (start and cleanup) for all room modes (single, multi, filtered)
+ * Initializes the room mode trigger by setting up socket and room subscriptions
  */
-export async function handleRoomMode(
-	socket: Socket,
-	config: TriggerConfig,
-	credentials: ThenvoiCredentials,
-	triggerContext: ITriggerFunctions,
+export async function initializeRoomModeTrigger(
+	roomManager: RoomManager,
 ): Promise<ITriggerResponse> {
-	const roomManager = new RoomManager(socket, config, triggerContext, credentials);
+	const socket = await roomManager.initializeSocket();
 	await roomManager.initialize();
 
 	return {

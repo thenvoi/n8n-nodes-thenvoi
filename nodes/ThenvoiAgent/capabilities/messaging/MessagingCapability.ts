@@ -11,16 +11,15 @@
  * Priority: HIGH (25) - Runs early to capture all agent events
  */
 
-import { Logger } from 'n8n-workflow';
-import { Capability, CapabilityContext, SetupResult, CapabilityPriority } from '../base/Capability';
-import { ThenvoiAgentCallbackHandler } from '../../handlers/callbacks/ThenvoiAgentCallbackHandler';
-import { createCallbackOptions } from '../../utils/config';
-import { createMentionMetadata, detectMentions } from '../../utils/mentions';
-import { ChatParticipant, ChatMessageMention } from '@lib/types';
-import { HttpClient } from '@lib/http/client';
 import { fetchChatParticipants } from '@lib/api';
-import { updateMessageProcessedStatus, updateMessageFailedStatus } from '../../utils/messages';
-import { SendMessageTool } from '../../tools';
+import { HttpClient } from '@lib/http/client';
+import { ChatParticipant } from '@lib/types';
+import { Logger } from 'n8n-workflow';
+import { ThenvoiAgentCallbackHandler } from '../../handlers/callbacks/ThenvoiAgentCallbackHandler';
+import { SendMessageTool } from '../../tools/SendMessageTool';
+import { createCallbackOptions } from '../../utils/config';
+import { updateMessageFailedStatus, updateMessageProcessedStatus } from '../../utils/messages';
+import { Capability, CapabilityContext, CapabilityPriority, SetupResult } from '../base/Capability';
 
 export class MessagingCapability implements Capability {
 	readonly name = 'messaging';
@@ -126,9 +125,7 @@ export class MessagingCapability implements Capability {
 
 	/**
 	 * Handles successful agent execution
-	 *
-	 * Sends final response only if agent didn't use send_message tool.
-	 * If agent sent messages via tool, skips final output to avoid redundancy.
+	 * Sends final output as thought if thoughts are enabled in message types
 	 *
 	 * @param ctx - Capability context with execution state
 	 * @param output - Agent's final output string
@@ -136,18 +133,10 @@ export class MessagingCapability implements Capability {
 	async onSuccess(ctx: CapabilityContext, output: string): Promise<void> {
 		if (!this.handler) return;
 
-		const toolsUsed = this.handler.getToolsUsed();
-		const sentMessagesViaTool = toolsUsed.includes('send_message');
-
-		// Only send final output if no messages were sent via tool
-		// This prevents redundant messages when agent already sent what it needed
-		if (output && !sentMessagesViaTool) {
-			const cleanedOutput = this.removeThoughtsFromOutput(output);
-			const { content, mentions } = this.processMentionsInResponse(
-				cleanedOutput,
-				ctx.credentials.agentId,
-			);
-			await this.handler.sendFinalResponse(content, mentions);
+		// Send final output as thought if thoughts are enabled
+		const sendThoughts = ctx.config.messageTypes.includes('thoughts');
+		if (sendThoughts && output && output.trim().length > 0) {
+			await this.handler.sendThought(output);
 		}
 
 		if (this.sendTaskUpdates) {
@@ -166,30 +155,6 @@ export class MessagingCapability implements Capability {
 			ctx.config.chatId,
 			ctx.messageId,
 		);
-	}
-
-	/**
-	 * Removes model-generated thoughts from the output text
-	 *
-	 * Removes patterns like "Thinking: ..." and "Reasoning: ..." from the final response
-	 * since thoughts are sent separately as thought messages.
-	 * Handles both single-line and multi-line thoughts.
-	 *
-	 * @param output - The agent output that may contain thoughts
-	 * @returns The output with thoughts removed
-	 */
-	private removeThoughtsFromOutput(output: string): string {
-		// Remove "Thinking: ..." patterns - matches until newline or end of string
-		// This captures the entire thought line including any trailing text on the same line
-		let cleaned = output.replace(/Thinking:\s*[^\n]*(?:\n|$)/gi, '');
-
-		// Remove "Reasoning: ..." patterns
-		cleaned = cleaned.replace(/Reasoning:\s*[^\n]*(?:\n|$)/gi, '');
-
-		// Remove any standalone "Thinking:" or "Reasoning:" labels that might be left
-		cleaned = cleaned.replace(/^(?:Thinking|Reasoning):\s*/gim, '');
-
-		return cleaned;
 	}
 
 	async onError(ctx: CapabilityContext, error: Error): Promise<void> {
@@ -232,34 +197,5 @@ export class MessagingCapability implements Capability {
 		if (!exists) {
 			this.participants.push(participant);
 		}
-	}
-
-	/**
-	 * Detects mentions in response and creates mention metadata
-	 *
-	 * Processes the output text to find participant mentions in @Name format,
-	 * then creates the metadata structure required for Thenvoi message API.
-	 * Returns content unchanged - only adds mention metadata.
-	 *
-	 * @param output - The response text to process
-	 * @param currentAgentId - ID of the current agent (excluded from mentions)
-	 * @returns Object with content and optional mention metadata
-	 */
-	private processMentionsInResponse(
-		output: string,
-		currentAgentId?: string,
-	): { content: string; mentions?: ChatMessageMention[] } {
-		if (this.participants.length === 0) {
-			return { content: output };
-		}
-
-		const participantsToMention = detectMentions(output, this.participants, currentAgentId);
-
-		if (participantsToMention.length > 0) {
-			const { content, mentions } = createMentionMetadata(output, participantsToMention);
-			return { content, mentions };
-		}
-
-		return { content: output };
 	}
 }

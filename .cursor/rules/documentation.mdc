@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+# Documentation Rules
+
+When creating or editing documentation files (in `/docs/`), follow the guidelines in `/docs/documentation_guide.md`. Key principles:
+- Focus on concepts, not code
+- Use Mermaid diagrams for visual explanations
+- Link to glossary terms when using domain-specific terminology
+- Keep documentation aligned with current codebase version
+- Document behavior and architecture, not implementation details
+- Use conceptual examples rather than code snippets
+
+Reference the full guide at `/docs/documentation_guide.md` for complete guidelines, structure templates, and best practices.
+

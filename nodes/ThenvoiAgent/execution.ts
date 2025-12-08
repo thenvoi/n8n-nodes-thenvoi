@@ -13,20 +13,25 @@
  * 6. Finalize - Cleanup and final operations
  */
 
-import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, AgentBasicInfo } from '@lib/types';
-import { AgentNodeConfig, AgentExecutionResult } from './types';
-import { AgentComponents, CallbackHandlers } from './types/langchain';
-import { getConnectedModel, getConnectedTools, getConnectedMemory } from './utils/nodeConnections';
-import { createAgentExecutor } from './factories/agentFactory';
-import { executeAgent } from './utils/agents/agentExecutor';
-import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
-import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
-import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
-import { ChatContextCapability } from './capabilities/context/ChatContextCapability';
 import { StructuredTool } from '@langchain/core/tools';
+import { fetchChatParticipants, fetchChatRoom } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
+import { ThenvoiCredentials } from '@lib/types';
+import { IExecuteFunctions } from 'n8n-workflow';
+import { CapabilityContext, CapabilityRegistry, SetupResult } from './capabilities';
+import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
+import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
+import { createAgentExecutor } from './factories/agentFactory';
+import { setupMemory } from './factories/memoryConfig';
+import { ThenvoiAgentCallbackHandler } from './handlers/callbacks';
+import { ThenvoiMemory } from './memory/ThenvoiMemory';
+import { AgentExecutionResult, AgentNodeConfig, DynamicPromptContext } from './types';
+import { AgentComponents, CallbackHandlers } from './types/langchain';
+import { executeAgent } from './utils/agents/agentExecutor';
 import { updateMessageProcessingStatus } from './utils/messages';
+import { getRecentMessages } from './utils/messages/messageHistory';
+import { buildToolNameRegistry } from './utils/messages/toolFormatters';
+import { getConnectedModel, getConnectedTools } from './utils/nodeConnections';
 
 /**
  * Initialize capabilities phase - runs capability setup to get tools and metadata
@@ -58,46 +63,87 @@ async function initializeCapabilitiesPhase(
  * Setup phase - retrieves all connected components and creates executor
  *
  * Retrieves model, tools, and memory from node connections, combines them with
- * capability-provided tools, and creates the agent executor. Also extracts
- * available agent metadata for prompt augmentation.
+ * capability-provided tools, and creates the agent executor. Also fetches
+ * dynamic context data for prompt injection.
  *
  * @param ctx - n8n execution context
  * @param config - Agent node configuration
  * @param capabilityTools - Tools provided by capabilities
- * @param setupResults - Setup results from capabilities (for metadata extraction)
- * @returns Agent components including model, tools, memory, and executor
+ * @param setupResults - Setup results from capabilities
+ * @param httpClient - HTTP client for API requests
+ * @param memory - Configured memory instance
+ * @returns Agent components and dynamic context
  */
 async function setupPhase(
 	ctx: IExecuteFunctions,
 	config: AgentNodeConfig,
 	capabilityTools: StructuredTool[],
 	setupResults: SetupResult[],
-): Promise<AgentComponents> {
+	httpClient: HttpClient,
+	memory: ThenvoiMemory | undefined,
+	credentials: ThenvoiCredentials,
+): Promise<{ components: AgentComponents; dynamicContext: DynamicPromptContext }> {
 	const model = await getConnectedModel(ctx);
 	const connectedTools = await getConnectedTools(ctx);
-	const memory = await getConnectedMemory(ctx);
-
-	// Combine connected tools with capability tools
 	const allTools = [...connectedTools, ...capabilityTools];
 
-	// Extract available agents from capability metadata for prompt augmentation
-	const collaborationResult = setupResults.find((r) => r.metadata?.availableAgents);
-	const availableAgents = Array.isArray(collaborationResult?.metadata?.availableAgents)
-		? (collaborationResult.metadata.availableAgents as AgentBasicInfo[])
-		: [];
+	// Fetch dynamic context data
+	const roomInfo = await fetchChatRoom(httpClient, config.chatId);
+	const participants = await fetchChatParticipants(httpClient, config.chatId);
+	const recentMessages = await getRecentMessages(config, memory, httpClient, ctx);
 
-	ctx.logger.info('Agent components retrieved', {
-		hasModel: !!model,
-		connectedToolCount: connectedTools.length,
-		capabilityToolCount: capabilityTools.length,
-		totalToolCount: allTools.length,
-		hasMemory: !!memory,
-		availableAgentsCount: availableAgents.length,
+	ctx.logger.info('Dynamic context fetched', {
+		participantsCount: participants.length,
 	});
 
-	const executor = await createAgentExecutor(ctx, model, allTools, memory, config, availableAgents);
+	const dynamicContext: DynamicPromptContext = {
+		roomInfo,
+		participants,
+		recentMessages,
+		tools: allTools,
+	};
 
-	return { model, tools: allTools, memory, executor };
+	ctx.logger.info('Agent components and context retrieved', {
+		hasModel: !!model,
+		totalToolCount: allTools.length,
+		hasMemory: !!memory,
+		participantsCount: participants.length,
+		recentMessagesCount: recentMessages.length,
+		historySource: config.messageHistorySource,
+	});
+
+	const executor = await createAgentExecutor(ctx, model, allTools, memory, config, dynamicContext);
+
+	return {
+		components: { model, tools: allTools, memory, executor },
+		dynamicContext,
+	};
+}
+
+/**
+ * Configures tool name registry on callback handlers
+ *
+ * Builds a registry mapping tool class names to their declared names from
+ * actual tool instances, then sets it on callback handlers that support it.
+ * This enables correct tool name extraction from serialized tool objects.
+ *
+ * @param tools - Array of tool instances to build registry from
+ * @param callbacks - Callback handlers to configure
+ * @returns The built tool name registry
+ */
+function configureToolNameRegistry(
+	tools: StructuredTool[],
+	callbacks: CallbackHandlers,
+): ReturnType<typeof buildToolNameRegistry> {
+	const toolNameRegistry = buildToolNameRegistry(tools);
+
+	for (const callback of callbacks) {
+		if (callback instanceof ThenvoiAgentCallbackHandler) {
+			callback.setToolNameRegistry(toolNameRegistry);
+		}
+	}
+
+	return toolNameRegistry;
 }
 
 /**
@@ -123,8 +169,11 @@ async function preparePhase(
 
 	const callbacks = setupResults.flatMap((result) => result.callbacks || []);
 
+	const toolNameRegistry = configureToolNameRegistry(components.tools, callbacks);
+
 	capabilityContext.execution.logger.info('Capabilities prepared', {
 		callbackCount: callbacks.length,
+		toolRegistrySize: toolNameRegistry.size,
 	});
 
 	return callbacks;
@@ -214,9 +263,26 @@ function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry
 
 	registry.register(new AgentCollaborationCapability());
 	registry.register(new MessagingCapability());
-	registry.register(new ChatContextCapability());
 
 	return registry;
+}
+
+/**
+ * Configures memory on callback handlers that support it
+ *
+ * Iterates through callbacks and sets the memory instance on handlers
+ * that implement the MemoryAwareCallback interface. This allows handlers
+ * to capture intermediate steps during agent execution.
+ *
+ * @param memory - ThenvoiMemory instance to inject
+ * @param callbacks - Array of callback handlers
+ */
+function configureMemoryOnCallbacks(memory: ThenvoiMemory, callbacks: CallbackHandlers): void {
+	for (const callback of callbacks) {
+		if (callback instanceof ThenvoiAgentCallbackHandler) {
+			callback.setMemory(memory);
+		}
+	}
 }
 
 /**
@@ -237,6 +303,9 @@ export async function runAgent(
 		config.messageId,
 	);
 
+	// Setup memory based on configuration
+	const memory = await setupMemory(execution, config.messageHistorySource);
+
 	const registry = createCapabilitiesRegistry(config);
 
 	const capabilityContext: CapabilityContext = {
@@ -254,8 +323,23 @@ export async function runAgent(
 			registry,
 			capabilityContext,
 		);
-		const components = await setupPhase(execution, config, capabilityTools, setupResults);
+
+		const { components } = await setupPhase(
+			execution,
+			config,
+			capabilityTools,
+			setupResults,
+			httpClient,
+			memory,
+			credentials,
+		);
+
 		const callbacks = await preparePhase(registry, capabilityContext, components, setupResults);
+
+		if (components.memory) {
+			configureMemoryOnCallbacks(components.memory, callbacks);
+		}
+
 		const result = await executePhase(components.executor, input, callbacks, execution);
 
 		await successPhase(registry, capabilityContext, result);

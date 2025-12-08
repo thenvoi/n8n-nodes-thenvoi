@@ -1,4 +1,5 @@
 import { Serialized } from '@langchain/core/load/serializable';
+import { ChainValues } from '@langchain/core/utils/types';
 import { CallbackContext } from '../../types/agentCapabilities';
 
 /**
@@ -7,7 +8,7 @@ import { CallbackContext } from '../../types/agentCapabilities';
 export async function handleChainStart(
 	context: CallbackContext,
 	chain: Serialized,
-	inputs: Record<string, any>,
+	inputs: ChainValues,
 	runId: string,
 ): Promise<void> {
 	context.executionContext.logger.info('Chain execution started', {
@@ -22,7 +23,7 @@ export async function handleChainStart(
  */
 export async function handleChainEnd(
 	context: CallbackContext,
-	outputs: Record<string, any>,
+	outputs: ChainValues,
 	runId: string,
 ): Promise<void> {
 	context.executionContext.logger.info('Chain execution completed', {

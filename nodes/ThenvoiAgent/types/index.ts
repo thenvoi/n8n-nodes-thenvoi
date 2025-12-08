@@ -1,8 +1,8 @@
 // Agent configuration
-export type { AgentNodeConfig, AgentInput } from './agentConfig';
+export * from './agentConfig';
 
 // Agent execution
-export type { AgentType, AgentExecutionContext, AgentExecutionResult } from './agentExecution';
+export * from './agentExecution';
 
 // Callback handler types
 export * from './callbackHandler';
@@ -15,3 +15,6 @@ export * from './langchain';
 
 // Common types
 export * from './common';
+
+// Memory types
+export * from './memory';

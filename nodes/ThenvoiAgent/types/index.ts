@@ -15,3 +15,6 @@ export * from './langchain';
 
 // Common types
 export * from './common';
+
+// Memory types
+export * from './memory';

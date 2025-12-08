@@ -43,3 +43,15 @@ export interface AddParticipantPayload {
 export interface AddParticipantRequest {
 	participant: AddParticipantPayload;
 }
+
+/**
+ * Sender information for messages and events
+ *
+ * Represents the identity of who sent something (message, event, etc.).
+ * Used across memory storage, formatting, and display contexts.
+ */
+export interface SenderInfo {
+	sender_id: string;
+	sender_name: string;
+	sender_type: ParticipantType;
+}

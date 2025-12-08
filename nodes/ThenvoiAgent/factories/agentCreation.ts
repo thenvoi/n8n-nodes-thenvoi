@@ -1,6 +1,6 @@
 import { IExecuteFunctions } from 'n8n-workflow';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { StructuredTool } from '@langchain/core/tools';
+import { StructuredTool, ToolInterface } from '@langchain/core/tools';
 import { createToolCallingAgent, createReactAgent } from 'langchain/agents';
 import { Runnable } from '@langchain/core/runnables';
 import { ChatPromptTemplate, PromptTemplate } from '@langchain/core/prompts';
@@ -62,7 +62,7 @@ async function createReactAgentInstance(
 ): Promise<Runnable> {
 	const agent = await createReactAgent({
 		llm: model,
-		tools: tools as any,
+		tools: tools as ToolInterface[],
 		prompt,
 		streamRunnable: true,
 	});
@@ -88,15 +88,10 @@ export async function createAgent(
 			? await createToolCallingAgentInstance(
 					model,
 					tools,
-					createToolCallingPrompt(systemMessage, hasMemory),
+					createToolCallingPrompt(systemMessage),
 					ctx,
 				)
-			: await createReactAgentInstance(
-					model,
-					tools,
-					createReactPrompt(systemMessage, hasMemory),
-					ctx,
-				);
+			: await createReactAgentInstance(model, tools, createReactPrompt(systemMessage), ctx);
 
 	return { agent, agentType };
 }

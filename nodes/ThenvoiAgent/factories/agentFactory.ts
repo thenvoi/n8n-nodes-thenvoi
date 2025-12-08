@@ -10,15 +10,16 @@
  * - ReAct agents: Prompt-based fallback for models without function calling
  */
 
-import { IExecuteFunctions, NodeOperationError } from 'n8n-workflow';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { Runnable } from '@langchain/core/runnables';
 import { StructuredTool } from '@langchain/core/tools';
 import { AgentExecutor } from 'langchain/agents';
-import { Runnable } from '@langchain/core/runnables';
-import { AgentNodeConfig, AgentType, DynamicPromptContext } from '../types';
+import { IExecuteFunctions, NodeOperationError } from 'n8n-workflow';
 import { ThenvoiMemory } from '../memory/ThenvoiMemory';
+import { AgentNodeConfig, AgentType, DynamicPromptContext } from '../types';
 import { createAgent } from './agentCreation';
-import { getBaseTemplate, injectUserContent, injectDynamicContext } from './promptFactory';
+import { getBaseTemplate, injectDynamicContext, injectUserContent } from './promptFactory';
+import { configureMemorySenderInfo } from './memoryConfig';
 /**
  * Prepares complete system prompt from template + user content + dynamic context
  */
@@ -70,7 +71,7 @@ function assembleExecutor(
 		agent,
 		tools,
 		maxIterations: config.maxIterations,
-		returnIntermediateSteps: config.returnIntermediateSteps,
+		returnIntermediateSteps: false, // Collected via callback handler for real-time memory updates
 		verbose: false,
 		...(memory && {
 			memory,
@@ -104,6 +105,10 @@ export async function createAgentExecutor(
 
 		const hasMemory = !!memory;
 		const { agent, agentType } = await createAgent(model, tools, systemMessage, hasMemory, ctx);
+
+		if (memory) {
+			configureMemorySenderInfo(memory, config, dynamicContext.participants, ctx.logger);
+		}
 
 		return assembleExecutor(agent, tools, memory, config, agentType, ctx);
 	} catch (error) {

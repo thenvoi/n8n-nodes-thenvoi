@@ -13,25 +13,25 @@
  * 6. Finalize - Cleanup and final operations
  */
 
-import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials } from '@lib/types';
-import { AgentNodeConfig, AgentExecutionResult, DynamicPromptContext } from './types';
-import { AgentComponents, CallbackHandlers } from './types/langchain';
-import { getConnectedModel, getConnectedTools } from './utils/nodeConnections';
-import { createAgentExecutor } from './factories/agentFactory';
-import { executeAgent } from './utils/agents/agentExecutor';
-import { CapabilityRegistry, CapabilityContext, SetupResult } from './capabilities';
-import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
-import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
 import { StructuredTool } from '@langchain/core/tools';
+import { fetchChatParticipants, fetchChatRoom } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { updateMessageProcessingStatus } from './utils/messages';
-import { fetchChatRoom, fetchChatParticipants } from '@lib/api';
-import { ThenvoiMemory } from './memory/ThenvoiMemory';
+import { ThenvoiCredentials } from '@lib/types';
+import { IExecuteFunctions } from 'n8n-workflow';
+import { CapabilityContext, CapabilityRegistry, SetupResult } from './capabilities';
+import { AgentCollaborationCapability } from './capabilities/collaboration/AgentCollaborationCapability';
+import { MessagingCapability } from './capabilities/messaging/MessagingCapability';
+import { createAgentExecutor } from './factories/agentFactory';
 import { setupMemory } from './factories/memoryConfig';
-import { getRecentMessages } from './utils/messages/messageHistory';
 import { ThenvoiAgentCallbackHandler } from './handlers/callbacks';
+import { ThenvoiMemory } from './memory/ThenvoiMemory';
+import { AgentExecutionResult, AgentNodeConfig, DynamicPromptContext } from './types';
+import { AgentComponents, CallbackHandlers } from './types/langchain';
+import { executeAgent } from './utils/agents/agentExecutor';
+import { updateMessageProcessingStatus } from './utils/messages';
+import { getRecentMessages } from './utils/messages/messageHistory';
 import { buildToolNameRegistry } from './utils/messages/toolFormatters';
+import { getConnectedModel, getConnectedTools } from './utils/nodeConnections';
 
 /**
  * Initialize capabilities phase - runs capability setup to get tools and metadata
@@ -81,6 +81,7 @@ async function setupPhase(
 	setupResults: SetupResult[],
 	httpClient: HttpClient,
 	memory: ThenvoiMemory | undefined,
+	credentials: ThenvoiCredentials,
 ): Promise<{ components: AgentComponents; dynamicContext: DynamicPromptContext }> {
 	const model = await getConnectedModel(ctx);
 	const connectedTools = await getConnectedTools(ctx);
@@ -90,6 +91,10 @@ async function setupPhase(
 	const roomInfo = await fetchChatRoom(httpClient, config.chatId);
 	const participants = await fetchChatParticipants(httpClient, config.chatId);
 	const recentMessages = await getRecentMessages(config, memory, httpClient, ctx);
+
+	ctx.logger.info('Dynamic context fetched', {
+		participantsCount: participants.length,
+	});
 
 	const dynamicContext: DynamicPromptContext = {
 		roomInfo,
@@ -263,6 +268,24 @@ function createCapabilitiesRegistry(config: AgentNodeConfig): CapabilityRegistry
 }
 
 /**
+ * Configures memory on callback handlers that support it
+ *
+ * Iterates through callbacks and sets the memory instance on handlers
+ * that implement the MemoryAwareCallback interface. This allows handlers
+ * to capture intermediate steps during agent execution.
+ *
+ * @param memory - ThenvoiMemory instance to inject
+ * @param callbacks - Array of callback handlers
+ */
+function configureMemoryOnCallbacks(memory: ThenvoiMemory, callbacks: CallbackHandlers): void {
+	for (const callback of callbacks) {
+		if (callback instanceof ThenvoiAgentCallbackHandler) {
+			callback.setMemory(memory);
+		}
+	}
+}
+
+/**
  * Main execution function - coordinates all phases of agent execution
  * Uses capability system for extensible functionality
  */
@@ -308,9 +331,15 @@ export async function runAgent(
 			setupResults,
 			httpClient,
 			memory,
+			credentials,
 		);
 
 		const callbacks = await preparePhase(registry, capabilityContext, components, setupResults);
+
+		if (components.memory) {
+			configureMemoryOnCallbacks(components.memory, callbacks);
+		}
+
 		const result = await executePhase(components.executor, input, callbacks, execution);
 
 		await successPhase(registry, capabilityContext, result);

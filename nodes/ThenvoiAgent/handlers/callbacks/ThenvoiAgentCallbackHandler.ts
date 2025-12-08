@@ -1,17 +1,21 @@
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { Serialized } from '@langchain/core/load/serializable';
 import { LLMResult } from '@langchain/core/outputs';
-import { IExecuteFunctions } from 'n8n-workflow';
-import { ThenvoiCredentials, ChatMessageMention } from '@lib/types';
+import { ChainValues } from '@langchain/core/utils/types';
 import { HttpClient } from '@lib/http/client';
-import { CallbackOptions } from '../../types/callbackHandler';
-import { CallbackContext, ToolNameRegistry } from '../../types/agentCapabilities';
-import { TaskStatus } from '../../types/common';
-import { createMessageQueue } from '../../utils/messages/messageQueue';
-import { handleLLMStart, handleLLMEnd, handleLLMError } from './llmCallbacks';
-import { handleToolStart, handleToolEnd, handleToolError } from './toolCallbacks';
-import { handleChainStart, handleChainEnd } from './chainCallbacks';
+import { ChatMessageMention, ThenvoiCredentials } from '@lib/types';
+import { IExecuteFunctions } from 'n8n-workflow';
+import { ThenvoiMemory } from '../../memory/ThenvoiMemory';
 import { SEND_MESSAGE_TOOL_ID } from '../../tools/SendMessageTool';
+import { CallbackContext, ToolNameRegistry } from '../../types/agentCapabilities';
+import { CallbackOptions } from '../../types/callbackHandler';
+import { TaskStatus } from '../../types/common';
+import type { IntermediateStep } from '../../types/memory';
+import { createMessageQueue } from '../../utils/messages/messageQueue';
+import { handleChainEnd, handleChainStart } from './chainCallbacks';
+import { captureIntermediateStep } from './intermediateStepUtils';
+import { handleLLMEnd, handleLLMError, handleLLMStart } from './llmCallbacks';
+import { handleToolEnd, handleToolError, handleToolStart } from './toolCallbacks';
 
 /**
  * LangChain callback handler that sends events to Thenvoi chat in real-time
@@ -29,16 +33,21 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	private ctx: CallbackContext;
 	private taskId: string;
+	private memory?: ThenvoiMemory;
+	private intermediateSteps: IntermediateStep[] = [];
+	private currentToolInput: string = '';
 
 	constructor(
 		chatId: string,
 		credentials: ThenvoiCredentials,
 		executionContext: IExecuteFunctions,
 		options: CallbackOptions,
+		memory?: ThenvoiMemory,
 	) {
 		super();
 
 		this.taskId = this.generateTaskId();
+		this.memory = memory;
 
 		const httpClient = new HttpClient(credentials, executionContext.logger);
 
@@ -76,12 +85,26 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 
 	async handleToolStart(tool: Serialized, input: string, runId: string): Promise<void> {
 		this.ctx.currentTool = tool;
+		this.currentToolInput = input; // Store input for intermediate steps
 		await handleToolStart(this.ctx, tool, input, runId);
 	}
 
 	async handleToolEnd(output: string, runId: string): Promise<void> {
 		await handleToolEnd(this.ctx, this.ctx.currentTool, output, runId);
+
+		if (this.ctx.currentTool) {
+			const step = captureIntermediateStep(
+				this.ctx.currentTool,
+				this.currentToolInput,
+				output,
+				this.ctx.toolNameRegistry,
+			);
+			this.intermediateSteps.push(step);
+			this.updateMemoryWithSteps();
+		}
+
 		this.ctx.currentTool = null;
+		this.currentToolInput = '';
 	}
 
 	async handleToolError(error: Error, runId: string): Promise<void> {
@@ -89,15 +112,11 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		this.ctx.currentTool = null;
 	}
 
-	async handleChainStart(
-		chain: Serialized,
-		inputs: Record<string, any>,
-		runId: string,
-	): Promise<void> {
+	async handleChainStart(chain: Serialized, inputs: ChainValues, runId: string): Promise<void> {
 		await handleChainStart(this.ctx, chain, inputs, runId);
 	}
 
-	async handleChainEnd(outputs: Record<string, any>, runId: string): Promise<void> {
+	async handleChainEnd(outputs: ChainValues, runId: string): Promise<void> {
 		await handleChainEnd(this.ctx, outputs, runId);
 	}
 
@@ -106,6 +125,32 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 			runId,
 			inputLength: input?.length || 0,
 		});
+		// Reset intermediate steps for new execution
+		this.intermediateSteps = [];
+	}
+
+	/**
+	 * Gets the captured intermediate steps
+	 * Called by agentExecutor to set them in memory before saveContext
+	 */
+	getIntermediateSteps(): IntermediateStep[] {
+		return this.intermediateSteps;
+	}
+
+	/**
+	 * Sets the memory instance to update intermediate steps directly
+	 */
+	setMemory(memory: ThenvoiMemory): void {
+		this.memory = memory;
+	}
+
+	/**
+	 * Updates memory with current intermediate steps if memory is available
+	 */
+	private updateMemoryWithSteps(): void {
+		if (this.memory) {
+			this.memory.setIntermediateSteps(this.intermediateSteps);
+		}
 	}
 
 	getToolsUsed(): string[] {

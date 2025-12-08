@@ -21,9 +21,12 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 - **Capability system** - Extensible architecture with priority-based lifecycle hooks (Setup, Prepare, Success/Error, Finalize)
 - **Configurable streaming** - Control what gets streamed (task updates, thoughts, tool calls, tool results)
 - **Modern agent support** - Works with tool-calling agents (OpenAI, Claude, Gemini, etc.) and ReAct agents
-- **Memory support** - Full support for conversation memory
+- **Enhanced memory system** - Custom ThenvoiMemory wrapper stores structured execution data (thoughts, tool calls, messages sent)
+- **Flexible message history** - Choose between loading conversation history from memory or fetching from API
+- **Sender attribution** - Messages in memory include sender information for proper name display in prompts
+- **Structured prompt system** - Customizable agent role, guidelines, and examples with dynamic context injection
+- **JSON-formatted context** - Recent messages formatted as JSON for better parsing by LLMs
 - **Multiple message types** - Support for task updates, thoughts, tool calls, and tool results
-- **Thought modes** - Choose between synthetic (auto-generated) or model-generated reasoning
 - **Agent collaboration** - Agents can dynamically add other Thenvoi agents to the chat for specialized help
 - **Chat context tools** - Built-in tools for agents to fetch chat history, participants, agent info, and chat room details
 - **Mention detection** - Automatic detection and processing of @mentions in agent responses
@@ -59,23 +62,28 @@ The Thenvoi Agent node enables AI agents to interact with Thenvoi chat rooms, st
 #### Configuration Options
 
 1. **Chat ID** (required) - The ID of the Thenvoi chat room to stream agent activity to
-2. **Message ID** (required) - The ID of the message to reply to (used for message processing status tracking)
-3. **Prompt** - The system prompt that defines the agent behavior (default: "You are a helpful AI assistant.")
-4. **Max Iterations** - Maximum number of iterations the agent can perform before stopping (default: 20)
-5. **Message Types to Send** - Select which types of messages to stream (default: all enabled):
+2. **Agent Role** (required) - Define your agent's identity, capabilities, and personality
+3. **Agent Guidelines** (optional) - Domain-specific rules and behavioral guidelines
+4. **Agent Examples** (optional) - Example interactions demonstrating desired behavior
+5. **Message History Source** - Where to load conversation history from:
+   - **From Memory** (default) - Load from connected memory node (requires memory connection)
+   - **From API** - Fetch recent messages from Thenvoi API
+6. **Message History Limit** - Maximum messages to fetch when using API source (default: 50)
+7. **Max Iterations** - Maximum iterations before agent stops (default: 20)
+8. **Message Types to Send** - Select which types of messages to stream (default: all enabled):
    - **Task Updates** - Send task status updates (in progress, completed, failed)
    - **Thoughts** - Send reasoning/thought messages during agent execution
    - **Tool Calls** - Send messages when tools are invoked
    - **Tool Results** - Send messages with tool execution results
-6. **Thought Mode** (shown when "Thoughts" is enabled) - Choose how reasoning messages are generated (default: Synthetic):
-   - **Synthetic** - Automatically generate reasoning messages based on agent actions (fast, consistent)
-   - **Model Generated** - Let the LLM explicitly state its reasoning (natural, model-dependent)
-7. **Options**:
-   - **Return Intermediate Steps** - Whether to return the agent intermediate steps in the output
+9. **Message ID** (required) - The ID of the message to reply to (from trigger)
+10. **Sender ID** (required) - ID of the participant who sent the message (from trigger)
+11. **Sender Type** (required) - Type of sender: "User" or "Agent" (from trigger)
+12. **Options**:
+    - **Return Intermediate Steps** - Whether to return the agent intermediate steps in the output
 
 #### Built-in Capabilities
 
-The agent includes three built-in capabilities that provide advanced functionality:
+The agent includes two built-in capabilities that provide advanced functionality:
 
 1. **Messaging Capability**
    - Streams all agent activity to Thenvoi chat in real-time
@@ -83,20 +91,30 @@ The agent includes three built-in capabilities that provide advanced functionali
    - Automatically detects and processes @mentions in agent responses
    - Manages message queueing and ensures all messages are sent
    - Updates message processing status (processing, processed, failed) for tracking
+   - Provides **SendMessageTool** for agents to send visible messages to the chat
 
 2. **Agent Collaboration Capability**
-   - Enables agents to discover available Thenvoi agents
-   - Provides `AddAgentTool` for dynamically adding other agents to the chat
-   - Augments agent prompts with information about available and current agents in the chat
+   - Enables agents to discover available Thenvoi agents and users
+   - Provides tools for managing chat participants:
+     - **ListAvailableParticipantsTool** - Discover agents/users that can be added to the chat
+     - **AddParticipantToChatTool** - Add agents or users to the current chat
+     - **RemoveParticipantFromChatTool** - Remove participants from the chat
    - Automatically updates participant lists when agents are added
 
-3. **Chat Context Capability**
-   - Provides tools for agents to fetch chat context on-demand:
-     - **GetChatMessagesTool** - Retrieve chat message history (with memory-checking guidance)
-     - **GetChatParticipantsTool** - Get list of participants (users and agents) in the chat
-     - **GetAgentInfoTool** - Get information about available agents
-     - **GetChatInfoTool** - Get chat room information and details
-     - **SendMessageTool** - Send messages directly to the chat (for agent-initiated communication)
+#### Memory System
+
+The agent uses an enhanced memory system that stores structured execution data:
+
+- **ThenvoiMemory Wrapper** - Wraps any LangChain memory (BufferMemory, WindowMemory, etc.)
+- **Structured Storage** - Stores agent thoughts, tool calls, and messages sent as structured objects
+- **Sender Attribution** - Attaches sender information (ID, name, type) to messages for proper display
+- **Intermediate Steps** - Captures all tool calls and results during execution
+- **Backward Compatible** - Works with existing n8n memory nodes without modification
+
+The structured data enables:
+- Full execution context in conversation history
+- Proper sender names in prompts (not generic "User" labels)
+- Programmatic access to tool calls and messages for analysis
 
 #### Node Connections
 
@@ -112,15 +130,22 @@ The agent includes three built-in capabilities that provide advanced functionali
 3. Add a "Thenvoi AI Agent" node to your workflow
 4. Connect the output of the Thenvoi Trigger node to the input of the Thenvoi Agent node
 5. Connect an AI Language Model node (e.g., OpenAI GPT-4)
-6. Optionally connect Memory and Tool nodes
+6. Connect a Memory node for conversation persistence (optional but recommended)
 7. Configure the agent:
-   - Set the Chat ID of the Thenvoi chat room
-   - Set the Message ID of the message to reply to
-   - Customize the system prompt for your use case
+   - Set the **Chat ID** (from trigger output or expression)
+   - Define your **Agent Role** (who is this agent, what can it do)
+   - Add optional **Agent Guidelines** (domain-specific rules)
+   - Add optional **Agent Examples** (example interactions)
+   - Choose **Message History Source** (memory or API)
+   - Map **Message ID**, **Sender ID**, and **Sender Type** from trigger output
    - Select which message types to stream
-   - Choose thought generation mode
 
-That's it! The agent will automatically stream its activity to Thenvoi, update message processing status, and can use built-in tools to collaborate and fetch context
+That's it! The agent will automatically:
+- Stream its activity to Thenvoi in real-time
+- Update message processing status
+- Store structured execution data in memory
+- Display proper sender names in conversation context
+- Use built-in tools to collaborate with other agents
 
 ### Using the Thenvoi Trigger
 
@@ -293,6 +318,10 @@ The project follows a clean, modular architecture with clear separation of conce
 - **Module Aliases**: Uses `@lib` and `@credentials` aliases for clean imports
 - **Capability System**: Extensible architecture for ThenvoiAgent with priority-based lifecycle hooks (Setup, Prepare, Success/Error, Finalize). Capabilities execute sequentially based on priority (lower executes first)
 - **Execution Pipeline**: Clear phase-based execution flow: Initialize Capabilities → Setup → Prepare → Execute → Success/Error → Finalize, with proper resource management and cleanup
+- **Enhanced Memory System**: ThenvoiMemory wrapper adds structured data storage (thoughts, tool calls, messages) to any LangChain memory implementation
+- **Dynamic Prompt Injection**: System prompt template with placeholders for user customization and runtime context injection (participants, messages, tools)
+- **Flexible Message History**: Support for loading conversation history from memory or API with proper formatting
+- **Sender Attribution**: Messages in memory include sender information for proper name display in prompts
 - **Separation of Concerns**: Clear boundaries between HTTP operations, WebSocket management, agent logic, and node-specific features
 - **Event Handler System**: Extensible event handler architecture with base classes and specific implementations (ThenvoiTrigger)
 - **Modular Factories**: Specialized factories for agent creation, memory configuration, and prompt preparation

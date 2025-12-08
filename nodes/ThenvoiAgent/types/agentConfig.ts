@@ -1,5 +1,5 @@
 import { MessageTypeOptionValue, MessageHistorySource } from '../constants/nodeProperties';
-import { ChatParticipant, RoomInfo, ChatMessage } from '@lib/types';
+import { ChatParticipant, RoomInfo, ChatMessage, ParticipantType } from '@lib/types';
 import { StructuredTool } from '@langchain/core/tools';
 import { BaseMessage } from '@langchain/core/messages';
 
@@ -17,6 +17,8 @@ export interface AgentNodeConfig {
 	messageTypes: MessageTypeOptionValue[];
 	messageId: string;
 	returnIntermediateSteps: boolean;
+	senderId: string;
+	senderType: ParticipantType;
 }
 
 /**

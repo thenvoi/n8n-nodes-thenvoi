@@ -121,6 +121,8 @@ export const NODE_PARAMETER_NAMES = {
 	MAX_ITERATIONS: 'maxIterations',
 	MESSAGE_TYPES: 'messageTypes',
 	MESSAGE_ID: 'messageId',
+	SENDER_ID: 'senderId',
+	SENDER_TYPE: 'senderType',
 	OPTIONS: 'options',
 } as const;
 
@@ -238,6 +240,26 @@ const MESSAGE_ID_PROPERTY: INodeProperties = {
 	description: 'ID of the message to reply to',
 };
 
+const SENDER_ID_PROPERTY: INodeProperties = {
+	displayName: 'Sender ID',
+	name: NODE_PARAMETER_NAMES.SENDER_ID,
+	type: 'string',
+	default: '',
+	required: true,
+	placeholder: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
+	description: 'ID of the participant who sent the message (from trigger)',
+};
+
+const SENDER_TYPE_PROPERTY: INodeProperties = {
+	displayName: 'Sender Type',
+	name: NODE_PARAMETER_NAMES.SENDER_TYPE,
+	type: 'string',
+	default: '',
+	required: true,
+	placeholder: 'e.g., User or Agent',
+	description: 'Type of the participant who sent the message (from trigger)',
+};
+
 export const NODE_PARAMETER_PROPERTIES = [
 	CHAT_ID_PROPERTY,
 	AGENT_ROLE_PROPERTY,
@@ -248,5 +270,7 @@ export const NODE_PARAMETER_PROPERTIES = [
 	MAX_ITERATIONS_PROPERTY,
 	MESSAGE_TYPES_NODE_PROPERTY,
 	MESSAGE_ID_PROPERTY,
+	SENDER_ID_PROPERTY,
+	SENDER_TYPE_PROPERTY,
 	OPTIONS_NODE_PROPERTY,
 ];

@@ -6,6 +6,7 @@ import {
 	AgentNodeOptions,
 	NODE_PARAMETER_NAMES,
 } from '../constants/nodeProperties';
+import { ParticipantType } from '@lib/types';
 
 /**
  * Extracts agent configuration from node parameters
@@ -43,6 +44,11 @@ export function getAgentConfig(ctx: IExecuteFunctions, itemIndex: number): Agent
 			itemIndex,
 		) as MessageTypeOptionValue[],
 		messageId: ctx.getNodeParameter(NODE_PARAMETER_NAMES.MESSAGE_ID, itemIndex) as string,
+		senderId: ctx.getNodeParameter(NODE_PARAMETER_NAMES.SENDER_ID, itemIndex) as string,
+		senderType: ctx.getNodeParameter(
+			NODE_PARAMETER_NAMES.SENDER_TYPE,
+			itemIndex,
+		) as ParticipantType,
 		returnIntermediateSteps: options.returnIntermediateSteps || false,
 	};
 }

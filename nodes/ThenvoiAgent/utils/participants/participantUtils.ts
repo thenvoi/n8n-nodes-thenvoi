@@ -25,3 +25,15 @@ export function createAgentParticipantObject(agent: AgentBasicInfo): ChatPartici
 		avatar_url: null,
 	};
 }
+
+/**
+ * Looks up a participant's name by ID
+ *
+ * @param participantId - The participant's ID to look up
+ * @param participants - Array of chat participants to search
+ * @returns The participant's name or 'Unknown' if not found
+ */
+export function lookupParticipantName(participantId: string, participants: ChatParticipant[]): string {
+	const participant = participants.find((p) => p.id === participantId);
+	return participant?.name ?? 'Unknown';
+}

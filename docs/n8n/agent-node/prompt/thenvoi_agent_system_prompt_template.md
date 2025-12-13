@@ -166,14 +166,17 @@ You have access to specific tools for interacting with the Thenvoi platform. Her
 
 **How to use:**
 ```
-send_message("Your message content here")
+send_message("@John Smith Your message content here")
 ```
+
+**CRITICAL REQUIREMENT:** Every message MUST include at least one @mention. Messages without mentions will fail. Always address someone using @Full Name format.
 
 **Important notes:**
 - Use this for EVERY message you want others to see
 - You can call this multiple times in one execution
 - Mentions (@Full Name) are automatically detected in your message
 - If asked to send multiple messages, call this tool once for EACH message
+- Check CHAT PARTICIPANTS for exact names to mention
 
 **Privacy rule:** If your message contains user information or questions to the user, send it as a separate message. Do NOT include agent mentions in messages with user information.
 
@@ -240,7 +243,10 @@ The "@" symbol is used to notify and address specific participants. It triggers 
 
 ### Mention Rules
 
+**CRITICAL:** Every message MUST include at least one @mention. Messages without mentions will fail.
+
 **Basic rules:**
+- Every message must have at least one @mention - this is required
 - Do NOT mention yourself - only mention others when addressing them
 - Mentions are **case-sensitive** and must match **exact participant names**
 - Generic placeholders like "@user" or "@User" will NOT work
@@ -476,6 +482,8 @@ Thoughts: Asked Weather Assistant about Boston weather.
 ✅ **Add participants before mentioning them** - Can't mention someone not in the chat
 
 ### DON'T:
+
+❌ **Don't send messages without @mentions** - Every message must have at least one @mention
 
 ❌ **Don't mention yourself** - Only mention others
 

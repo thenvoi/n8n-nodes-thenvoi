@@ -3,13 +3,22 @@ import { Channel, Socket } from 'phoenix';
 import { raceWithTimeout } from '../utils/timeout';
 
 // Constants
-const CHANNEL_JOIN_TIMEOUT = 10000;
+const CHANNEL_JOIN_TIMEOUT = 15000;
 
 // Types
+
+/**
+ * Event handler function type for Phoenix channel events.
+ *
+ * Called when the associated event is received on the channel.
+ *
+ * @param rawData - The raw event payload from the Phoenix channel
+ */
+export type ChannelEventHandler = (rawData: unknown) => void;
+
 export interface ChannelConfig {
 	channelName: string;
-	event: string;
-	onEvent: (rawData: unknown) => void;
+	events: Record<string, ChannelEventHandler>;
 	logger: Logger;
 	timeout?: number;
 }
@@ -91,6 +100,8 @@ async function joinChannelWithTimeout(
 
 /**
  * Creates and joins a Phoenix channel with the specified configuration
+ *
+ * Supports multiple event handlers via the events Record.
  */
 export async function createAndJoinChannel(
 	socket: Socket,
@@ -98,7 +109,9 @@ export async function createAndJoinChannel(
 ): Promise<Channel> {
 	const channel = socket.channel(config.channelName, {});
 
-	channel.on(config.event, config.onEvent);
+	for (const [event, handler] of Object.entries(config.events)) {
+		channel.on(event, handler);
+	}
 
 	return joinChannelWithTimeout(channel, config.channelName, config.logger, config.timeout);
 }
@@ -110,7 +123,7 @@ export async function createAndJoinChannel(
  * Constructs the channel name as `chat_room:{roomId}`.
  *
  * @param socket - Phoenix socket instance to create the channel on
- * @param config - Channel configuration containing roomId, event type, and callbacks
+ * @param config - Channel configuration containing roomId, event handlers, and callbacks
  * @returns Promise resolving to the joined Phoenix Channel
  * @throws Error if channel join fails or times out
  *
@@ -118,8 +131,7 @@ export async function createAndJoinChannel(
  * ```typescript
  * const channel = await createAndJoinChatRoomChannel(socket, {
  *   roomId: 'room-123',
- *   event: 'new_message',
- *   onEvent: (data) => console.log(data),
+ *   events: { 'new_message': (data) => console.log(data) },
  *   logger: context.logger,
  * });
  * ```
@@ -130,8 +142,7 @@ export async function createAndJoinChatRoomChannel(
 ): Promise<Channel> {
 	return createAndJoinChannel(socket, {
 		channelName: `chat_room:${config.roomId}`,
-		event: config.event,
-		onEvent: config.onEvent,
+		events: config.events,
 		logger: config.logger,
 		timeout: config.timeout,
 	});

@@ -12,11 +12,10 @@
  */
 
 import { Tool } from '@langchain/core/tools';
-import { addAgentToChat } from '@lib/api';
+import { addParticipantToChat } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { AgentBasicInfo, ChatParticipant } from '@lib/types';
+import { AvailableParticipant, ChatParticipant } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
-import { createAgentParticipantObject, isAgentParticipant } from '../utils/participants';
 
 /**
  * Tool configuration dependencies
@@ -24,7 +23,7 @@ import { createAgentParticipantObject, isAgentParticipant } from '../utils/parti
 export interface AddParticipantToolConfig {
 	httpClient: HttpClient;
 	chatId: string;
-	availableAgents: AgentBasicInfo[];
+	availableParticipants: AvailableParticipant[];
 	currentParticipants: ChatParticipant[];
 	onParticipantAdded?: (participant: ChatParticipant) => void;
 }
@@ -39,7 +38,7 @@ export class AddParticipantTool extends Tool {
 
 	private httpClient: HttpClient;
 	private chatId: string;
-	private availableAgents: AgentBasicInfo[];
+	private availableParticipants: AvailableParticipant[];
 	private currentParticipants: ChatParticipant[];
 	private onParticipantAdded?: (participant: ChatParticipant) => void;
 
@@ -47,7 +46,7 @@ export class AddParticipantTool extends Tool {
 		super();
 		this.httpClient = config.httpClient;
 		this.chatId = config.chatId;
-		this.availableAgents = config.availableAgents;
+		this.availableParticipants = config.availableParticipants;
 		this.currentParticipants = config.currentParticipants;
 		this.onParticipantAdded = config.onParticipantAdded;
 	}
@@ -62,30 +61,35 @@ export class AddParticipantTool extends Tool {
 	 */
 	async _call(participant_identifier: string): Promise<string> {
 		// Try to find by ID first (UUID format), then fall back to name
-		const agent =
-			this.findAgentById(participant_identifier) || this.findAgentByName(participant_identifier);
-		if (!agent) {
+		const participant =
+			this.findParticipantById(participant_identifier) ||
+			this.findParticipantByName(participant_identifier);
+		if (!participant) {
 			return JSON.stringify({
 				error: this.buildParticipantNotFoundError(participant_identifier),
-				availableAgents: this.availableAgents.map((a) => ({ id: a.id, name: a.name })),
+				availableParticipants: this.availableParticipants.map((p) => ({
+					id: p.id,
+					name: p.name,
+					type: p.type,
+				})),
 			});
 		}
 
-		if (this.isParticipantAlreadyInChat(agent)) {
+		if (this.isParticipantAlreadyInChat(participant)) {
 			return JSON.stringify({
 				success: true,
-				message: this.buildAlreadyInChatMessage(agent),
-				participant: agent,
+				message: this.buildAlreadyInChatMessage(participant),
+				participant: this.createChatParticipant(participant),
 				alreadyInChat: true,
 			});
 		}
 
 		try {
-			const participant = await this.addParticipantToChat(agent);
+			const chatParticipant = await this.addParticipant(participant);
 			return JSON.stringify({
 				success: true,
-				message: this.buildSuccessMessage(agent),
-				participant,
+				message: this.buildSuccessMessage(participant),
+				participant: chatParticipant,
 			});
 		} catch (error) {
 			return formatToolErrorResponse(error, 'adding participant to chat');
@@ -93,26 +97,26 @@ export class AddParticipantTool extends Tool {
 	}
 
 	/**
-	 * Finds an agent by ID in the available agents list
+	 * Finds a participant by ID in the available participants list
 	 *
 	 * @param participantId - The ID (UUID) to search for
-	 * @returns The agent if found, undefined otherwise
+	 * @returns The participant if found, undefined otherwise
 	 */
-	private findAgentById(participantId: string): AgentBasicInfo | undefined {
-		return this.availableAgents.find((a) => a.id === participantId);
+	private findParticipantById(participantId: string): AvailableParticipant | undefined {
+		return this.availableParticipants.find((p) => p.id === participantId);
 	}
 
 	/**
-	 * Finds an agent by name in the available agents list
+	 * Finds a participant by name in the available participants list
 	 *
 	 * Matching is case-sensitive to ensure exact participant identification.
 	 * This tool requires precise names to prevent accidental additions.
 	 *
 	 * @param participantName - The name to search for (case-sensitive)
-	 * @returns The agent if found, undefined otherwise
+	 * @returns The participant if found, undefined otherwise
 	 */
-	private findAgentByName(participantName: string): AgentBasicInfo | undefined {
-		return this.availableAgents.find((a) => a.name === participantName);
+	private findParticipantByName(participantName: string): AvailableParticipant | undefined {
+		return this.availableParticipants.find((p) => p.name === participantName);
 	}
 
 	/**
@@ -120,11 +124,11 @@ export class AddParticipantTool extends Tool {
 	 *
 	 * Compares by participant ID to ensure accurate detection even if names differ.
 	 *
-	 * @param agent - The agent to check
+	 * @param participant - The participant to check
 	 * @returns True if participant is already in chat, false otherwise
 	 */
-	private isParticipantAlreadyInChat(agent: AgentBasicInfo): boolean {
-		return this.currentParticipants.some((p) => isAgentParticipant(p) && p.id === agent.id);
+	private isParticipantAlreadyInChat(participant: AvailableParticipant): boolean {
+		return this.currentParticipants.some((p) => p.id === participant.id);
 	}
 
 	/**
@@ -133,24 +137,40 @@ export class AddParticipantTool extends Tool {
 	 * Performs the API call, creates participant object, updates local state,
 	 * and notifies the capability callback if provided.
 	 *
-	 * @param agent - The agent to add
+	 * @param participant - The participant to add
 	 * @returns The created participant object
 	 * @throws Error if API call fails
 	 */
-	private async addParticipantToChat(agent: AgentBasicInfo): Promise<ChatParticipant> {
-		await addAgentToChat(this.httpClient, this.chatId, agent.id);
+	private async addParticipant(participant: AvailableParticipant): Promise<ChatParticipant> {
+		await addParticipantToChat(this.httpClient, this.chatId, participant.id);
 
-		const participant = createAgentParticipantObject(agent);
+		const chatParticipant = this.createChatParticipant(participant);
 
 		// Update current participants list to keep state in sync
-		this.currentParticipants.push(participant);
+		this.currentParticipants.push(chatParticipant);
 
 		// Notify the capability that a participant was added
 		if (this.onParticipantAdded) {
-			this.onParticipantAdded(participant);
+			this.onParticipantAdded(chatParticipant);
 		}
 
-		return participant;
+		return chatParticipant;
+	}
+
+	/**
+	 * Creates a ChatParticipant from AvailableParticipant
+	 *
+	 * @param participant - The available participant to convert
+	 * @returns ChatParticipant object
+	 */
+	private createChatParticipant(participant: AvailableParticipant): ChatParticipant {
+		return {
+			id: participant.id,
+			name: participant.name,
+			type: participant.type,
+			avatar_url: null,
+			description: participant.description || undefined,
+		};
 	}
 
 	/**
@@ -162,18 +182,18 @@ export class AddParticipantTool extends Tool {
 	 * @returns Error message string
 	 */
 	private buildParticipantNotFoundError(participantName: string): string {
-		const availableNames = this.availableAgents.map((a) => a.name).join(', ');
+		const availableNames = this.availableParticipants.map((p) => p.name).join(', ');
 		return `Error: Participant "${participantName}" not found. Available participants: ${availableNames}`;
 	}
 
 	/**
 	 * Builds informative message when participant is already in chat
 	 *
-	 * @param agent - The agent that's already present
+	 * @param participant - The participant that's already present
 	 * @returns Informative message string
 	 */
-	private buildAlreadyInChatMessage(agent: AgentBasicInfo): string {
-		return `Participant "${agent.name}" is already in this chat and ready to help. You can now communicate with them by mentioning them with "@${agent.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
+	private buildAlreadyInChatMessage(participant: AvailableParticipant): string {
+		return `Participant "${participant.name}" is already in this chat and ready to help. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 
 	/**
@@ -181,10 +201,10 @@ export class AddParticipantTool extends Tool {
 	 *
 	 * Includes clear instructions on how to proceed and not to call the tool again.
 	 *
-	 * @param agent - The agent that was added
+	 * @param participant - The participant that was added
 	 * @returns Success message string
 	 */
-	private buildSuccessMessage(agent: AgentBasicInfo): string {
-		return `Successfully added "${agent.name}" to the chat. You can now communicate with them by mentioning them with "@${agent.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
+	private buildSuccessMessage(participant: AvailableParticipant): string {
+		return `Successfully added "${participant.name}" to the chat. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 }

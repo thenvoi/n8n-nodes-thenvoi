@@ -33,7 +33,10 @@ export function createAgentParticipantObject(agent: AgentBasicInfo): ChatPartici
  * @param participants - Array of chat participants to search
  * @returns The participant's name or 'Unknown' if not found
  */
-export function lookupParticipantName(participantId: string, participants: ChatParticipant[]): string {
+export function lookupParticipantName(
+	participantId: string,
+	participants: ChatParticipant[],
+): string {
 	const participant = participants.find((p) => p.id === participantId);
 	return participant?.name ?? 'Unknown';
 }

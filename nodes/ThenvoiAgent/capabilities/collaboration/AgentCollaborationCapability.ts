@@ -8,10 +8,10 @@
  * Priority: HIGH (25) - Runs early to fetch agent data and provide tool
  */
 
-import { Capability, CapabilityContext, SetupResult, CapabilityPriority } from '../base/Capability';
+import { fetchAllAvailableParticipants, fetchChatParticipants, fetchChatRoom } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { AgentBasicInfo, ChatParticipant, RoomInfo } from '@lib/types';
-import { fetchAvailableAgents, fetchChatParticipants, fetchChatRoom } from '@lib/api';
+import { AvailableParticipant, ChatParticipant, RoomInfo } from '@lib/types';
+import { getErrorMessage } from '@lib/utils/errors';
 import {
 	AddParticipantTool,
 	AddParticipantToolConfig,
@@ -21,14 +21,14 @@ import {
 	RemoveParticipantToolConfig,
 } from '../../tools';
 import { filterAgents } from '../../utils/participants';
-import { getErrorMessage } from '@lib/utils/errors';
+import { Capability, CapabilityContext, CapabilityPriority, SetupResult } from '../base/Capability';
 import { MessagingCapability } from '../messaging/MessagingCapability';
 
 export class AgentCollaborationCapability implements Capability {
 	readonly name = 'agent_collaboration';
 	readonly priority = CapabilityPriority.HIGH;
 
-	private availableAgents: AgentBasicInfo[] = [];
+	private availableParticipants: AvailableParticipant[] = [];
 	private currentParticipants: ChatParticipant[] = [];
 	private chatRoom: RoomInfo | null = null;
 	private addParticipantTool: AddParticipantTool | null = null;
@@ -62,7 +62,7 @@ export class AgentCollaborationCapability implements Capability {
 	}
 
 	/**
-	 * Fetches available agents, current chat participants, and chat room info in parallel
+	 * Fetches available participants (agents and users), current chat participants, and chat room info in parallel
 	 *
 	 * Updates internal state with fetched data and logs initialization details.
 	 * This data is required for tools and context augmentation.
@@ -76,8 +76,8 @@ export class AgentCollaborationCapability implements Capability {
 		chatId: string,
 		ctx: CapabilityContext,
 	): Promise<void> {
-		[this.availableAgents, this.currentParticipants, this.chatRoom] = await Promise.all([
-			fetchAvailableAgents(httpClient),
+		[this.availableParticipants, this.currentParticipants, this.chatRoom] = await Promise.all([
+			fetchAllAvailableParticipants(httpClient, chatId),
 			fetchChatParticipants(httpClient, chatId),
 			fetchChatRoom(httpClient, chatId),
 		]);
@@ -87,7 +87,7 @@ export class AgentCollaborationCapability implements Capability {
 		ctx.execution.logger.info('Agent collaboration capability initialized', {
 			chatId,
 			chatTitle: this.chatRoom.title,
-			availableAgentsCount: this.availableAgents.length,
+			availableParticipantsCount: this.availableParticipants.length,
 			currentParticipantsCount: this.currentParticipants.length,
 			currentAgentsCount: currentAgents.length,
 		});
@@ -112,7 +112,7 @@ export class AgentCollaborationCapability implements Capability {
 		const addParticipantConfig: AddParticipantToolConfig = {
 			httpClient,
 			chatId,
-			availableAgents: this.availableAgents,
+			availableParticipants: this.availableParticipants,
 			currentParticipants: this.currentParticipants,
 			onParticipantAdded: this.createParticipantAddedCallback(ctx),
 		};
@@ -151,7 +151,6 @@ export class AgentCollaborationCapability implements Capability {
 	private buildSetupMetadata(): Record<string, unknown> {
 		return {
 			collaborationEnabled: true,
-			availableAgents: this.availableAgents,
 			currentAgents: filterAgents(this.currentParticipants),
 			chatRoom: this.chatRoom,
 			currentParticipants: this.currentParticipants,
@@ -222,13 +221,6 @@ export class AgentCollaborationCapability implements Capability {
 				currentParticipantsCount: this.currentParticipants.length,
 			});
 		};
-	}
-
-	/**
-	 * Get all available agents for context
-	 */
-	getAvailableAgents(): AgentBasicInfo[] {
-		return this.availableAgents;
 	}
 
 	/**

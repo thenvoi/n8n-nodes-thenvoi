@@ -1,5 +1,5 @@
 import { HttpClient } from '../http/client';
-import { AddParticipantRequest, AgentBasicInfo, Agent } from '../types';
+import { Agent, AgentBasicInfo } from '../types';
 
 /**
  * Fetches all available agents from Thenvoi
@@ -10,28 +10,6 @@ import { AddParticipantRequest, AgentBasicInfo, Agent } from '../types';
 export async function fetchAvailableAgents(httpClient: HttpClient): Promise<AgentBasicInfo[]> {
 	const response = await httpClient.get<{ data: AgentBasicInfo[] }>('/agents');
 	return response.data || [];
-}
-
-/**
- * Adds an agent to a chat room with the specified role
- *
- * @param httpClient - HTTP client for API requests
- * @param chatId - ID of the chat room
- * @param agentId - ID of the agent to add
- */
-export async function addAgentToChat(
-	httpClient: HttpClient,
-	chatId: string,
-	agentId: string,
-): Promise<void> {
-	const payload: AddParticipantRequest = {
-		participant: {
-			participant_id: agentId,
-			role: 'member',
-		},
-	};
-
-	await httpClient.post(`/chats/${chatId}/participants`, payload);
 }
 
 /**

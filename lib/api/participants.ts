@@ -1,5 +1,6 @@
 import { HttpClient } from '../http/client';
 import {
+	AddParticipantRequest,
 	AvailableParticipant,
 	ChatParticipant,
 	ParticipantRole,
@@ -131,6 +132,29 @@ export async function fetchAllAvailableParticipants(
 	]);
 
 	return [...agents, ...users];
+}
+
+/**
+ * Adds a participant (agent or user) to a chat room with the specified role
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param participantId - ID of the participant to add
+ * @param role - Role to assign to the participant (defaults to 'member')
+ */
+export async function addParticipantToChat(
+	httpClient: HttpClient,
+	chatId: string,
+	participantId: string,
+): Promise<void> {
+	const payload: AddParticipantRequest = {
+		participant: {
+			participant_id: participantId,
+			role: 'member',
+		},
+	};
+
+	await httpClient.post(`/chats/${chatId}/participants`, payload);
 }
 
 /**

@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+# Code Changes - Verification Steps
+
+The AI must perform the following actions after making any code changes:
+
+1. Update any relevant documentation files to reflect the changes.
+2. Do a manual review of the changes to ensure they are correct and complete and follow the code style preferences.
+3. Run the project's linter using the command: `npm run lint`.
+4. Only if the command pass, provide a final summary of the completed work.
+5. If the command fails, use the debug logs to fix the issues iteratively without asking for user confirmation until they pass.

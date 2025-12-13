@@ -9,8 +9,10 @@ import { roomMatchesFilters } from '../utils/rooms/roomFilterUtils';
 import { getRoomIdsForMode, supportsAutoSubscribe } from '../utils/rooms/roomModeUtils';
 import {
 	cleanupSubscriptions,
+	leaveSubscriptionChannels,
 	setupAutoSubscribe,
 	subscribeToRoom,
+	subscribeToRoomParticipants,
 	subscribeToRooms,
 } from '../utils/rooms/roomSubscriptions';
 import { createSocket } from '@lib/socket';
@@ -67,7 +69,7 @@ export class RoomManager {
 
 	async initialize(): Promise<void> {
 		await this.subscribeToAllRooms();
-		this.initializeAutoSubscribe();
+		await this.initializeAutoSubscribe();
 	}
 
 	/**
@@ -93,22 +95,50 @@ export class RoomManager {
 		);
 	}
 
-	private initializeAutoSubscribe(): void {
-		if (supportsAutoSubscribe(this.config) && this.config.autoSubscribe) {
-			this.autoSubscribeActive = true;
-			this.agentRoomsChannel = setupAutoSubscribe(
-				this.socket,
-				this.agentId,
-				this.logger,
-				this.subscribeToNewRoom,
-				this.unsubscribeFromRoom,
-			);
+	/**
+	 * Initializes auto-subscribe features:
+	 * - Sets up agent_rooms channel for room_added/room_removed events
+	 * - Sets up room_participants channels for room_deleted events on existing subscriptions
+	 */
+	private async initializeAutoSubscribe(): Promise<void> {
+		if (!supportsAutoSubscribe(this.config) || !this.config.autoSubscribe) {
+			return;
 		}
+
+		this.autoSubscribeActive = true;
+
+		// Set up agent_rooms channel for room_added/room_removed
+		this.agentRoomsChannel = await setupAutoSubscribe(
+			this.socket,
+			this.agentId,
+			this.logger,
+			this.subscribeToNewRoom,
+			this.unsubscribeFromRoom,
+		);
+
+		// Set up room_participants channels for existing subscriptions
+		await this.addRoomDeletionListeners();
+	}
+
+	/**
+	 * Adds room_participants channel listeners for all existing subscriptions
+	 */
+	private async addRoomDeletionListeners(): Promise<void> {
+		const subscriptions = Array.from(this.subscriptions.values());
+		const promises = subscriptions.map(async (subscription) => {
+			subscription.participantsChannel = await subscribeToRoomParticipants(
+				this.socket,
+				subscription.roomId,
+				this.unsubscribeFromRoom,
+				this.logger,
+			);
+		});
+
+		await Promise.all(promises);
 	}
 
 	/**
 	 * Handles socket reconnection by orchestrating channel reconnection
-	 * Public method to be used as socket reconnection callback
 	 */
 	async handleReconnection(): Promise<void> {
 		if (this.isReconnecting) {
@@ -139,18 +169,21 @@ export class RoomManager {
 		await this.subscribeToAllRooms();
 		this.logger.info(`Rejoined ${this.subscriptions.size} room channels after reconnection`);
 
-		// Rejoin auto-subscribe channel if it was active
+		// Rejoin auto-subscribe channels if it was active
 		if (this.autoSubscribeActive) {
-			this.initializeAutoSubscribe();
+			await this.initializeAutoSubscribe();
 		}
 	}
 
+	/**
+	 * Subscribes to a new room (called by auto-subscribe when room_added is received)
+	 */
 	private async subscribeToNewRoom(room: RoomInfo): Promise<void> {
 		// For filtered mode, check if the new room matches the filter criteria
 		if (this.config.roomMode === RoomMode.FILTERED) {
 			const filteredConfig = this.config as FilteredRoomsConfig;
-			const shouldSubscribe = this.shouldSubscribeToRoom(room, filteredConfig);
-			if (!shouldSubscribe) {
+
+			if (!this.shouldSubscribeToRoom(room, filteredConfig)) {
 				this.logger.debug(
 					`Room ${room.id} does not match filter criteria, skipping auto-subscribe`,
 				);
@@ -166,8 +199,22 @@ export class RoomManager {
 			(roomId: string, rawData: unknown) => this.handleRoomEvent(roomId, rawData),
 			this.logger,
 		);
+
+		// Add room_participants listener for this new room
+		const subscription = this.subscriptions.get(room.id);
+		if (subscription) {
+			subscription.participantsChannel = await subscribeToRoomParticipants(
+				this.socket,
+				room.id,
+				this.unsubscribeFromRoom,
+				this.logger,
+			);
+		}
 	}
 
+	/**
+	 * Checks if a room matches the filter criteria for subscription
+	 */
 	private shouldSubscribeToRoom(room: RoomInfo, config: FilteredRoomsConfig): boolean {
 		return roomMatchesFilters(room, config.roomFilter);
 	}
@@ -177,7 +224,7 @@ export class RoomManager {
 
 		if (subscription) {
 			try {
-				subscription.channel.leave();
+				leaveSubscriptionChannels(subscription);
 				this.subscriptions.delete(roomId);
 				this.logger.info(`Unsubscribed from room: ${roomId}`);
 			} catch (error) {
@@ -202,12 +249,12 @@ export class RoomManager {
 		}
 	}
 
-	async cleanup(): Promise<void> {
+	cleanup(): void {
 		if (this.agentRoomsChannel) {
 			this.agentRoomsChannel.leave();
 			this.agentRoomsChannel = undefined;
 		}
-		await cleanupSubscriptions(this.subscriptions, this.logger);
+		cleanupSubscriptions(this.subscriptions, this.logger);
 	}
 
 	getSubscribedRooms(): string[] {

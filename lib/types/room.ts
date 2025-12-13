@@ -37,6 +37,7 @@ export interface RoomInfo {
 export interface RoomSubscription {
 	roomId: string;
 	channel: Channel;
+	participantsChannel?: Channel;
 	subscribed: boolean;
 	lastActivity: Date;
 }
@@ -77,5 +78,18 @@ export interface RoomLeaveEvent extends Omit<RoomInfo, 'updated_at'> {}
  */
 export interface RoomRemovedEvent {
 	/** The unique identifier of the removed room */
+	id: string;
+}
+
+/**
+ * Event fired when a room is deleted via room_participants channel
+ *
+ * This event is received when:
+ * - The room itself is deleted (while the agent is still a participant)
+ *
+ * Used by auto-subscribe functionality to clean up room subscriptions.
+ */
+export interface RoomDeletedEvent {
+	/** The unique identifier of the deleted room */
 	id: string;
 }

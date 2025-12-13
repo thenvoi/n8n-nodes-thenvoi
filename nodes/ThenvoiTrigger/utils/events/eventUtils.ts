@@ -37,8 +37,7 @@ export async function setupChannelEvents(
 
 	return createAndJoinChatRoomChannel(socket, {
 		roomId: config.chatRoomId,
-		event: config.event,
-		onEvent: triggerFunction,
+		events: { [config.event]: triggerFunction },
 		logger: triggerContext.logger,
 	});
 }

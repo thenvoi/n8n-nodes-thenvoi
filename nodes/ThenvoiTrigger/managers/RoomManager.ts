@@ -1,5 +1,5 @@
 import { ITriggerFunctions, Logger } from 'n8n-workflow';
-import { Socket } from 'phoenix';
+import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
 import { HttpClient } from '@lib/http';
 import { RoomInfo, RoomSubscription, ThenvoiCredentials } from '@lib/types';
@@ -27,6 +27,7 @@ export class RoomManager {
 	private agentId: string;
 	private credentials: ThenvoiCredentials;
 	private subscriptions = new Map<string, RoomSubscription>();
+	private agentRoomsChannel?: Channel;
 	private autoSubscribeActive = false;
 	private isReconnecting = false;
 
@@ -95,7 +96,7 @@ export class RoomManager {
 	private initializeAutoSubscribe(): void {
 		if (supportsAutoSubscribe(this.config) && this.config.autoSubscribe) {
 			this.autoSubscribeActive = true;
-			setupAutoSubscribe(
+			this.agentRoomsChannel = setupAutoSubscribe(
 				this.socket,
 				this.agentId,
 				this.logger,
@@ -178,7 +179,7 @@ export class RoomManager {
 			try {
 				subscription.channel.leave();
 				this.subscriptions.delete(roomId);
-				this.logger.info(`Unsubscribed from removed room: ${roomId}`);
+				this.logger.info(`Unsubscribed from room: ${roomId}`);
 			} catch (error) {
 				logError(this.logger, `Failed to unsubscribe from room: ${roomId}`, error);
 			}
@@ -202,6 +203,10 @@ export class RoomManager {
 	}
 
 	async cleanup(): Promise<void> {
+		if (this.agentRoomsChannel) {
+			this.agentRoomsChannel.leave();
+			this.agentRoomsChannel = undefined;
+		}
 		await cleanupSubscriptions(this.subscriptions, this.logger);
 	}
 

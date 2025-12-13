@@ -13,8 +13,10 @@ export interface ChatMessageMetadata {
 	mentions: ChatMessageMention[];
 }
 
-export const CHAT_MESSAGE_TYPES: readonly string[] = [
-	'text',
+/**
+ * Event types that go to the /events endpoint (no mention validation)
+ */
+export const CHAT_EVENT_TYPES = [
 	'system',
 	'action',
 	'thought',
@@ -23,27 +25,64 @@ export const CHAT_MESSAGE_TYPES: readonly string[] = [
 	'tool_call',
 	'tool_result',
 	'task',
-];
+] as const;
+
+export type ChatEventType = (typeof CHAT_EVENT_TYPES)[number];
+
+/**
+ * All message types (text + events)
+ */
+export const CHAT_MESSAGE_TYPES = ['text', ...CHAT_EVENT_TYPES] as const;
 
 export type ChatMessageType = (typeof CHAT_MESSAGE_TYPES)[number];
 
 /**
- * Inner message structure sent to Thenvoi API
+ * Type guard to check if a message type is an event type
+ *
+ * @param type - The message type to check
+ * @returns True if the type is an event type, false otherwise
+ */
+export function isEventType(type: ChatMessageType): type is ChatEventType {
+	return CHAT_EVENT_TYPES.includes(type as ChatEventType);
+}
+
+/**
+ * Base message payload with shared properties
  */
 export interface ThenvoiMessagePayload {
 	content: string;
-	message_type: string;
-	sender_id: string;
-	sender_type: ParticipantType;
+}
+
+/**
+ * Text message payload sent to /messages endpoint
+ * Requires mentions array
+ */
+export interface ThenvoiTextPayload extends ThenvoiMessagePayload {
 	mentions: ChatMessageMention[];
 }
 
 /**
- * Request body wrapper for Thenvoi API message endpoint
+ * Event payload sent to /events endpoint
+ * No mention validation required
+ */
+export interface ThenvoiEventPayload extends ThenvoiMessagePayload {
+	message_type: ChatEventType;
+}
+
+/**
+ * Request body wrapper for Thenvoi API /messages endpoint
  * The API requires the message payload to be wrapped in a "message" object
  */
-export interface ThenvoiMessageRequest {
-	message: ThenvoiMessagePayload;
+export interface ThenvoiTextRequest {
+	message: ThenvoiTextPayload;
+}
+
+/**
+ * Request body wrapper for Thenvoi API /events endpoint
+ * The API requires the event payload to be wrapped in an "event" object
+ */
+export interface ThenvoiEventRequest {
+	event: ThenvoiEventPayload;
 }
 
 // Raw data structure as it comes from the socket

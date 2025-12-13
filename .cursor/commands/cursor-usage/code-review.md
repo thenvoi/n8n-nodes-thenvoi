@@ -102,6 +102,6 @@ Best practices not in preferences but should be considered:
 
 After the review, you must:
 
-1. **Create a plan of action** for the changes that need to be made to the codebase.
+1. **Create a full detailed plan of action** for the changes that need to be made to the codebase. The plan should be detailed, informative and comprehensive.
 2. **Update any relevant documentation files** to reflect the changes.
 3. If you have any further questions, please ask me.

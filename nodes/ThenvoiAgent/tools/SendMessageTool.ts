@@ -33,7 +33,7 @@ export interface SendMessageToolConfig {
 export class SendMessageTool extends Tool {
 	name = 'send_message';
 	description =
-		'MANDATORY: Use this tool to send ANY message to users. You MUST use this tool for ALL messages to users - never output text directly as a final answer. This applies to: direct responses, responses from other agents, acknowledgments, questions, and any information for users. You can call this tool multiple times in a single execution to send multiple messages. IMPORTANT: When asked to send multiple messages, call this tool once for EACH message (e.g., if asked for 5 messages, call send_message 5 times with different content). CRITICAL PRIVACY: If your message contains user information, questions to the user, or user context, send it as a separate message (do NOT include agent mentions). Use separate send_message calls to keep user information separate from agent mentions. Example: First call sends "Sure, I\'ll ask the weather assistant!" to user, second call sends "@Weather Assistant What\'s the weather in Houston?" to agent. Input: The message content as a string (ONE message per call). Mentions will be automatically detected from @Name format.';
+		'MANDATORY: Use this tool to send ANY message to users. You MUST use this tool for ALL messages to users - never output text directly as a final answer. This applies to: direct responses, responses from other agents, acknowledgments, questions, and any information for users. REQUIRED: Every message MUST include at least one @mention using @Name format (e.g., "@John Hello!"). Check CHAT PARTICIPANTS for available names. You can call this tool multiple times in a single execution to send multiple messages. IMPORTANT: When asked to send multiple messages, call this tool once for EACH message (e.g., if asked for 5 messages, call send_message 5 times with different content). CRITICAL PRIVACY: If your message contains user information, questions to the user, or user context, send it as a separate message (do NOT include agent mentions). Use separate send_message calls to keep user information separate from agent mentions. Example: First call sends "@John Sure, I\'ll ask the weather assistant!" to user, second call sends "@Weather Assistant What\'s the weather in Houston?" to agent. Input: The message content as a string (ONE message per call). Mentions will be automatically detected from @Name format.';
 
 	private messageQueue: MessageQueue;
 	private participants: ChatParticipant[];
@@ -59,6 +59,14 @@ export class SendMessageTool extends Tool {
 
 		try {
 			const mentions = detectMentions(content, this.participants);
+
+			if (mentions.length === 0) {
+				return JSON.stringify({
+					error:
+						'Message must include at least one @mention. Use @Name format to mention a participant (e.g., "@John Hello!"). Check CHAT PARTICIPANTS for available names.',
+				});
+			}
+
 			const { mentions: mentionMetadata } = createMentionMetadata(content, mentions);
 
 			this.messageQueue.enqueue('text', content, mentionMetadata);

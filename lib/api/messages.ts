@@ -1,7 +1,9 @@
 import {
 	ChatMessageType,
 	ChatMessageMention,
-	ThenvoiMessageRequest,
+	ChatEventType,
+	ThenvoiTextRequest,
+	ThenvoiEventRequest,
 	ChatMessage,
 	RawChatMessage,
 } from '../types';
@@ -11,45 +13,70 @@ import { fetchPaginated } from '../utils/pagination';
 import { Logger } from 'n8n-workflow';
 
 /**
- * Sends a message to the Thenvoi API
+ * Sends a text message to the Thenvoi API /messages endpoint
+ *
+ * Text messages require mentions array with at least one mention.
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
- * @param messageType - Type of message to send
  * @param content - Message content
- * @param senderId - ID of the message sender
- * @param mentions - Optional array of mentions
+ * @param mentions - Array of mentions (required, must have at least one)
  * @returns API response data
  */
-export async function sendMessageToThenvoi(
+export async function sendTextMessageToThenvoi(
 	httpClient: HttpClient,
 	chatId: string,
-	messageType: ChatMessageType,
 	content: string,
-	senderId: string,
-	mentions?: ChatMessageMention[],
+	mentions: ChatMessageMention[],
 ): Promise<unknown> {
-	const body = buildMessagePayload(messageType, content, senderId, mentions);
+	const body = buildTextPayload(content, mentions);
 
 	return await httpClient.post(`/chats/${chatId}/messages`, body);
 }
 
 /**
- * Builds the message payload for the API request
+ * Sends an event to the Thenvoi API /events endpoint
+ *
+ * Events are non-text message types (tool_call, tool_result, thought, etc.)
+ * that do not require mention validation.
+ *
+ * @param httpClient - HTTP client for API requests
+ * @param chatId - ID of the chat room
+ * @param eventType - Type of event to send
+ * @param content - Event content
+ * @returns API response data
  */
-function buildMessagePayload(
-	messageType: ChatMessageType,
+export async function sendEventToThenvoi(
+	httpClient: HttpClient,
+	chatId: string,
+	eventType: ChatEventType,
 	content: string,
-	senderId: string,
-	mentions?: ChatMessageMention[],
-): ThenvoiMessageRequest {
+): Promise<unknown> {
+	const body = buildEventPayload(eventType, content);
+
+	return await httpClient.post(`/chats/${chatId}/events`, body);
+}
+
+/**
+ * Builds the text message payload for the /messages endpoint
+ */
+function buildTextPayload(content: string, mentions: ChatMessageMention[]): ThenvoiTextRequest {
 	return {
 		message: {
 			content,
-			message_type: messageType,
-			sender_id: senderId,
-			sender_type: 'Agent',
-			mentions: mentions || [],
+			mentions,
+		},
+	};
+}
+
+/**
+ * Builds the event payload for the /events endpoint
+ */
+function buildEventPayload(eventType: ChatEventType, content: string): ThenvoiEventRequest {
+	return {
+		event: {
+			content,
+			message_type: eventType,
 		},
 	};
 }

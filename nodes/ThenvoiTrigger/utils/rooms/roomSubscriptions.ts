@@ -1,8 +1,8 @@
 import { Logger } from 'n8n-workflow';
-import { Socket } from 'phoenix';
-import { RoomAddedEvent, RoomInfo, RoomLeaveEvent, RoomSubscription } from '@lib/types';
+import { Channel, Socket } from 'phoenix';
+import { RoomAddedEvent, RoomInfo, RoomRemovedEvent, RoomSubscription } from '@lib/types';
 import { TriggerConfig } from '../../types';
-import { createAndJoinChannel } from '@lib/socket';
+import { createAndJoinChatRoomChannel } from '@lib/socket';
 import { logError } from '@lib/utils';
 
 /**
@@ -24,7 +24,7 @@ export async function subscribeToRoom(
 	logger.debug(`Starting subscription to room: ${roomId}`);
 
 	try {
-		const channel = await createAndJoinChannel(socket, {
+		const channel = await createAndJoinChatRoomChannel(socket, {
 			roomId,
 			event: config.event,
 			onEvent: (rawData: unknown) => onEvent(roomId, rawData),
@@ -42,6 +42,7 @@ export async function subscribeToRoom(
 		logger.info(`Successfully subscribed to room: ${roomId}`);
 	} catch (error) {
 		logError(logger, `Failed to subscribe to room: ${roomId}`, error);
+
 		throw error;
 	}
 }
@@ -93,20 +94,22 @@ async function handleRoomAdded(
  * Handle room_removed event
  */
 async function handleRoomRemoved(
-	room: RoomLeaveEvent,
+	event: RoomRemovedEvent,
 	onRoomRemoved: (roomId: string) => Promise<void>,
 	logger: Logger,
 ): Promise<void> {
 	try {
-		logger.info(`Room removed: ${room.id}`);
-		await onRoomRemoved(room.id);
+		logger.info(`Room removed event received: ${event.id}`);
+		await onRoomRemoved(event.id);
 	} catch (error) {
-		logError(logger, `Failed to unsubscribe from room: ${room.id}`, error);
+		logError(logger, `Failed to handle room_removed for room: ${event.id}`, error);
 	}
 }
 
 /**
  * Setup auto-subscribe for new rooms and auto-unsubscribe for removed rooms
+ *
+ * Listens for room_added and room_removed events on the agent_rooms channel.
  */
 export function setupAutoSubscribe(
 	socket: Socket,
@@ -114,25 +117,27 @@ export function setupAutoSubscribe(
 	logger: Logger,
 	onRoomAdded: (room: RoomInfo) => Promise<void>,
 	onRoomRemoved: (roomId: string) => Promise<void>,
-): void {
-	const userChannel = socket.channel(`agent_rooms:${agentId}`, {});
+): Channel {
+	const agentRoomsChannel = socket.channel(`agent_rooms:${agentId}`, {});
 
-	userChannel.on('room_added', (data: RoomAddedEvent) => {
+	agentRoomsChannel.on('room_added', (data: RoomAddedEvent) => {
 		handleRoomAdded(data, onRoomAdded, logger);
 	});
 
-	userChannel.on('room_removed', (data: RoomLeaveEvent) => {
+	agentRoomsChannel.on('room_removed', (data: RoomRemovedEvent) => {
 		handleRoomRemoved(data, onRoomRemoved, logger);
 	});
 
-	userChannel
+	agentRoomsChannel
 		.join()
 		.receive('ok', () => {
-			logger.info('Auto-subscribe channel joined successfully');
+			logger.info('Agent rooms channel joined successfully');
 		})
 		.receive('error', (resp) => {
-			logError(logger, 'Failed to join auto-subscribe channel', resp);
+			logError(logger, 'Failed to join agent rooms channel', resp);
 		});
+
+	return agentRoomsChannel;
 }
 
 /**

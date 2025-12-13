@@ -71,9 +71,16 @@ export class HttpClient {
 				throw new Error(`API request failed: ${response.status} ${response.statusText}`);
 			}
 
+			// Handle 204 No Content responses (e.g., DELETE operations, POST processing endpoints)
+			// Type assertion is necessary here as the generic T doesn't express "no response body".
+			// Callers using endpoints that return 204 should expect undefined or use void as T.
+			if (response.status === 204) {
+				return undefined as T;
+			}
+
 			return (await response.json()) as T;
 		} catch (error) {
-			logError(this.logger, 'HTTP request failed', error, { endpoint });
+			logError(this.logger, 'HTTP request failed', error, { endpoint, method });
 
 			throw error;
 		}

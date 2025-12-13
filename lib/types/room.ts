@@ -66,3 +66,16 @@ export interface RoomAddedEvent extends Omit<RoomInfo, 'updated_at'> {
 }
 
 export interface RoomLeaveEvent extends Omit<RoomInfo, 'updated_at'> {}
+
+/**
+ * Event fired when a room is removed via agent_rooms channel
+ *
+ * This event is received when:
+ * - The agent is removed from a room
+ *
+ * Used by auto-subscribe functionality to clean up room subscriptions.
+ */
+export interface RoomRemovedEvent {
+	/** The unique identifier of the removed room */
+	id: string;
+}

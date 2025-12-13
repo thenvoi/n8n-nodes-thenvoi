@@ -54,7 +54,7 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		this.ctx = {
 			executionContext,
 			options,
-			messageQueue: createMessageQueue(httpClient, executionContext.logger, credentials, chatId),
+			messageQueue: createMessageQueue(httpClient, executionContext.logger, chatId),
 			currentTool: null,
 			toolsUsed: [],
 		};
@@ -226,9 +226,13 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 	}
 
 	private formatTaskSummary(task: string, status: TaskStatus, summary?: string): string {
-		return `UUID: ${this.taskId}
-Task: ${task}
-Status: ${status}${summary ? `\nSummary: ${summary}` : ''}`;
+		const lines = [`UUID: ${this.taskId}`, `Task: ${task}`, `Status: ${status}`];
+
+		if (summary) {
+			lines.push(`Summary: ${summary}`);
+		}
+
+		return lines.join('\n');
 	}
 
 	private generateTaskId(): string {

@@ -104,7 +104,7 @@ let cachedTemplate: string | null = null;
 function loadBaseTemplate(): string {
 	const templatePath = path.join(
 		__dirname,
-		'../../../docs/n8n/agent-node/prompt/thenvoi_agent_system_prompt_template.md',
+		'../../../templates/agent/thenvoi_agent_system_prompt_template.md',
 	);
 
 	try {

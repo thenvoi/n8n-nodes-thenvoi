@@ -243,6 +243,12 @@ alwaysApply: true
 - Document when case-insensitive matching is used and why
 - Consider performance implications of case-insensitive regex (`i` flag) vs explicit case handling
 
+### Multi-line String Building
+
+- For building multi-line strings, prefer array-based approaches over template literals with `\n`
+- Array with `join('\n')` is more readable and easier to modify than inline newlines
+- Use conditional logic to add optional lines to the array before joining
+
 ## Modern TypeScript Features
 
 ### Advanced Type Patterns
@@ -436,6 +442,14 @@ alwaysApply: true
 - Document private methods when they contain complex logic or non-obvious behavior
 - Add inline comments explaining "why" for non-obvious code paths, not just "what"
 - When changing code, update adjacent comments to reflect the new behavior
+
+### JSDoc Best Practices
+
+- Write JSDoc that describes behavior, not specific use cases that may change
+- Keep return descriptions general - describe what the function returns based on its logic, not specific values (e.g., "false otherwise" not "false if it's 'text'")
+- Don't add examples for intuitive functions - save examples for complex or non-obvious APIs
+- Avoid prescribing how a function should be used; document what it does and let the caller decide
+- Keep JSDoc proportional to complexity - simple functions need minimal documentation
 
 ## Logging
 

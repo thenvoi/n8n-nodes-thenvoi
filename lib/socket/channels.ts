@@ -7,26 +7,30 @@ const CHANNEL_JOIN_TIMEOUT = 10000;
 
 // Types
 export interface ChannelConfig {
-	roomId: string;
+	channelName: string;
 	event: string;
 	onEvent: (rawData: unknown) => void;
 	logger: Logger;
 	timeout?: number;
 }
 
+export interface ChatRoomChannelConfig extends Omit<ChannelConfig, 'channelName'> {
+	roomId: string;
+}
+
 // Utility Functions
 
 /**
- * Handles successful channel join
+ * Handles successful channel join - called when Phoenix channel.join() receives 'ok'
  */
-function handleJoinSuccess(channel: Channel, logger: Logger, resp?: any): void {
+function handleJoinSuccess(channel: Channel, logger: Logger, resp?: unknown): void {
 	logger.info('ChannelManager: Joined channel', { resp });
 }
 
 /**
- * Handles channel join error
+ * Handles channel join error - called when Phoenix channel.join() receives 'error'
  */
-function handleJoinError(channelName: string, logger: Logger, resp?: any): never {
+function handleJoinError(channelName: string, logger: Logger, resp?: unknown): never {
 	logger.error('ChannelManager: Failed to join channel', {
 		channelName,
 		error: resp,
@@ -55,11 +59,11 @@ function createJoinPromise(
 	return new Promise((resolve, reject) => {
 		channel
 			.join()
-			.receive('ok', (resp?: any) => {
+			.receive('ok', (resp?: unknown) => {
 				handleJoinSuccess(channel, logger, resp);
 				resolve(channel);
 			})
-			.receive('error', (resp?: any) => {
+			.receive('error', (resp?: unknown) => {
 				reject(handleJoinError(channelName, logger, resp));
 			})
 			.receive('timeout', () => {
@@ -84,6 +88,7 @@ async function joinChannelWithTimeout(
 }
 
 // Public API
+
 /**
  * Creates and joins a Phoenix channel with the specified configuration
  */
@@ -91,11 +96,43 @@ export async function createAndJoinChannel(
 	socket: Socket,
 	config: ChannelConfig,
 ): Promise<Channel> {
-	const channelName = `chat_room:${config.roomId}`;
-	const channel = socket.channel(channelName, {});
+	const channel = socket.channel(config.channelName, {});
 
-	// Set up event listener
 	channel.on(config.event, config.onEvent);
 
-	return joinChannelWithTimeout(channel, channelName, config.logger, config.timeout);
+	return joinChannelWithTimeout(channel, config.channelName, config.logger, config.timeout);
+}
+
+/**
+ * Creates and joins a chat_room channel for message events
+ *
+ * Convenience wrapper for createAndJoinChannel with chat_room prefix.
+ * Constructs the channel name as `chat_room:{roomId}`.
+ *
+ * @param socket - Phoenix socket instance to create the channel on
+ * @param config - Channel configuration containing roomId, event type, and callbacks
+ * @returns Promise resolving to the joined Phoenix Channel
+ * @throws Error if channel join fails or times out
+ *
+ * @example
+ * ```typescript
+ * const channel = await createAndJoinChatRoomChannel(socket, {
+ *   roomId: 'room-123',
+ *   event: 'new_message',
+ *   onEvent: (data) => console.log(data),
+ *   logger: context.logger,
+ * });
+ * ```
+ */
+export async function createAndJoinChatRoomChannel(
+	socket: Socket,
+	config: ChatRoomChannelConfig,
+): Promise<Channel> {
+	return createAndJoinChannel(socket, {
+		channelName: `chat_room:${config.roomId}`,
+		event: config.event,
+		onEvent: config.onEvent,
+		logger: config.logger,
+		timeout: config.timeout,
+	});
 }

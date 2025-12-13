@@ -3,9 +3,8 @@ import { Channel, Socket } from 'phoenix';
 import { eventHandlerRegistry } from '../../handlers/events/EventHandlerRegistry';
 import { TriggerConfig, SingleRoomConfig } from '../../types';
 import { logError } from '@lib/utils';
-import { createAndJoinChannel } from '@lib/socket';
+import { createAndJoinChatRoomChannel } from '@lib/socket';
 
-// Utility Functions
 /**
  * Handles incoming events using the appropriate event handler
  */
@@ -24,7 +23,6 @@ function handleEvent(
 	}
 }
 
-// Public API
 /**
  * Sets up channel events for a Phoenix socket
  */
@@ -37,8 +35,8 @@ export async function setupChannelEvents(
 		handleEvent(rawData, config, triggerContext);
 	};
 
-	return createAndJoinChannel(socket, {
-		roomId: config.chatRoomId!,
+	return createAndJoinChatRoomChannel(socket, {
+		roomId: config.chatRoomId,
 		event: config.event,
 		onEvent: triggerFunction,
 		logger: triggerContext.logger,

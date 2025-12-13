@@ -14,11 +14,11 @@ Documentation is organized by purpose and scope:
   - Component relationships and interactions
   - Example: `/docs/architecture/memory/memory_system_guide.md`
 
-- **`/docs/n8n/`** - Per-node conceptual descriptions
+- **`/docs/nodes/`** - Per-node conceptual descriptions
   - Node-specific architecture and behavior
   - Node configuration and capabilities
   - Node integration patterns
-  - Example: `/docs/n8n/agent_node_guide.md`
+  - Example: `/docs/nodes/agent/agent_node_guide.md`
 
 - **`/docs/plans/`** - Planning documents and discussions
   - Design discussions and analysis documents

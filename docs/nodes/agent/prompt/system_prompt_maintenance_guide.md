@@ -1,6 +1,6 @@
 # Thenvoi AI Agent System Prompt - Maintenance Guide
 
-This guide is for developers and AI assistants (like Cursor) who need to maintain and update the `docs/n8n/agent-node/prompt/thenvoi_agent_system_prompt_template.md` file.
+This guide is for developers and AI assistants (like Cursor) who need to maintain and update the `templates/agent/thenvoi_agent_system_prompt_template.md` file.
 
 ## Table of Contents
 
@@ -599,9 +599,9 @@ Migration: Search/replace old placeholder names with new ones
 
 ### File Locations
 
-- **Template**: `docs/n8n/agent-node/prompt/thenvoi_agent_system_prompt_template.md`
-- **User Guide**: `docs/n8n/agent-node/agent_node_guide.md`
-- **This Guide**: `docs/n8n/agent-node/prompt/system_prompt_maintenance_guide.md`
+- **Template**: `templates/agent/thenvoi_agent_system_prompt_template.md`
+- **User Guide**: `docs/nodes/agent/agent_node_guide.md`
+- **This Guide**: `docs/nodes/agent/prompt/system_prompt_maintenance_guide.md`
 - **Tool Refactoring**: `docs/tool_refactoring_tasks.md`
 
 ### Key Concepts

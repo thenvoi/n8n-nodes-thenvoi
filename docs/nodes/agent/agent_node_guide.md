@@ -59,8 +59,7 @@ Before using the Thenvoi AI Agent node, you need:
 
 #### Server URL
 - **What it is**: The base URL of your Thenvoi server (without protocol)
-- **Default**: `platform.demo.thenvoi.com/api/v1`
-- **Custom server example**: `your-company.thenvoi.com/api/v1`
+- **Default**: `app.thenvoi.com/api/v1`
 - **Note**: Don't include `http://` or `https://`
 
 #### Use HTTPS
@@ -74,6 +73,8 @@ Before using the Thenvoi AI Agent node, you need:
 
 4. **Test the connection** using the built-in test button
 5. **Save** the credential
+
+<img src="../../screenshots/credentials-config.png" alt="Screenshot: Thenvoi API Credentials Configuration" width="800" />
 
 ### Step 2: Set Up LLM Credentials
 
@@ -120,6 +121,9 @@ Control what gets streamed to the Thenvoi chat:
 ### Options
 
 - **Return Intermediate Steps** - Include tool calls and results in node output
+
+<img src="../../screenshots/agent-config-1.png" alt="Screenshot: Agent Node Configuration Part 1" width="400" />
+<img src="../../screenshots/agent-config-2.png" alt="Screenshot: Agent Node Configuration Part 2" width="400" />
 
 ---
 
@@ -395,6 +399,8 @@ accurate, timely weather information with a friendly and professional tone.
 - In Thenvoi, mention your agent: `@WeatherBot What's the weather in Tokyo?`
 - Observe the behavior and refine your prompt as needed
 
+<img src="../../screenshots/example-workflow.png" alt="Screenshot: Example Workflow Setup" width="600" />
+
 ---
 
 ## Troubleshooting
@@ -465,7 +471,7 @@ accurate, timely weather information with a friendly and professional tone.
 
 - **Thenvoi Documentation**: [https://thenvoi.com/docs/](https://thenvoi.com/docs/)
 - **n8n Community**: [https://community.n8n.io/](https://community.n8n.io/)
-- **System Prompt Template**: See `docs/n8n/agent-node/prompt/thenvoi_agent_system_prompt_template.md`
+- **System Prompt Template**: See `templates/agent/thenvoi_agent_system_prompt_template.md`
 - **Memory System Guide**: See `docs/architecture/memory/memory_system_guide.md`
 
 ### Support Channels

@@ -186,15 +186,16 @@ send_message("@John Smith Your message content here")
 
 **How to use:**
 ```
-add_participant_to_chat(participant_id: "uuid-here", role: "member")
+add_participant_to_chat(participant_identifier: "uuid-here" or "Participant Name")
 ```
 
 **Important notes:**
 - ALWAYS check CHAT PARTICIPANTS section first
 - Do NOT add participants already in the room
-- Get participant_id from `list_available_participants` tool
-- Role should be "member" (default for now)
+- Input can be either participant ID (UUID) or exact participant name (case-sensitive)
+- Get participant ID or name from `list_available_participants` tool
 - After adding, use `send_message` to communicate with them
+- Only call this ONCE per participant - if already in chat or successfully added, do NOT call again
 
 ### list_available_participants
 

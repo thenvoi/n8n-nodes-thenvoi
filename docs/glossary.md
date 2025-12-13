@@ -42,11 +42,6 @@ The complete runtime environment for agent execution, including the model, tools
 ### Intermediate Steps
 The sequence of tool calls and their results that occur during agent execution. Captured by the callback handler during execution and passed to memory for storage. Always collected by the system (even if filtered from output) because memory needs them to create structured data.
 
-### Pending Saves
-Accumulated save operations that are deferred during agent execution. Multiple `saveContext()` calls are accumulated and then combined into a single enhanced save when execution completes and `intermediateSteps` are available.
-
-**Note**: In the current implementation, intermediate steps are captured progressively by the callback handler and updated on memory after each tool call.
-
 ## Agent Terms
 
 ### Agent Role
@@ -70,7 +65,10 @@ The agent's reasoning and decision-making process, extracted from LLM output. Th
 ## Capability Terms
 
 ### Capability
-A modular component that extends agent functionality through lifecycle hooks. Capabilities execute in priority order during the agent execution pipeline.
+A modular component that extends agent functionality through lifecycle hooks. Capabilities execute in priority order during the agent execution pipeline and can provide tools, callbacks, and metadata.
+
+### Capability Registry
+Manages and coordinates agent capabilities. Capabilities are executed sequentially based on their priority (lower priority values execute first).
 
 ### Capability Lifecycle
 The phases a capability can hook into:
@@ -100,6 +98,23 @@ Runtime data injected into prompts during each execution:
 - **Participants**: List of chat participants
 - **Recent Messages**: Conversation history (from memory or API)
 - **Tools**: Available tools and their descriptions
+
+## Architecture Terms
+
+### Execution Pipeline
+The structured phase-based flow that orchestrates agent execution: Initialize Capabilities → Setup → Prepare → Execute → Success/Error → Finalize.
+
+### Message Queue
+A queue system that ensures messages are sent sequentially to prevent race conditions and maintain message order. Messages are enqueued and sent one at a time.
+
+### Phoenix Socket
+A WebSocket implementation used for real-time communication with the Thenvoi platform. Provides connection management, automatic reconnection, and channel-based messaging.
+
+### Room Subscription
+A subscription to a specific chat room's events via a Phoenix channel. The trigger node manages multiple room subscriptions based on configuration.
+
+### Tool Name Registry
+A registry mapping tool class names to their declared names, enabling correct tool name extraction from serialized tool objects used by callback handlers.
 
 ## Usage
 

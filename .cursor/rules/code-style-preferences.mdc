@@ -74,6 +74,7 @@ alwaysApply: true
 - Use consistent naming patterns for similar concepts
 - Choose names that accurately describe functionality
 - Question names that don't clearly indicate purpose
+- For callback types, use the pattern `On{Action}Callback` (e.g., `OnRoomDeletedCallback`)
 
 ### File and Folder Naming
 
@@ -115,6 +116,7 @@ alwaysApply: true
 - Prefer array methods (`filter`, `map`, `find`) over for loops when selecting or transforming arrays
 - Use `filter` when selecting items from an array, `map` when transforming items, `find` when searching for one item
 - When checking all items against a condition, looping through items and checking each can be appropriate and readable
+- For iterating over `Object.entries()`, prefer `for...of` loops over `forEach` for better readability and control flow
 
 ### When to Extract Functions
 
@@ -228,6 +230,7 @@ alwaysApply: true
 - Implement proper error handling with typed error objects
 - Use branded types to prevent mixing different domain values
 - Leverage TypeScript's control flow analysis for type narrowing
+- Use optional chaining (`?.`) for operations on optional properties (e.g., `channel?.leave()`) instead of explicit if checks
 
 ### Runtime Type Checking Patterns
 
@@ -343,6 +346,15 @@ alwaysApply: true
 - When classes grow large, question what logic should be extracted
 - Use classes when they provide clear value over functional approaches
 
+### Resource Cleanup Patterns
+
+- For resources that require cleanup (channels, connections, subscriptions):
+  - Create paired setup/cleanup functions in the same module
+  - Export a single cleanup function that handles all related resources
+  - Centralize cleanup logic to avoid forgetting to clean up new resources when adding them
+- Keep cleanup functions synchronous when possible - cleanup should be fast and deterministic
+- When a resource has multiple sub-resources, create a unified cleanup function (e.g., `leaveSubscriptionChannels` for both main channel and participants channel)
+
 ## Configuration Management
 
 ### Configuration Principles
@@ -401,6 +413,14 @@ alwaysApply: true
 - Place domain-specific utilities close to where they're used
 - Question utility placement: "Is this general-purpose or domain-specific?"
 - Don't put general-purpose helpers inside classes - extract them to shared utility files
+
+### Manager vs Utility Separation
+
+- Utilities should do simple, focused operations without business logic decisions
+- Managers/orchestrators handle business logic, feature flags, and coordination
+- Don't pass optional feature callbacks to utilities - let the manager decide and call separate utilities
+- If a utility needs to behave differently based on configuration, the manager should call different utilities rather than the utility checking config
+- Keep utilities "dumb" - they do what they're told, managers decide what to tell them
 
 ## Refactoring Approach
 

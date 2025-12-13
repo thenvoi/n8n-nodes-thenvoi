@@ -25,7 +25,7 @@ export class ThenvoiApi implements ICredentialType {
 			displayName: 'Server URL',
 			name: 'serverUrl',
 			type: 'string',
-			default: 'platform.demo.thenvoi.com/api/v1',
+			default: 'app.thenvoi.com/api/v1',
 			required: true,
 			description: 'Base URL of the Thenvoi server (without protocol)',
 		},

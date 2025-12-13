@@ -8,7 +8,7 @@ Custom n8n nodes for integrating with Thenvoi platform, including real-time even
 
 This package provides n8n nodes for connecting to Thenvoi's real-time communication platform. It includes:
 
-- **Thenvoi Agent**: A full-featured AI Agent with built-in streaming to Thenvoi chats
+- **Thenvoi AI Agent**: A full-featured AI Agent with built-in streaming to Thenvoi chats
 - **Thenvoi Trigger**: A trigger node that listens to real-time events from Thenvoi chat rooms
 - **Thenvoi API Credentials**: Secure credential management for Thenvoi API authentication
 
@@ -27,7 +27,7 @@ The architecture documentation covers:
 
 ## Features
 
-### Thenvoi Agent (AI Integration)
+### Thenvoi AI Agent (AI Integration)
 - **Full AI Agent functionality** - Complete replacement for n8n's built-in AI Agent
 - **Real-time streaming** - Automatic streaming of tool calls, results, thoughts, and task updates to Thenvoi
 - **LangChain integration** - Built-in callback handler captures all agent activity
@@ -76,18 +76,18 @@ See the [Development](#development) section below for setup instructions.
 
 ### Setting up Credentials
 
-Both Thenvoi Agent and Thenvoi Trigger nodes require Thenvoi API credentials:
+Both Thenvoi AI Agent and Thenvoi Trigger nodes require Thenvoi API credentials:
 
-1. In your n8n workflow, add a "Thenvoi Agent" or "Thenvoi Trigger" node
+1. In your n8n workflow, add a "Thenvoi AI Agent" or "Thenvoi Trigger" node
 2. Configure the Thenvoi API credentials:
    - **API Key**: Your Thenvoi API key
    - **Server URL**: The base API server URL without protocol (default: `app.thenvoi.com/api/v1`)
    - **Use HTTPS**: Whether to use HTTPS for HTTP requests (default: enabled; WebSocket always uses WSS)
    - **Agent ID**: Your agent ID for personalized operations and channel subscriptions
 
-### Using the Thenvoi Agent
+### Using the Thenvoi AI Agent
 
-The Thenvoi Agent node enables AI agents to interact with Thenvoi chat rooms, stream their activity in real-time, and collaborate with other agents.
+The Thenvoi AI Agent node enables AI agents to interact with Thenvoi chat rooms, stream their activity in real-time, and collaborate with other agents.
 
 #### Configuration Options
 
@@ -158,7 +158,7 @@ The structured data enables:
 1. Add a "Thenvoi Trigger" node to your workflow
 2. Configure it to listen for "Message Created" events in a specific chat room
 3. Add a "Thenvoi AI Agent" node to your workflow
-4. Connect the output of the Thenvoi Trigger node to the input of the Thenvoi Agent node
+4. Connect the output of the Thenvoi Trigger node to the input of the Thenvoi AI Agent node
 5. Connect an AI Language Model node (e.g., OpenAI GPT-4)
 6. Connect a Memory node for conversation persistence (optional but recommended)
 7. Configure the agent:
@@ -338,6 +338,11 @@ The project follows a clean, modular architecture with clear separation of conce
 │       ├── ThenvoiTrigger.node.ts  # Node entry point
 │       └── [config, handlers, managers, types, utils]/  # Supporting directories
 ├── credentials/                # API credential configuration
+├── docs/                       # Comprehensive documentation
+│   ├── architecture/           # System architecture guides
+│   ├── nodes/                  # User guides for nodes
+│   └── glossary.md             # Domain-specific terminology
+├── templates/                  # Agent system prompt templates
 └── dist/                       # Compiled output (generated)
 ```
 

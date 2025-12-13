@@ -69,6 +69,7 @@ export class RoomManager {
 
 	async initialize(): Promise<void> {
 		await this.subscribeToAllRooms();
+		await this.addRoomDeletionListeners();
 		await this.initializeAutoSubscribe();
 	}
 
@@ -98,7 +99,6 @@ export class RoomManager {
 	/**
 	 * Initializes auto-subscribe features:
 	 * - Sets up agent_rooms channel for room_added/room_removed events
-	 * - Sets up room_participants channels for room_deleted events on existing subscriptions
 	 */
 	private async initializeAutoSubscribe(): Promise<void> {
 		if (!supportsAutoSubscribe(this.config) || !this.config.autoSubscribe) {
@@ -115,9 +115,6 @@ export class RoomManager {
 			this.subscribeToNewRoom,
 			this.unsubscribeFromRoom,
 		);
-
-		// Set up room_participants channels for existing subscriptions
-		await this.addRoomDeletionListeners();
 	}
 
 	/**
@@ -168,6 +165,9 @@ export class RoomManager {
 		// Fetch and subscribe to current rooms (may have changed during disconnect)
 		await this.subscribeToAllRooms();
 		this.logger.info(`Rejoined ${this.subscriptions.size} room channels after reconnection`);
+
+		// Set up room deletion listeners for reconnected subscriptions
+		await this.addRoomDeletionListeners();
 
 		// Rejoin auto-subscribe channels if it was active
 		if (this.autoSubscribeActive) {

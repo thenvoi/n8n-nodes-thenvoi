@@ -74,7 +74,7 @@ export class ListAvailableParticipantsTool extends Tool {
 		return participants.map((participant) => ({
 			id: participant.id,
 			name: participant.name,
-			type: participant.type.toLowerCase(),
+			type: participant.type,
 			description: participant.description || '',
 		}));
 	}

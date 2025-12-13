@@ -12,6 +12,19 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 - **Thenvoi Trigger**: A trigger node that listens to real-time events from Thenvoi chat rooms
 - **Thenvoi API Credentials**: Secure credential management for Thenvoi API authentication
 
+### Documentation
+
+For developers working on or extending these nodes, comprehensive architecture documentation is available:
+
+- **[Architecture Getting Started Guide](docs/architecture/getting_started.md)** - Start here to understand the system architecture and find the right documentation for your needs
+- **[Glossary](docs/glossary.md)** - Definitions of domain-specific terms used throughout the documentation
+
+The architecture documentation covers:
+- Agent node system architecture (execution pipeline, capabilities, memory, prompts, tools, messaging)
+- Trigger node system architecture (room management, event handling, WebSocket connections)
+- Shared systems (API client, socket management)
+- Reading paths for different goals (understanding the system, extending functionality, debugging)
+
 ## Features
 
 ### Thenvoi Agent (AI Integration)
@@ -28,7 +41,7 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 - **JSON-formatted context** - Recent messages formatted as JSON for better parsing by LLMs
 - **Multiple message types** - Support for task updates, thoughts, tool calls, and tool results
 - **Agent collaboration** - Agents can dynamically add other Thenvoi agents to the chat for specialized help
-- **Chat context tools** - Built-in tools for agents to fetch chat history, participants, agent info, and chat room details
+- **Dynamic context injection** - Chat room info, participants, and message history automatically injected into prompts
 - **Mention detection** - Automatic detection and processing of @mentions in agent responses
 - **Phase-based execution** - Structured pipeline (Initialize Capabilities → Setup → Prepare → Execute → Success/Error → Finalize)
 
@@ -40,7 +53,24 @@ This package provides n8n nodes for connecting to Thenvoi's real-time communicat
 - **TypeScript support** with full type definitions
 - **Auto-subscribe** - Automatically subscribe to new rooms and unsubscribe from removed rooms
 - **Regex filtering** - Powerful regex-based filtering for room titles with graceful fallback
-- **Room type filtering** - Filter by room types (direct, group, task)
+
+## Installation
+
+### For End Users
+
+Install the package in your n8n instance:
+
+```bash
+npm install n8n-nodes-thenvoi
+```
+
+After installation, restart your n8n instance. The nodes will appear in the n8n node palette under "Thenvoi".
+
+**Note**: If you're using n8n cloud, you may need to install this package through the n8n community nodes interface or contact support.
+
+### For Developers
+
+See the [Development](#development) section below for setup instructions.
 
 ## Usage
 
@@ -51,7 +81,7 @@ Both Thenvoi Agent and Thenvoi Trigger nodes require Thenvoi API credentials:
 1. In your n8n workflow, add a "Thenvoi Agent" or "Thenvoi Trigger" node
 2. Configure the Thenvoi API credentials:
    - **API Key**: Your Thenvoi API key
-   - **Server URL**: The base API server URL without protocol (default: `platform.demo.thenvoi.com/api/v1`)
+   - **Server URL**: The base API server URL without protocol (default: `app.thenvoi.com/api/v1`)
    - **Use HTTPS**: Whether to use HTTPS for HTTP requests (default: enabled; WebSocket always uses WSS)
    - **Agent ID**: Your agent ID for personalized operations and channel subscriptions
 
@@ -91,14 +121,14 @@ The agent includes two built-in capabilities that provide advanced functionality
    - Automatically detects and processes @mentions in agent responses
    - Manages message queueing and ensures all messages are sent
    - Updates message processing status (processing, processed, failed) for tracking
-   - Provides **SendMessageTool** for agents to send visible messages to the chat
+   - Provides **send_message** tool for agents to send visible messages to the chat
 
 2. **Agent Collaboration Capability**
    - Enables agents to discover available Thenvoi agents and users
    - Provides tools for managing chat participants:
-     - **ListAvailableParticipantsTool** - Discover agents/users that can be added to the chat
-     - **AddParticipantToChatTool** - Add agents or users to the current chat
-     - **RemoveParticipantFromChatTool** - Remove participants from the chat
+     - **list_available_participants** - Discover agents/users that can be added to the chat
+     - **add_participant_to_chat** - Add agents or users to the current chat
+     - **remove_participant_from_chat** - Remove participants from the chat
    - Automatically updates participant lists when agents are added
 
 #### Memory System
@@ -161,7 +191,6 @@ The Thenvoi Trigger node allows you to listen to real-time events from Thenvoi c
 
 3. **Filtered Rooms** - Listen to rooms matching a filter pattern
    - Configure regex pattern for room titles (e.g., `^support`, `team$`, `bug|issue`)
-   - Filter by room types (direct, group, task) - optional
    - Enable auto-subscribe for new rooms - optional
 
 **Regex Filter Examples:**

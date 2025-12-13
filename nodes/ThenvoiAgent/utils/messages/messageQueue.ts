@@ -1,8 +1,8 @@
-import { Logger } from 'n8n-workflow';
-import { ThenvoiCredentials, ChatMessageType, ChatMessageMention } from '@lib/types';
-import { sendMessageToThenvoi } from '@lib/api/messages';
-import { getErrorMessage } from '@lib/utils/errors';
+import { sendEventToThenvoi, sendTextMessageToThenvoi } from '@lib/api/messages';
 import { HttpClient } from '@lib/http/client';
+import { ChatMessageMention, ChatMessageType, isEventType } from '@lib/types';
+import { getErrorMessage } from '@lib/utils/errors';
+import { Logger } from 'n8n-workflow';
 
 /**
  * Message queue interface for managing sequential message sending
@@ -14,13 +14,33 @@ export interface MessageQueue {
 }
 
 /**
+ * Sends a message or event based on type
+ *
+ * Routes to the correct endpoint:
+ * - 'text' → /messages (requires mentions)
+ * - All others → /events (no mention validation)
+ */
+async function sendByType(
+	httpClient: HttpClient,
+	chatId: string,
+	messageType: ChatMessageType,
+	content: string,
+	mentions?: ChatMessageMention[],
+): Promise<void> {
+	if (isEventType(messageType)) {
+		await sendEventToThenvoi(httpClient, chatId, messageType, content);
+	} else {
+		await sendTextMessageToThenvoi(httpClient, chatId, content, mentions || []);
+	}
+}
+
+/**
  * Creates a message queue that ensures messages are sent sequentially
  * Uses closure to maintain state
  */
 export function createMessageQueue(
 	httpClient: HttpClient,
 	logger: Logger,
-	credentials: ThenvoiCredentials,
 	chatId: string,
 ): MessageQueue {
 	let queue = Promise.resolve();
@@ -33,14 +53,7 @@ export function createMessageQueue(
 
 			queue = queue.then(async () => {
 				try {
-					await sendMessageToThenvoi(
-						httpClient,
-						chatId,
-						messageType,
-						content,
-						credentials.agentId,
-						mentions,
-					);
+					await sendByType(httpClient, chatId, messageType, content, mentions);
 				} catch (error) {
 					const errorDetails = getErrorMessage(error);
 					const errorStack = error instanceof Error ? error.stack : undefined;

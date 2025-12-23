@@ -1,6 +1,6 @@
 import { Logger } from 'n8n-workflow';
-import { ThenvoiCredentials } from '../types';
-import { logError } from '../utils/errors';
+import { ThenvoiCredentials, ThenvoiApiError } from '../types';
+import { logError, createApiError } from '../utils/errors';
 import { getHttpUrl } from '../utils/urls';
 
 /**
@@ -18,6 +18,10 @@ export class HttpClient {
 
 	/**
 	 * Makes a GET request to the Thenvoi API
+	 *
+	 * @param endpoint - API endpoint path (e.g., '/agent/chats')
+	 * @param params - Optional query parameters
+	 * @returns Promise resolving to the response data of type T
 	 */
 	async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
 		const url = this.buildUrl(endpoint, params);
@@ -26,6 +30,10 @@ export class HttpClient {
 
 	/**
 	 * Makes a POST request to the Thenvoi API
+	 *
+	 * @param endpoint - API endpoint path (e.g., '/agent/chats/{id}/messages')
+	 * @param body - Optional request body (will be JSON stringified)
+	 * @returns Promise resolving to the response data of type T, or undefined for 204 No Content responses
 	 */
 	async post<T>(endpoint: string, body?: unknown): Promise<T> {
 		const url = this.buildUrl(endpoint);
@@ -34,6 +42,9 @@ export class HttpClient {
 
 	/**
 	 * Makes a DELETE request to the Thenvoi API
+	 *
+	 * @param endpoint - API endpoint path (e.g., '/agent/chats/{id}/participants/{id}')
+	 * @returns Promise resolving to the response data of type T, or undefined for 204 No Content responses
 	 */
 	async delete<T>(endpoint: string): Promise<T> {
 		const url = this.buildUrl(endpoint);
@@ -42,6 +53,17 @@ export class HttpClient {
 
 	/**
 	 * Makes an HTTP request with common error handling and response parsing
+	 *
+	 * Handles 204 No Content responses by returning undefined (type assertion required
+	 * as generic T doesn't express "no response body"). Logs errors before re-throwing
+	 * to ensure error context is captured even if error handling fails upstream.
+	 *
+	 * @param url - Complete URL including base URL and query parameters
+	 * @param method - HTTP method (GET, POST, DELETE, etc.)
+	 * @param endpoint - API endpoint path (used for error logging context)
+	 * @param body - Optional request body (will be JSON stringified)
+	 * @param headers - Optional additional headers to merge with default headers
+	 * @returns Promise resolving to the response data of type T, or undefined for 204 responses
 	 */
 	private async request<T>(
 		url: string,
@@ -68,7 +90,9 @@ export class HttpClient {
 			const response = await fetch(url, fetchOptions);
 
 			if (!response.ok) {
-				throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+				const error = await createApiError(response);
+				logError(this.logger, 'HTTP request failed', error, { endpoint, method, status: error.status });
+				throw error;
 			}
 
 			// Handle 204 No Content responses (e.g., DELETE operations, POST processing endpoints)
@@ -80,7 +104,10 @@ export class HttpClient {
 
 			return (await response.json()) as T;
 		} catch (error) {
-			logError(this.logger, 'HTTP request failed', error, { endpoint, method });
+			// Log and re-throw if not already a ThenvoiApiError
+			if (!(error instanceof ThenvoiApiError)) {
+				logError(this.logger, 'HTTP request failed', error, { endpoint, method });
+			}
 
 			throw error;
 		}
@@ -88,6 +115,12 @@ export class HttpClient {
 
 	/**
 	 * Builds a complete URL for the API endpoint
+	 *
+	 * Combines base URL with endpoint path and appends query parameters.
+	 *
+	 * @param endpoint - API endpoint path (e.g., '/agent/chats')
+	 * @param params - Optional query parameters to append as URL search params
+	 * @returns Complete URL string ready for fetch()
 	 */
 	private buildUrl(endpoint: string, params?: Record<string, string>): string {
 		const url = new URL(`${this.baseUrl}${endpoint}`);

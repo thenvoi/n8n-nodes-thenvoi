@@ -494,6 +494,19 @@ alwaysApply: true
 - Log major phase transitions (setup, execution, cleanup)
 - Avoid logging success messages that duplicate information already logged elsewhere
 
+### Error Logging Consistency
+
+- Use `info` log level only for expected state transitions or non-error events
+- Don't log errors at `info` level - this makes it difficult to filter and monitor actual failures
+- Consistent error logging levels across the codebase
+
+### Silent Error Handling
+
+- When catch blocks return fallback values (empty arrays, null, etc.), log the error at `warn` level with context
+- Silent error handling should only be used when the error is truly expected and not actionable
+- Include relevant context in error logs (IDs, parameters, operation name) to aid debugging
+- Example: `catch (error) { logger.warn('Failed to fetch messages, returning empty array', { error }); return []; }`
+
 ## Testing and Quality Assurance
 
 ### Testing Best Practices

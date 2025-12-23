@@ -177,7 +177,7 @@ export async function handleLLMError(
 ): Promise<void> {
 	const errorMessage = getSafeErrorMessage(error);
 
-	ctx.executionContext.logger.info('LLM execution error', {
+	ctx.executionContext.logger.error('LLM execution error', {
 		runId,
 		error: errorMessage,
 	});

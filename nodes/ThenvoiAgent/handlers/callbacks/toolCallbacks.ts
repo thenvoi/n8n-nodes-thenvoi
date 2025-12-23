@@ -16,18 +16,18 @@ function sendToolCallMessage(
 	input: string,
 	runId: string,
 ): void {
-	const toolCallContent = formatToolCall(tool, input, runId, ctx.toolNameRegistry);
-	ctx.executionContext.logger.info('Sending tool call', { runId });
-	ctx.messageQueue.enqueue('tool_call', toolCallContent);
+	const toolCallEvent = formatToolCall(tool, input, runId, ctx.toolNameRegistry);
+	ctx.executionContext.logger.debug('Enqueuing tool call message', { runId });
+	ctx.messageQueue.enqueue('tool_call', toolCallEvent.content, undefined, toolCallEvent.metadata);
 }
 
 /**
  * Sends tool result message to Thenvoi
  */
 function sendToolResultMessage(ctx: CallbackContext, output: string, runId: string): void {
-	const toolResultContent = formatToolResult(output, runId);
-	ctx.executionContext.logger.info('Sending tool result', { runId });
-	ctx.messageQueue.enqueue('tool_result', toolResultContent);
+	const toolResultEvent = formatToolResult(output, runId);
+	ctx.executionContext.logger.debug('Enqueuing tool result message', { runId });
+	ctx.messageQueue.enqueue('tool_result', toolResultEvent.content, undefined, toolResultEvent.metadata);
 }
 
 /**
@@ -85,7 +85,7 @@ export async function handleToolError(
 ): Promise<void> {
 	const errorMessage = getSafeErrorMessage(error);
 
-	ctx.executionContext.logger.info('Tool execution error', {
+	ctx.executionContext.logger.error('Tool execution error', {
 		runId,
 		toolName: tool ? extractToolName(tool, ctx.toolNameRegistry) : 'unknown',
 		error: errorMessage,

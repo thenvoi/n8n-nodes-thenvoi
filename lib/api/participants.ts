@@ -1,13 +1,14 @@
 import { HttpClient } from '../http/client';
 import {
 	AddParticipantRequest,
-	AvailableParticipant,
 	ChatParticipant,
 	ParticipantRole,
 	ParticipantStatus,
 	ParticipantType,
+	Peer,
 } from '../types';
 import { includeProperty } from '../utils';
+import { fetchPeers } from './peers';
 
 /**
  * Raw participant structure as returned by the API
@@ -31,6 +32,12 @@ interface RawParticipant {
  * Maps API fields to expected structure:
  * - Agents: uses `agent_name` as `name`
  * - Users: combines `first_name` and `last_name`, falls back to `email`
+ *
+ * Handles null/undefined values by providing sensible defaults
+ * (empty strings, null for optional fields, undefined for omitted fields).
+ *
+ * @param raw - Raw participant data from API response
+ * @returns Transformed ChatParticipant object with normalized fields
  */
 function transformParticipant(raw: RawParticipant): ChatParticipant {
 	let name: string;
@@ -80,7 +87,7 @@ export async function fetchChatParticipants(
 	};
 
 	const response = await httpClient.get<{ data: RawParticipant[] }>(
-		`/chats/${chatId}/participants`,
+		`/agent/chats/${chatId}/participants`,
 		queryParams,
 	);
 
@@ -91,56 +98,55 @@ export async function fetchChatParticipants(
 /**
  * Fetches available participants that can be added to a specific chat room
  *
+ * Uses the /agent/peers endpoint with not_in_chat filter to exclude
+ * participants already in the chat. Filters by participant type.
+ *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param participantType - Filter by participant type (Agent or User)
- * @returns Array of available participants
+ * @returns Array of peers that can be added to the chat
  */
 export async function fetchAvailableParticipants(
 	httpClient: HttpClient,
 	chatId: string,
 	participantType: ParticipantType,
-): Promise<AvailableParticipant[]> {
-	const queryParams: Record<string, string> = {
-		participant_type: participantType,
-	};
+): Promise<Peer[]> {
+	const peersResponse = await fetchPeers(httpClient, {
+		notInChat: chatId,
+		pageSize: 100,
+	});
 
-	const response = await httpClient.get<{ data: AvailableParticipant[] }>(
-		`/chats/${chatId}/available-participants`,
-		queryParams,
-	);
-
-	return response.data || [];
+	return peersResponse.data.filter((peer) => peer.type === participantType);
 }
 
 /**
  * Fetches all available participants (both agents and users) that can be added to a chat room
  *
- * Fetches Agent and User participants in parallel and combines the results.
+ * Uses the /agent/peers endpoint with not_in_chat filter to get all peers
+ * (agents and users) that are not already in the chat.
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
- * @returns Array of all available participants (agents and users)
+ * @returns Array of all peers that can be added to the chat
  */
 export async function fetchAllAvailableParticipants(
 	httpClient: HttpClient,
 	chatId: string,
-): Promise<AvailableParticipant[]> {
-	const [agents, users] = await Promise.all([
-		fetchAvailableParticipants(httpClient, chatId, 'Agent'),
-		fetchAvailableParticipants(httpClient, chatId, 'User'),
-	]);
+): Promise<Peer[]> {
+	const peersResponse = await fetchPeers(httpClient, {
+		notInChat: chatId,
+		pageSize: 100,
+	});
 
-	return [...agents, ...users];
+	return peersResponse.data;
 }
 
 /**
- * Adds a participant (agent or user) to a chat room with the specified role
+ * Adds a participant (agent or user) to a chat room with 'member' role
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param participantId - ID of the participant to add
- * @param role - Role to assign to the participant (defaults to 'member')
  */
 export async function addParticipantToChat(
 	httpClient: HttpClient,
@@ -154,7 +160,7 @@ export async function addParticipantToChat(
 		},
 	};
 
-	await httpClient.post(`/chats/${chatId}/participants`, payload);
+	await httpClient.post(`/agent/chats/${chatId}/participants`, payload);
 }
 
 /**
@@ -169,5 +175,5 @@ export async function removeParticipantFromChat(
 	chatId: string,
 	participantId: string,
 ): Promise<void> {
-	await httpClient.delete(`/chats/${chatId}/participants/${participantId}`);
+	await httpClient.delete(`/agent/chats/${chatId}/participants/${participantId}`);
 }

@@ -13,7 +13,7 @@
 import { Tool } from '@langchain/core/tools';
 import { fetchAllAvailableParticipants } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { AvailableParticipant } from '@lib/types';
+import { Peer } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
 
 /**
@@ -63,13 +63,13 @@ export class ListAvailableParticipantsTool extends Tool {
 	}
 
 	/**
-	 * Formats ChatParticipant data into tool response format
+	 * Formats Peer data into tool response format
 	 *
-	 * @param participants - Array of chat participants
+	 * @param participants - Array of peers
 	 * @returns Array of formatted participant objects with description
 	 */
 	private formatParticipants(
-		participants: AvailableParticipant[],
+		participants: Peer[],
 	): Array<{ id: string; name: string; type: string; description: string }> {
 		return participants.map((participant) => ({
 			id: participant.id,

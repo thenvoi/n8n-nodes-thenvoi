@@ -14,7 +14,7 @@
 import { Tool } from '@langchain/core/tools';
 import { addParticipantToChat } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { AvailableParticipant, ChatParticipant } from '@lib/types';
+import { ChatParticipant, Peer } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
 
 /**
@@ -23,7 +23,7 @@ import { formatToolErrorResponse } from '../utils/errors';
 export interface AddParticipantToolConfig {
 	httpClient: HttpClient;
 	chatId: string;
-	availableParticipants: AvailableParticipant[];
+	availableParticipants: Peer[];
 	currentParticipants: ChatParticipant[];
 	onParticipantAdded?: (participant: ChatParticipant) => void;
 }
@@ -38,7 +38,7 @@ export class AddParticipantTool extends Tool {
 
 	private httpClient: HttpClient;
 	private chatId: string;
-	private availableParticipants: AvailableParticipant[];
+	private availableParticipants: Peer[];
 	private currentParticipants: ChatParticipant[];
 	private onParticipantAdded?: (participant: ChatParticipant) => void;
 
@@ -102,7 +102,7 @@ export class AddParticipantTool extends Tool {
 	 * @param participantId - The ID (UUID) to search for
 	 * @returns The participant if found, undefined otherwise
 	 */
-	private findParticipantById(participantId: string): AvailableParticipant | undefined {
+	private findParticipantById(participantId: string): Peer | undefined {
 		return this.availableParticipants.find((p) => p.id === participantId);
 	}
 
@@ -115,7 +115,7 @@ export class AddParticipantTool extends Tool {
 	 * @param participantName - The name to search for (case-sensitive)
 	 * @returns The participant if found, undefined otherwise
 	 */
-	private findParticipantByName(participantName: string): AvailableParticipant | undefined {
+	private findParticipantByName(participantName: string): Peer | undefined {
 		return this.availableParticipants.find((p) => p.name === participantName);
 	}
 
@@ -127,7 +127,7 @@ export class AddParticipantTool extends Tool {
 	 * @param participant - The participant to check
 	 * @returns True if participant is already in chat, false otherwise
 	 */
-	private isParticipantAlreadyInChat(participant: AvailableParticipant): boolean {
+	private isParticipantAlreadyInChat(participant: Peer): boolean {
 		return this.currentParticipants.some((p) => p.id === participant.id);
 	}
 
@@ -141,7 +141,7 @@ export class AddParticipantTool extends Tool {
 	 * @returns The created participant object
 	 * @throws Error if API call fails
 	 */
-	private async addParticipant(participant: AvailableParticipant): Promise<ChatParticipant> {
+	private async addParticipant(participant: Peer): Promise<ChatParticipant> {
 		await addParticipantToChat(this.httpClient, this.chatId, participant.id);
 
 		const chatParticipant = this.createChatParticipant(participant);
@@ -158,12 +158,12 @@ export class AddParticipantTool extends Tool {
 	}
 
 	/**
-	 * Creates a ChatParticipant from AvailableParticipant
+	 * Creates a ChatParticipant from Peer
 	 *
-	 * @param participant - The available participant to convert
+	 * @param participant - The peer to convert
 	 * @returns ChatParticipant object
 	 */
-	private createChatParticipant(participant: AvailableParticipant): ChatParticipant {
+	private createChatParticipant(participant: Peer): ChatParticipant {
 		return {
 			id: participant.id,
 			name: participant.name,
@@ -192,7 +192,7 @@ export class AddParticipantTool extends Tool {
 	 * @param participant - The participant that's already present
 	 * @returns Informative message string
 	 */
-	private buildAlreadyInChatMessage(participant: AvailableParticipant): string {
+	private buildAlreadyInChatMessage(participant: Peer): string {
 		return `Participant "${participant.name}" is already in this chat and ready to help. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 
@@ -204,7 +204,7 @@ export class AddParticipantTool extends Tool {
 	 * @param participant - The participant that was added
 	 * @returns Success message string
 	 */
-	private buildSuccessMessage(participant: AvailableParticipant): string {
+	private buildSuccessMessage(participant: Peer): string {
 		return `Successfully added "${participant.name}" to the chat. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 }

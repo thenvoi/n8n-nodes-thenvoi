@@ -81,7 +81,6 @@ export class RoomManager {
 		const roomIds = await getRoomIdsForMode(
 			this.config,
 			this.httpClient,
-			this.agentId,
 			this.logger,
 		);
 

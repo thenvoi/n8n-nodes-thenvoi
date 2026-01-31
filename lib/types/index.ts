@@ -6,3 +6,4 @@ export * from './socket';
 export * from './events';
 export * from './agent';
 export * from './participant';
+export * from './peer';

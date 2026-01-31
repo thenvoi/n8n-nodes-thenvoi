@@ -5,7 +5,7 @@ import { ParticipantType } from './participant';
 
 export interface ChatMessageMention {
 	id: string;
-	username: string;
+	name: string;
 }
 
 export interface ChatMessageMetadata {
@@ -15,17 +15,15 @@ export interface ChatMessageMetadata {
 
 /**
  * Event types that go to the /events endpoint (no mention validation)
+ *
+ * Only these 5 event types are supported by the API:
+ * - tool_call: Tool invocation by the agent
+ * - tool_result: Result from tool execution
+ * - thought: Agent's internal reasoning/thoughts
+ * - error: Error messages
+ * - task: Task-related events
  */
-export const CHAT_EVENT_TYPES = [
-	'system',
-	'action',
-	'thought',
-	'guidelines',
-	'error',
-	'tool_call',
-	'tool_result',
-	'task',
-] as const;
+export const CHAT_EVENT_TYPES = ['tool_call', 'tool_result', 'thought', 'error', 'task'] as const;
 
 export type ChatEventType = (typeof CHAT_EVENT_TYPES)[number];
 
@@ -67,6 +65,7 @@ export interface ThenvoiTextPayload extends ThenvoiMessagePayload {
  */
 export interface ThenvoiEventPayload extends ThenvoiMessagePayload {
 	message_type: ChatEventType;
+	metadata?: Record<string, unknown>;
 }
 
 /**

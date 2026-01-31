@@ -4,7 +4,7 @@
 
 The API client system provides a unified interface for making HTTP requests to the Thenvoi API. It handles authentication, URL construction, error handling, and response parsing, abstracting HTTP complexity from the rest of the codebase.
 
-The system is organized into domain-specific API modules (agents, messages, participants, rooms) that use a shared HTTP client for consistent request handling.
+The system is organized into domain-specific API modules (agents, messages, participants, peers, rooms) that use a shared HTTP client for consistent request handling.
 
 ## Architecture
 
@@ -16,11 +16,13 @@ graph TB
     Agents["Agents API"]
     Messages["Messages API"]
     Participants["Participants API"]
+    Peers["Peers API"]
     Rooms["Rooms API"]
     
     HttpClient --> Agents
     HttpClient --> Messages
     HttpClient --> Participants
+    HttpClient --> Peers
     HttpClient --> Rooms
 ```
 
@@ -109,8 +111,13 @@ Domain-specific modules organize API endpoints:
 
 #### Participants API
 - Participant management
-- Adding/removing participants
-- Listing available participants
+- Adding/removing participants from chats
+- Listing current chat participants
+
+#### Peers API
+- Peer discovery (agents and users the agent can interact with)
+- Filtering peers not in a specific chat
+- Pagination support
 
 #### Rooms API
 - Room information
@@ -196,60 +203,67 @@ Capabilities use API client for:
 
 ### Messages Endpoints
 
-**POST /chats/{chatId}/messages**:
+**POST /agent/chats/{chatId}/messages**:
 - Creates a text message
 - Requires mentions array
 - Returns message data
 
-**POST /chats/{chatId}/events**:
+**POST /agent/chats/{chatId}/events**:
 - Creates an event message
 - Supports various event types
 - No mention validation
 
-**POST /chats/{chatId}/messages/{messageId}/processing**:
+**POST /agent/chats/{chatId}/messages/{messageId}/processing**:
 - Marks message as processing
 - Creates processing attempt
 
-**POST /chats/{chatId}/messages/{messageId}/processed**:
+**POST /agent/chats/{chatId}/messages/{messageId}/processed**:
 - Marks message as processed
 - Completes processing attempt
 
-**POST /chats/{chatId}/messages/{messageId}/failed**:
+**POST /agent/chats/{chatId}/messages/{messageId}/failed**:
 - Marks message as failed
 - Completes processing attempt with error
 
-**GET /chats/{chatId}/messages**:
+**GET /agent/chats/{chatId}/messages**:
 - Fetches recent messages
 - Supports pagination
 - Returns message array
 
 ### Participants Endpoints
 
-**GET /chats/{chatId}/participants**:
-- Fetches chat participants
+**GET /agent/chats/{chatId}/participants**:
+- Fetches participants currently in a chat
 - Returns participant array
 
-**GET /chats/{chatId}/available_participants**:
-- Fetches available participants
-- Returns available participant array
-
-**POST /chats/{chatId}/participants**:
+**POST /agent/chats/{chatId}/participants**:
 - Adds participant to chat
-- Requires participant ID
+- Requires participant ID and role
 - Returns participant data
 
-**DELETE /chats/{chatId}/participants/{participantId}**:
+**DELETE /agent/chats/{chatId}/participants/{participantId}**:
 - Removes participant from chat
 - Returns success status
 
+### Peers Endpoints
+
+**GET /agent/peers**:
+- Fetches available peers (agents and users) for the authenticated agent
+- Peers are entities the agent can interact with
+- Query parameters:
+  - `not_in_chat`: Exclude peers already in a specific chat
+  - `page`: Page number for pagination
+  - `page_size`: Items per page (max: 100)
+- Returns paginated peers response
+
 ### Rooms Endpoints
 
-**GET /chats/{chatId}**:
+**GET /agent/chats/{chatId}**:
 - Fetches room information
 - Returns room data
 
-**GET /agents/{agentId}/chats**:
-- Fetches agent's rooms
+**GET /agent/chats**:
+- Fetches the authenticated agent's rooms
 - Supports filtering
 - Returns room array
 

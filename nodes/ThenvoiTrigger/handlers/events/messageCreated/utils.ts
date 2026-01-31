@@ -1,5 +1,5 @@
+import { ChatMessage, ChatMessageMention, N8NMessageResponse } from '@lib/types';
 import { Logger } from 'n8n-workflow';
-import { ChatMessage, N8NMessageResponse } from '@lib/types';
 
 /**
  * Checks if a message contains a mention to the specified agent using metadata
@@ -54,7 +54,7 @@ export function removeMentionsFromContent(
 
 	// Remove the mention using the exact username from metadata
 	const mentionPattern = new RegExp(
-		`@${mention.username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+		`@${mention.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
 		'g',
 	);
 
@@ -79,4 +79,25 @@ export function createMessageResponse(data: ChatMessage, agentId: string): N8NMe
 		},
 		chat_room_id: data.chat_room_id,
 	};
+}
+
+/**
+ * Transforms raw API mention data to internal ChatMessageMention format
+ *
+ * Maps the API's 'username' field to the internal 'name' field.
+ *
+ * @param mentions - Raw mention data from API response
+ * @returns Array of transformed ChatMessageMention objects
+ */
+export function parseMessageMentions(mentions: ChatMessageMention[]): ChatMessageMention[] {
+	if (!mentions || mentions.length === 0) {
+		return [];
+	}
+
+	return mentions.map(
+		(mention): ChatMessageMention => ({
+			id: mention.id,
+			name: (mention as ChatMessageMention & { username: string }).username,
+		}),
+	);
 }

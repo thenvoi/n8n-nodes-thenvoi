@@ -14,6 +14,18 @@ export interface AgentBasicInfo {
 }
 
 /**
+ * Agent profile information from /agent/me endpoint
+ */
+export interface AgentMe {
+	id: string;
+	name: string;
+	description: string | null;
+	owner_uuid: string;
+	inserted_at: string;
+	updated_at: string;
+}
+
+/**
  * Full agent model from Thenvoi API
  */
 export interface Agent {

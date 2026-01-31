@@ -31,7 +31,7 @@ export async function sendTextMessageToThenvoi(
 ): Promise<unknown> {
 	const body = buildTextPayload(content, mentions);
 
-	return await httpClient.post(`/chats/${chatId}/messages`, body);
+	return await httpClient.post(`/agent/chats/${chatId}/messages`, body);
 }
 
 /**
@@ -44,6 +44,7 @@ export async function sendTextMessageToThenvoi(
  * @param chatId - ID of the chat room
  * @param eventType - Type of event to send
  * @param content - Event content
+ * @param metadata - Optional metadata for the event
  * @returns API response data
  */
 export async function sendEventToThenvoi(
@@ -51,14 +52,23 @@ export async function sendEventToThenvoi(
 	chatId: string,
 	eventType: ChatEventType,
 	content: string,
+	metadata?: Record<string, unknown>,
 ): Promise<unknown> {
-	const body = buildEventPayload(eventType, content);
+	const body = buildEventPayload(eventType, content, metadata);
 
-	return await httpClient.post(`/chats/${chatId}/events`, body);
+	return await httpClient.post(`/agent/chats/${chatId}/events`, body);
 }
 
 /**
  * Builds the text message payload for the /messages endpoint
+ *
+ * Constructs the request body structure required by the Thenvoi API
+ * for sending text messages. Text messages require a mentions array
+ * with at least one mention.
+ *
+ * @param content - Message content text
+ * @param mentions - Array of mentions (required, must have at least one)
+ * @returns Formatted request payload for /messages endpoint
  */
 function buildTextPayload(content: string, mentions: ChatMessageMention[]): ThenvoiTextRequest {
 	return {
@@ -71,14 +81,39 @@ function buildTextPayload(content: string, mentions: ChatMessageMention[]): Then
 
 /**
  * Builds the event payload for the /events endpoint
+ *
+ * Constructs the request body structure required by the Thenvoi API
+ * for sending non-text events (tool_call, tool_result, thought, etc.).
+ * Events do not require mentions and support optional metadata.
+ *
+ * @param eventType - Type of event to send (tool_call, tool_result, thought, etc.)
+ * @param content - Event content text
+ * @param metadata - Optional metadata object to include in the event
+ * @returns Formatted request payload for /events endpoint
  */
-function buildEventPayload(eventType: ChatEventType, content: string): ThenvoiEventRequest {
+function buildEventPayload(
+	eventType: ChatEventType,
+	content: string,
+	metadata?: Record<string, unknown>,
+): ThenvoiEventRequest {
 	return {
 		event: {
 			content,
 			message_type: eventType,
+			...(metadata ? { metadata } : {}),
 		},
 	};
+}
+
+/**
+ * Pagination metadata structure from messages API response
+ */
+interface MessageMetadata {
+	page: number;
+	page_size: number;
+	total_pages: number;
+	total_count: number;
+	status_filter: string | null;
 }
 
 /**
@@ -88,9 +123,10 @@ function buildEventPayload(eventType: ChatEventType, content: string): ThenvoiEv
  * @param chatId - ID of the chat room
  * @param params - Optional query parameters:
  *   - page: Page number (default: 1)
- *   - per_page: Number of messages per page (default: 20, max: 50)
+ *   - page_size: Number of messages per page (default: 20, max: 100)
  *   - since: ISO timestamp to get messages after a certain date
  *   - message_type: Filter by message type (text, system, action, thought, etc.)
+ *   - status: Filter by message status (pending, processing, processed, failed, all)
  * @returns Array of chat messages
  */
 export async function fetchChatMessages(
@@ -98,20 +134,22 @@ export async function fetchChatMessages(
 	chatId: string,
 	params?: {
 		page?: number;
-		per_page?: number;
+		page_size?: number;
 		since?: string;
 		message_type?: ChatMessageType;
+		status?: 'pending' | 'processing' | 'processed' | 'failed' | 'all';
 	},
 ): Promise<ChatMessage[]> {
 	const queryParams: Record<string, string> = {
 		...includeProperty('page', params?.page?.toString()),
-		...includeProperty('per_page', params?.per_page?.toString()),
+		...includeProperty('page_size', params?.page_size?.toString()),
 		...includeProperty('since', params?.since),
 		...includeProperty('message_type', params?.message_type),
+		...includeProperty('status', params?.status),
 	};
 
-	const response = await httpClient.get<{ data: RawChatMessage[] }>(
-		`/chats/${chatId}/messages`,
+	const response = await httpClient.get<{ data: RawChatMessage[]; metadata: MessageMetadata }>(
+		`/agent/chats/${chatId}/messages`,
 		queryParams,
 	);
 
@@ -147,7 +185,7 @@ export async function fetchChatMessagesWithLimit(
 		fetchPage: (page, perPage) =>
 			fetchChatMessages(httpClient, chatId, {
 				page,
-				per_page: perPage,
+				page_size: perPage,
 				message_type: messageType,
 			}),
 		perPage: 50,
@@ -173,7 +211,7 @@ export async function markMessageAsProcessing(
 	chatId: string,
 	messageId: string,
 ): Promise<unknown> {
-	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/processing`);
+	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processing`);
 }
 
 /**
@@ -192,7 +230,7 @@ export async function markMessageAsProcessed(
 	chatId: string,
 	messageId: string,
 ): Promise<unknown> {
-	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/processed`);
+	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processed`);
 }
 
 /**
@@ -214,5 +252,5 @@ export async function markMessageAsFailed(
 	errorMessage: string,
 ): Promise<unknown> {
 	const body = { error: errorMessage };
-	return await httpClient.post(`/chats/${chatId}/messages/${messageId}/failed`, body);
+	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/failed`, body);
 }

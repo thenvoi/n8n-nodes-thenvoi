@@ -10,7 +10,7 @@
 
 import { fetchAllAvailableParticipants, fetchChatParticipants, fetchChatRoom } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
-import { AvailableParticipant, ChatParticipant, RoomInfo } from '@lib/types';
+import { ChatParticipant, Peer, RoomInfo } from '@lib/types';
 import { getErrorMessage } from '@lib/utils/errors';
 import {
 	AddParticipantTool,
@@ -28,7 +28,7 @@ export class AgentCollaborationCapability implements Capability {
 	readonly name = 'agent_collaboration';
 	readonly priority = CapabilityPriority.HIGH;
 
-	private availableParticipants: AvailableParticipant[] = [];
+	private availableParticipants: Peer[] = [];
 	private currentParticipants: ChatParticipant[] = [];
 	private chatRoom: RoomInfo | null = null;
 	private addParticipantTool: AddParticipantTool | null = null;

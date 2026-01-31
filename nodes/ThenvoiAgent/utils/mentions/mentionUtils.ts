@@ -66,7 +66,7 @@ export function createMentionMetadata(
 
 	const mentions: ChatMessageMention[] = participantsToMention.map((participant) => ({
 		id: participant.id,
-		username: participant.name,
+		name: participant.name,
 	}));
 
 	return {

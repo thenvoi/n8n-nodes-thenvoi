@@ -26,7 +26,7 @@ export interface CallbackHandlerContext {
 /**
  * Tool call structure matching LangChain format
  */
-export interface ToolCallData {
+export interface ToolCallData extends Record<string, unknown> {
 	function: {
 		name: string;
 		arguments: Record<string, unknown>;

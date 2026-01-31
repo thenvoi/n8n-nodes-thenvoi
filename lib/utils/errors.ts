@@ -1,5 +1,5 @@
 import { Logger } from 'n8n-workflow';
-import { ErrorInfo } from '../types';
+import { ErrorInfo, ApiErrorResponse, ThenvoiApiError } from '../types';
 
 /**
  * Converts any error-like value to a consistent error message string
@@ -63,4 +63,60 @@ export function getSafeErrorMessage(error: unknown): string {
 	} catch {
 		return 'An unknown error occurred';
 	}
+}
+
+/**
+ * Parses structured error response from API
+ *
+ * Returns parsed error details or null if response isn't structured error format.
+ *
+ * @param response - HTTP response object
+ * @returns Parsed error details or null if not a structured error
+ */
+export async function parseApiErrorResponse(
+	response: Response,
+): Promise<{ message: string; code?: string; details?: Record<string, string[]>; requestId?: string } | null> {
+	try {
+		const errorData = (await response.json()) as ApiErrorResponse;
+		if (errorData.error) {
+			return {
+				message: errorData.error.message,
+				code: errorData.error.code,
+				details: errorData.error.details,
+				requestId: errorData.error.request_id,
+			};
+		}
+	} catch {
+		// Not a structured error response
+	}
+	return null;
+}
+
+/**
+ * Creates a ThenvoiApiError from HTTP response
+ *
+ * Parses structured error response if available, otherwise creates
+ * generic error with status code.
+ *
+ * @param response - HTTP response object
+ * @returns ThenvoiApiError instance
+ */
+export async function createApiError(response: Response): Promise<ThenvoiApiError> {
+	const parsedError = await parseApiErrorResponse(response);
+
+	if (parsedError) {
+		return new ThenvoiApiError(
+			parsedError.message,
+			response.status,
+			parsedError.code,
+			parsedError.details,
+			parsedError.requestId,
+		);
+	}
+
+	// Fallback to generic error
+	return new ThenvoiApiError(
+		`API request failed: ${response.status} ${response.statusText}`,
+		response.status,
+	);
 }

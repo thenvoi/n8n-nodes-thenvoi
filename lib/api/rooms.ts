@@ -4,27 +4,37 @@ import { HttpClient } from '../http/client';
 import { fetchPaginated } from '../utils/pagination';
 
 /**
- * Fetches a single page of rooms for an agent
+ * Pagination metadata structure from API responses
+ */
+interface PaginationMetadata {
+	page: number;
+	page_size: number;
+	total_pages: number;
+	total_count: number;
+}
+
+/**
+ * Fetches a single page of rooms for the authenticated agent
  *
  * @param httpClient - HTTP client for API requests
- * @param agentId - ID of the agent
  * @param page - Page number to fetch
  * @param pageSize - Number of rooms per page
  * @returns Array of room information
  */
 export async function fetchRoomsPage(
 	httpClient: HttpClient,
-	agentId: string,
 	page: number,
 	pageSize: number,
 ): Promise<RoomInfo[]> {
-	const params = {
-		status: 'active',
+	const params: Record<string, string> = {
 		page: page.toString(),
 		page_size: pageSize.toString(),
 	};
 
-	const response = await httpClient.get<{ data: RoomInfo[] }>(`/agents/${agentId}/chats`, params);
+	const response = await httpClient.get<{ data: RoomInfo[]; metadata: PaginationMetadata }>(
+		'/agent/chats',
+		params,
+	);
 	return response.data || [];
 }
 
@@ -32,17 +42,15 @@ export async function fetchRoomsPage(
  * Fetches all rooms by handling pagination automatically
  *
  * @param httpClient - HTTP client for API requests
- * @param agentId - ID of the agent
  * @param logger - Logger for pagination progress
  * @returns Array of all room information
  */
 export async function fetchAllRooms(
 	httpClient: HttpClient,
-	agentId: string,
 	logger: Logger,
 ): Promise<RoomInfo[]> {
 	return fetchPaginated({
-		fetchPage: (page, perPage) => fetchRoomsPage(httpClient, agentId, page, perPage),
+		fetchPage: (page, perPage) => fetchRoomsPage(httpClient, page, perPage),
 		perPage: 100,
 		logger,
 		resourceName: 'rooms',
@@ -57,6 +65,6 @@ export async function fetchAllRooms(
  * @returns Chat room information
  */
 export async function fetchChatRoom(httpClient: HttpClient, chatId: string): Promise<RoomInfo> {
-	const response = await httpClient.get<{ data: RoomInfo }>(`/chats/${chatId}`);
+	const response = await httpClient.get<{ data: RoomInfo }>(`/agent/chats/${chatId}`);
 	return response.data;
 }

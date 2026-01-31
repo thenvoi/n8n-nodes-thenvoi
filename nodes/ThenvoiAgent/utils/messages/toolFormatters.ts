@@ -77,14 +77,39 @@ function parseToolInput(input: string): Record<string, unknown> {
 }
 
 /**
- * Formats a tool call into the Thenvoi tool_call message format
+ * Tool call event structure with descriptive content and structured metadata
+ */
+export interface ToolCallEvent {
+	content: string;
+	metadata: ToolCallData;
+}
+
+/**
+ * Tool result event structure with descriptive content and structured metadata
+ */
+export interface ToolResultEvent {
+	content: string;
+	metadata: Record<string, unknown>;
+}
+
+/**
+ * Formats a tool call into the Thenvoi tool_call event format
+ *
+ * Returns descriptive content text and structured metadata object.
+ * Content is human-readable description, metadata contains the actual tool call data.
+ *
+ * @param tool - Serialized tool object from LangChain
+ * @param input - Tool input arguments (JSON string)
+ * @param runId - Tool execution run ID
+ * @param toolNameRegistry - Optional registry for tool name lookup
+ * @returns Object with content (descriptive text) and metadata (tool call data)
  */
 export function formatToolCall(
 	tool: Serialized,
 	input: string,
 	runId: string,
 	toolNameRegistry?: ToolNameRegistry,
-): string {
+): ToolCallEvent {
 	const toolName = extractToolName(tool, toolNameRegistry);
 	const toolArguments = parseToolInput(input);
 
@@ -97,24 +122,42 @@ export function formatToolCall(
 		type: 'function',
 	};
 
-	return JSON.stringify(toolCall);
+	return {
+		content: `Calling ${toolName}`,
+		metadata: toolCall,
+	};
 }
 
 /**
- * Formats tool output into a string suitable for tool_result message
- * If output is already valid JSON, returns as-is. Otherwise wraps it.
+ * Formats tool output into tool_result event format
+ *
+ * Returns descriptive content text and structured metadata object.
+ * Content is human-readable summary, metadata contains the actual result data.
+ *
+ * @param output - Tool output (may be JSON string or plain text)
+ * @param runId - Optional tool execution run ID
+ * @returns Object with content (descriptive text) and metadata (result data)
  */
-export function formatToolResult(output: string, runId?: string): string {
+export function formatToolResult(output: string, runId?: string): ToolResultEvent {
+	let resultData: Record<string, unknown>;
+
 	try {
-		JSON.parse(output);
-		return output;
+		const parsed = JSON.parse(output);
+		resultData = typeof parsed === 'object' && parsed !== null ? parsed : { result: output };
 	} catch {
-		const result = {
+		resultData = {
 			result: output,
-			...(runId && { id: runId }),
 		};
-		return JSON.stringify(result);
 	}
+
+	if (runId) {
+		resultData.id = runId;
+	}
+
+	return {
+		content: 'Tool execution completed',
+		metadata: resultData,
+	};
 }
 
 /**

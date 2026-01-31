@@ -27,7 +27,12 @@ function sendToolCallMessage(
 function sendToolResultMessage(ctx: CallbackContext, output: string, runId: string): void {
 	const toolResultEvent = formatToolResult(output, runId);
 	ctx.executionContext.logger.debug('Enqueuing tool result message', { runId });
-	ctx.messageQueue.enqueue('tool_result', toolResultEvent.content, undefined, toolResultEvent.metadata);
+	ctx.messageQueue.enqueue(
+		'tool_result',
+		toolResultEvent.content,
+		undefined,
+		toolResultEvent.metadata,
+	);
 }
 
 /**

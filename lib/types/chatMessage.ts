@@ -5,7 +5,7 @@ import { ParticipantType } from './participant';
 
 export interface ChatMessageMention {
 	id: string;
-	username: string;
+	name: string;
 }
 
 export interface ChatMessageMetadata {

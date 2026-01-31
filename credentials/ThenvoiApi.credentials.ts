@@ -60,7 +60,7 @@ export class ThenvoiApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials?.useHttps ? "https://" : "http://"}}{{$credentials?.serverUrl}}',
-			url: '/agent/me',
+			url: '/test',
 			method: 'GET',
 		},
 	};

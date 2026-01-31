@@ -91,7 +91,12 @@ export class HttpClient {
 
 			if (!response.ok) {
 				const error = await createApiError(response);
-				logError(this.logger, 'HTTP request failed', error, { endpoint, method, status: error.status });
+				logError(this.logger, 'HTTP request failed', error, {
+					endpoint,
+					method,
+					status: error.status,
+					body,
+				});
 				throw error;
 			}
 
@@ -102,7 +107,16 @@ export class HttpClient {
 				return undefined as T;
 			}
 
-			return (await response.json()) as T;
+			const result = await response.json();
+
+			this.logger.debug('HTTP request successful', {
+				endpoint,
+				method,
+				status: response.status,
+				result,
+			});
+
+			return result as T;
 		} catch (error) {
 			// Log and re-throw if not already a ThenvoiApiError
 			if (!(error instanceof ThenvoiApiError)) {

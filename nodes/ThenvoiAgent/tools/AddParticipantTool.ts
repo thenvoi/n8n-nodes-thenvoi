@@ -168,7 +168,6 @@ export class AddParticipantTool extends Tool {
 			id: participant.id,
 			name: participant.name,
 			type: participant.type,
-			avatar_url: null,
 			description: participant.description || undefined,
 		};
 	}

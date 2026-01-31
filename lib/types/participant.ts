@@ -15,8 +15,6 @@ export interface ChatParticipant {
 	id: string;
 	name: string;
 	type: ParticipantType;
-	avatar_url: string | null;
-	email?: string;
 	role?: ParticipantRole;
 	status?: ParticipantStatus;
 	description?: string; // For agents: description of what they do

@@ -1,4 +1,4 @@
-import { ChatParticipant, AgentBasicInfo } from '@lib/types';
+import { AgentBasicInfo, ChatParticipant } from '@lib/types';
 
 /**
  * Checks if a participant is an agent
@@ -22,7 +22,6 @@ export function createAgentParticipantObject(agent: AgentBasicInfo): ChatPartici
 		id: agent.id,
 		name: agent.name,
 		type: 'Agent',
-		avatar_url: null,
 	};
 }
 

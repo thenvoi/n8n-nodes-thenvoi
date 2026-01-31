@@ -1,98 +1,23 @@
 import { HttpClient } from '../http/client';
-import {
-	AddParticipantRequest,
-	ChatParticipant,
-	ParticipantRole,
-	ParticipantStatus,
-	ParticipantType,
-	Peer,
-} from '../types';
-import { includeProperty } from '../utils';
+import { AddParticipantRequest, ChatParticipant, ParticipantType, Peer } from '../types';
 import { fetchPeers } from './peers';
-
-/**
- * Raw participant structure as returned by the API
- */
-interface RawParticipant {
-	id: string;
-	type: ParticipantType;
-	status: ParticipantStatus;
-	role: ParticipantRole;
-	email?: string | null;
-	first_name?: string | null;
-	last_name?: string | null;
-	agent_name?: string | null;
-	avatar_url?: string | null;
-	description?: string | null; // For agents: description of what they do
-}
-
-/**
- * Transforms raw API participant data to ChatParticipant format
- *
- * Maps API fields to expected structure:
- * - Agents: uses `agent_name` as `name`
- * - Users: combines `first_name` and `last_name`, falls back to `email`
- *
- * Handles null/undefined values by providing sensible defaults
- * (empty strings, null for optional fields, undefined for omitted fields).
- *
- * @param raw - Raw participant data from API response
- * @returns Transformed ChatParticipant object with normalized fields
- */
-function transformParticipant(raw: RawParticipant): ChatParticipant {
-	let name: string;
-
-	if (raw.type === 'Agent') {
-		// For agents, use agent_name field
-		name = raw.agent_name || '';
-	} else {
-		// For users, combine first_name and last_name, or use email as fallback
-		const firstName = raw.first_name || '';
-		const lastName = raw.last_name || '';
-
-		if (firstName || lastName) {
-			name = [firstName, lastName].filter(Boolean).join(' ');
-		} else {
-			name = raw.email || '';
-		}
-	}
-
-	return {
-		id: raw.id,
-		name,
-		type: raw.type,
-		avatar_url: raw.avatar_url || null,
-		email: raw.email || undefined,
-		role: raw.role,
-		status: raw.status,
-		description: raw.description || undefined,
-	};
-}
 
 /**
  * Fetches participants that are currently in a specific chat room
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
- * @param participantType - Optional filter by participant type (Agent or User)
  * @returns Array of chat participants
  */
 export async function fetchChatParticipants(
 	httpClient: HttpClient,
 	chatId: string,
-	participantType?: ParticipantType,
 ): Promise<ChatParticipant[]> {
-	const queryParams: Record<string, string> = {
-		...includeProperty('participant_type', participantType),
-	};
-
-	const response = await httpClient.get<{ data: RawParticipant[] }>(
+	const response = await httpClient.get<{ data: ChatParticipant[] }>(
 		`/agent/chats/${chatId}/participants`,
-		queryParams,
 	);
 
-	const rawParticipants = response.data || [];
-	return rawParticipants.map(transformParticipant);
+	return response.data || [];
 }
 
 /**

@@ -1,5 +1,5 @@
 import { HttpClient } from '../http/client';
-import { Peer, PeersResponse } from '../types';
+import { PeersResponse } from '../types';
 import { includeProperty } from '../utils';
 
 /**
@@ -32,4 +32,3 @@ export async function fetchPeers(
 
 	return httpClient.get<PeersResponse>('/agent/peers', queryParams);
 }
-

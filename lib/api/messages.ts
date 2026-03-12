@@ -1,6 +1,6 @@
 import {
-	ChatMessageType,
 	ChatMessageMention,
+	ChatMessageType,
 	ChatEventType,
 	ThenvoiTextRequest,
 	ThenvoiEventRequest,

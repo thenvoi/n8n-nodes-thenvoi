@@ -3,14 +3,30 @@ import { ParticipantType } from './participant';
 
 // Type definitions for message handling
 
+/**
+ * Mention format for outgoing API requests (/messages endpoint).
+ * API requires both id and name for text messages.
+ */
 export interface ChatMessageMention {
 	id: string;
 	name: string;
 }
 
+/**
+ * Mention format for incoming data (socket events and API fetch responses).
+ * Socket sends only id; API fetch may include name.
+ */
+export interface IncomingMention {
+	id: string;
+	name?: string;
+}
+
+/**
+ * Metadata for chat messages (socket events and API fetch).
+ */
 export interface ChatMessageMetadata {
 	status: string;
-	mentions: ChatMessageMention[];
+	mentions: IncomingMention[];
 }
 
 /**
@@ -53,7 +69,7 @@ export interface ThenvoiMessagePayload {
 
 /**
  * Text message payload sent to /messages endpoint
- * Requires mentions array
+ * Requires mentions array with id and name
  */
 export interface ThenvoiTextPayload extends ThenvoiMessagePayload {
 	mentions: ChatMessageMention[];

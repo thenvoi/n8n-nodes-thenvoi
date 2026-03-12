@@ -2,7 +2,7 @@ import { ChatMessage, N8NMessageResponse, RawChatMessage } from '@lib/types';
 import { ITriggerFunctions } from 'n8n-workflow';
 import { MessageCreatedConfig } from '../../../types/config';
 import { BaseEventHandler } from '../base/BaseEventHandler';
-import { containsMention, createMessageResponse, parseMessageMentions } from './utils';
+import { containsMention, createMessageResponse } from './utils';
 
 /**
  * Event handler for message_created events
@@ -41,10 +41,6 @@ export class MessageCreatedHandler extends BaseEventHandler<
 	}
 
 	parseEventData(rawData: RawChatMessage, context: ITriggerFunctions): ChatMessage {
-		const eventData = super.parseEventData(rawData, context);
-
-		eventData.metadata.mentions = parseMessageMentions(eventData.metadata.mentions);
-
-		return eventData as ChatMessage;
+		return super.parseEventData(rawData, context) as ChatMessage;
 	}
 }

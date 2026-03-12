@@ -199,7 +199,7 @@ The trigger provides the following data to your workflow:
 
 - `id`: The ID of the message
 - `content`: The trimmed message content (without the agent mention)
-- `originalContent`: The original message content (with the agent mention)
+- `originalContent`: The original message content (with the agent mention; mentions use `@[[participant-id]]` format)
 - `sender`: The sender object containing the ID and type of the sender
 	- `id`: The ID of the sender
 	- `type`: The type of sender ("User" or "Agent")

@@ -288,7 +288,8 @@ Capabilities use API client for:
 - Verify API key header is added
 - Check API key has required permissions
 - Ensure credentials are properly configured
-- Trigger and agent nodes explicitly fail fast with `Invalid Thenvoi auth token (API key). Please verify your Thenvoi credentials.`
+- Trigger initialization fails fast with `Invalid Thenvoi auth token (API key). Please verify your Thenvoi credentials.`
+- Agent node authentication errors are surfaced during item execution with the same invalid-token message
 - Authentication failures are detected from HTTP status (`401`/`403`) and websocket auth errors for consistent behavior across node types
 
 ### Response Parsing Errors

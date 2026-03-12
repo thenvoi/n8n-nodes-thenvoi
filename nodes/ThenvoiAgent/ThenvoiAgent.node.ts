@@ -1,5 +1,6 @@
 import { IExecuteFunctions, INodeExecutionData, INodeType } from 'n8n-workflow';
 import { ThenvoiCredentials } from '@lib/types';
+import { validateThenvoiAuth } from '@lib/utils';
 import { nodeDescription } from './config/nodeConfig';
 import { processAgentItem } from './utils';
 
@@ -22,6 +23,8 @@ export class ThenvoiAgent implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const credentials = (await this.getCredentials('thenvoiApi')) as ThenvoiCredentials;
+		await validateThenvoiAuth(this, credentials);
+
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 

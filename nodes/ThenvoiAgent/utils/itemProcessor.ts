@@ -8,6 +8,11 @@
 
 import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 import { ThenvoiCredentials } from '@lib/types';
+import {
+	getSafeErrorMessage,
+	INVALID_AUTH_TOKEN_ERROR_MESSAGE,
+	isThenvoiAuthError,
+} from '@lib/utils';
 import { AgentNodeConfig, AgentExecutionResult } from '../types';
 import { getAgentConfig } from './config';
 import { validateAgentInput } from './validation';
@@ -113,7 +118,9 @@ function handleExecutionError(
 	error: Error,
 	index: number,
 ): INodeExecutionData | never {
-	const errorMessage = error.message || 'Unknown error occurred';
+	const errorMessage = isThenvoiAuthError(error)
+		? INVALID_AUTH_TOKEN_ERROR_MESSAGE
+		: getSafeErrorMessage(error);
 
 	ctx.logger.error('Agent execution failed', {
 		itemIndex: index,

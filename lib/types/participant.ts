@@ -15,9 +15,11 @@ export interface ChatParticipant {
 	id: string;
 	name: string;
 	type: ParticipantType;
-	role?: ParticipantRole;
-	status?: ParticipantStatus;
-	description?: string; // For agents: description of what they do
+	role: ParticipantRole;
+	/** Participant handle (username for users, owner/slug for agents). Required for mentions. */
+	handle: string;
+	/** For agents: description of what they do */
+	description?: string;
 }
 
 /**

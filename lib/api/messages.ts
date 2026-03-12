@@ -1,6 +1,5 @@
 import {
 	ChatMessageMention,
-	ChatMessageType,
 	ChatEventType,
 	ThenvoiTextRequest,
 	ThenvoiEventRequest,
@@ -124,8 +123,6 @@ interface MessageMetadata {
  * @param params - Optional query parameters:
  *   - page: Page number (default: 1)
  *   - page_size: Number of messages per page (default: 20, max: 100)
- *   - since: ISO timestamp to get messages after a certain date
- *   - message_type: Filter by message type (text, system, action, thought, etc.)
  *   - status: Filter by message status (pending, processing, processed, failed, all)
  * @returns Array of chat messages
  */
@@ -135,16 +132,12 @@ export async function fetchChatMessages(
 	params?: {
 		page?: number;
 		page_size?: number;
-		since?: string;
-		message_type?: ChatMessageType;
 		status?: 'pending' | 'processing' | 'processed' | 'failed' | 'all';
 	},
 ): Promise<ChatMessage[]> {
 	const queryParams: Record<string, string> = {
 		...includeProperty('page', params?.page?.toString()),
 		...includeProperty('page_size', params?.page_size?.toString()),
-		...includeProperty('since', params?.since),
-		...includeProperty('message_type', params?.message_type),
 		...includeProperty('status', params?.status),
 	};
 
@@ -165,13 +158,11 @@ export async function fetchChatMessages(
  * Fetches chat messages with limit and pagination
  *
  * Uses generic pagination utility to handle page fetching.
- * Only fetches specified message type (default: 'text').
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - Chat room ID
  * @param limit - Maximum messages to fetch
  * @param logger - Logger for pagination progress
- * @param messageType - Message type filter (default: 'text')
  * @returns Array of chat messages (up to limit)
  */
 export async function fetchChatMessagesWithLimit(
@@ -179,14 +170,12 @@ export async function fetchChatMessagesWithLimit(
 	chatId: string,
 	limit: number,
 	logger: Logger,
-	messageType: ChatMessageType = 'text',
 ): Promise<ChatMessage[]> {
 	return fetchPaginated({
 		fetchPage: (page, perPage) =>
 			fetchChatMessages(httpClient, chatId, {
 				page,
 				page_size: perPage,
-				message_type: messageType,
 			}),
 		perPage: 50,
 		limit,

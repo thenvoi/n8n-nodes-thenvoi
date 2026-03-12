@@ -79,6 +79,7 @@ export function formatParticipants(participants: ChatParticipant[]): string {
 				`  **Name**: ${p.name}`,
 				`  **Type**: ${p.type}`,
 				`  **Role**: ${p.role}`,
+				`  **Handle**: ${p.handle}`,
 			];
 
 			if (p.type === 'Agent' && p.description) {

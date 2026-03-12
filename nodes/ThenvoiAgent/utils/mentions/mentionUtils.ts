@@ -5,6 +5,7 @@
  */
 
 import { ChatMessageMention, ChatParticipant } from '@lib/types';
+import { includeProperty } from '@lib/utils';
 import { escapeRegex } from '@lib/utils/strings';
 
 /**
@@ -13,9 +14,9 @@ import { escapeRegex } from '@lib/utils/strings';
 const MENTION_ENDING_PUNCTUATION = '!.,;:?';
 
 /**
- * Detects participants mentioned in a message text using @Name format.
- * The AI is responsible for adding @ mentions in the text - this only detects them.
- * Matching is case-sensitive.
+ * Detects participants mentioned in a message text using @handle format only.
+ * Name is not valid for mentions. Only participants with a handle can be matched.
+ * Handles can contain /, ., - (e.g., john.doe/weather-agent).
  */
 export function detectMentions(
 	message: string,
@@ -27,50 +28,45 @@ export function detectMentions(
 	}
 
 	return participants
-		.filter((participant) => !!participant.name)
+		.filter(hasValidHandle)
 		.filter((participant) => !currentAgentId || participant.id !== currentAgentId)
 		.filter((participant) => {
-			// Trim whitespace from participant name to handle any edge cases
-			const trimmedName = participant.name.trim();
-			if (!trimmedName) {
-				return false;
-			}
-
-			const escapedName = escapeRegex(trimmedName);
-			// Match @Name followed by:
-			// - Punctuation (MENTION_ENDING_PUNCTUATION)
-			// - Whitespace (space, tab, newline)
-			// - Word boundary (for names ending with word characters)
-			// - End of string
-			// This handles cases like "@Treasure Hunter!", "@Treasure Hunter hello", "@Name.", etc.
-			// Using positive lookahead to ensure the mention is followed by valid characters
-			// Matching is case-sensitive as documented
-			const pattern = `@${escapedName}(?=[${MENTION_ENDING_PUNCTUATION}\\s]|\\b|$)`;
+			const handle = participant.handle.trim();
+			const escapedHandle = escapeRegex(handle);
+			// Match @handle followed by: punctuation, whitespace, word boundary, or end of string
+			const pattern = `@${escapedHandle}(?=[${MENTION_ENDING_PUNCTUATION}\\s]|\\b|$)`;
 			const atMentionPattern = new RegExp(pattern);
-
 			return atMentionPattern.test(message);
 		});
 }
 
 /**
  * Creates mention metadata for participants mentioned in the content.
+ * Handle is required - only participants with handle are included.
  * Content is returned unchanged - only mention metadata is created.
  */
 export function createMentionMetadata(
 	content: string,
 	participantsToMention: ChatParticipant[],
 ): { content: string; mentions: ChatMessageMention[] } {
-	if (participantsToMention.length === 0) {
+	const participantsWithHandle = participantsToMention.filter(hasValidHandle);
+
+	if (participantsWithHandle.length === 0) {
 		return { content, mentions: [] };
 	}
 
-	const mentions: ChatMessageMention[] = participantsToMention.map((participant) => ({
+	const mentions: ChatMessageMention[] = participantsWithHandle.map((participant) => ({
 		id: participant.id,
-		name: participant.name,
+		handle: participant.handle,
+		...includeProperty('name', participant.name),
 	}));
 
 	return {
 		content,
 		mentions,
 	};
+}
+
+export function hasValidHandle(participant: ChatParticipant): boolean {
+	return typeof participant.handle === 'string' && participant.handle.trim().length > 0;
 }

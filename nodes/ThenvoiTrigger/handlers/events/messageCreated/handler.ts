@@ -39,8 +39,4 @@ export class MessageCreatedHandler extends BaseEventHandler<
 	): N8NMessageResponse {
 		return createMessageResponse(data, config.agentId);
 	}
-
-	parseEventData(rawData: RawChatMessage, context: ITriggerFunctions): ChatMessage {
-		return super.parseEventData(rawData, context) as ChatMessage;
-	}
 }

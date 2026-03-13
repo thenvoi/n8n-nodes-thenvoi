@@ -5,7 +5,7 @@
  */
 
 import { ChatMessageMention, ChatParticipant } from '@lib/types';
-import { includeProperty } from '@lib/utils';
+import { hasValidHandle, includeProperty } from '@lib/utils';
 import { escapeRegex } from '@lib/utils/strings';
 
 /**
@@ -65,8 +65,4 @@ export function createMentionMetadata(
 		content,
 		mentions,
 	};
-}
-
-export function hasValidHandle(participant: ChatParticipant): boolean {
-	return typeof participant.handle === 'string' && participant.handle.trim().length > 0;
 }

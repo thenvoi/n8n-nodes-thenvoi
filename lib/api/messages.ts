@@ -20,17 +20,17 @@ import { Logger } from 'n8n-workflow';
  * @param chatId - ID of the chat room
  * @param content - Message content
  * @param mentions - Array of mentions (required, must have at least one)
- * @returns API response data
+ * @returns Resolves when message is accepted by the API
  */
 export async function sendTextMessageToThenvoi(
 	httpClient: HttpClient,
 	chatId: string,
 	content: string,
 	mentions: ChatMessageMention[],
-): Promise<unknown> {
+): Promise<void> {
 	const body = buildTextPayload(content, mentions);
 
-	return await httpClient.post(`/agent/chats/${chatId}/messages`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages`, body);
 }
 
 /**
@@ -44,7 +44,7 @@ export async function sendTextMessageToThenvoi(
  * @param eventType - Type of event to send
  * @param content - Event content
  * @param metadata - Optional metadata for the event
- * @returns API response data
+ * @returns Resolves when event is accepted by the API
  */
 export async function sendEventToThenvoi(
 	httpClient: HttpClient,
@@ -52,10 +52,10 @@ export async function sendEventToThenvoi(
 	eventType: ChatEventType,
 	content: string,
 	metadata?: Record<string, unknown>,
-): Promise<unknown> {
+): Promise<void> {
 	const body = buildEventPayload(eventType, content, metadata);
 
-	return await httpClient.post(`/agent/chats/${chatId}/events`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/events`, body);
 }
 
 /**
@@ -146,12 +146,18 @@ export async function fetchChatMessages(
 		queryParams,
 	);
 
-	// Parse date strings to Date objects for EventData type
-	return (response.data || []).map((message) => ({
+	return (response.data || []).map(parseChatMessage);
+}
+
+/**
+ * Parses a raw chat message date fields from strings to Date objects.
+ */
+function parseChatMessage(message: RawChatMessage): ChatMessage {
+	return {
 		...message,
 		inserted_at: new Date(message.inserted_at),
 		updated_at: new Date(message.updated_at),
-	})) as ChatMessage[];
+	};
 }
 
 /**
@@ -193,14 +199,14 @@ export async function fetchChatMessagesWithLimit(
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as processing
- * @returns API response data
+ * @returns Resolves when processing state is recorded
  */
 export async function markMessageAsProcessing(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
-): Promise<unknown> {
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processing`);
+): Promise<void> {
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/processing`);
 }
 
 /**
@@ -212,14 +218,14 @@ export async function markMessageAsProcessing(
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as processed
- * @returns API response data
+ * @returns Resolves when processed state is recorded
  */
 export async function markMessageAsProcessed(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
-): Promise<unknown> {
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processed`);
+): Promise<void> {
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/processed`);
 }
 
 /**
@@ -232,14 +238,14 @@ export async function markMessageAsProcessed(
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as failed
  * @param errorMessage - Error message describing why processing failed
- * @returns API response data
+ * @returns Resolves when failed state is recorded
  */
 export async function markMessageAsFailed(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
 	errorMessage: string,
-): Promise<unknown> {
+): Promise<void> {
 	const body = { error: errorMessage };
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/failed`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/failed`, body);
 }

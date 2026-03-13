@@ -154,14 +154,14 @@ graph TB
 Mention detection extracts @mentions from message text:
 
 **Process**:
-1. **Pattern Matching**: Find @Name patterns in text
-2. **Participant Lookup**: Match names to participant list
+1. **Pattern Matching**: Find @handle patterns in text
+2. **Participant Lookup**: Match handles to participant list
 3. **Metadata Creation**: Create mention metadata for API
 4. **Validation**: Ensure at least one mention exists
 
 **Mention Format**:
-- Pattern: `@Name` (case-sensitive)
-- Must match participant name exactly
+- Pattern: `@handle` (case-sensitive)
+- Must match participant handle exactly
 - Multiple mentions supported
 
 ### Processing Status
@@ -260,16 +260,19 @@ The `wait()` method ensures all messages sent:
 ```json
 {
   "message": {
-    "content": "@ParticipantName I've completed the analysis. Here are the results you requested.",
+    "content": "@john.smith I've completed the analysis. Here are the results you requested.",
     "mentions": [
       {
         "id": "550e8400-e29b-41d4-a716-446655440000",
-        "username": "ParticipantName"
+        "handle": "john.smith",
+        "name": "John Smith"
       }
     ]
   }
 }
 ```
+
+Mentions require `id`; `handle` and `name` are optional.
 
 ### Event Message Format
 
@@ -334,7 +337,7 @@ The `wait()` method ensures all messages sent:
 ### Mentions Not Working
 
 - Verify participant list is populated
-- Check mention format matches participant names
+- Check mention format matches participant handles
 - Ensure mention detection is case-sensitive
 - Verify mention metadata is created correctly
 

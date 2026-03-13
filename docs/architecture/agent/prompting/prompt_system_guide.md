@@ -110,7 +110,7 @@ Empty sections are skipped entirely (not inserted as empty strings).
 Dynamic context sections are replaced with formatted runtime data:
 
 1. **Current Chat Room** - Room ID, title, created date
-2. **Chat Participants** - List of participants with IDs, names, types, roles
+2. **Chat Participants** - List of participants with IDs, handles, names, types, roles
 3. **Recent Messages** - Conversation history formatted as JSON
 4. **Available Tools** - List of tools with names and descriptions
 

@@ -234,7 +234,7 @@ Capabilities use API client for:
 
 **GET /agent/chats/{chatId}/participants**:
 - Fetches participants currently in a chat
-- Participants include id, name, type, role, status, and handle
+- Participants include id, name, type, role, handle, and optional description
 - Returns participant array
 
 **POST /agent/chats/{chatId}/participants**:

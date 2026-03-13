@@ -180,7 +180,7 @@ Provide example interactions showing desired behavior:
 
 User: @WeatherBot What's the weather in London?
 
-WeatherBot uses send_message("@John Smith Currently in London, it's 15°C with 
+WeatherBot uses send_message("@john.smith Currently in London, it's 15°C with 
 partly cloudy skies and 65% humidity. Conditions are pleasant for outdoor activities!")
 
 Thoughts: User asked about London weather. Provided current conditions with context.
@@ -189,7 +189,7 @@ Thoughts: User asked about London weather. Provided current conditions with cont
 
 User: @WeatherBot Any alerts for Miami?
 
-WeatherBot uses send_message("@John Smith Yes! There's a tropical storm warning 
+WeatherBot uses send_message("@john.smith Yes! There's a tropical storm warning 
 for Miami. Heavy rain and winds up to 70mph expected starting tonight. I recommend 
 staying indoors and securing outdoor items.")
 
@@ -435,7 +435,7 @@ accurate, timely weather information with a friendly and professional tone.
 
 ### Agent Using Wrong Names in Mentions
 
-**Issue**: Agent uses "@user" or generic names instead of actual names
+**Issue**: Agent uses placeholder mentions (like "@user") instead of exact handles
 
 **Solutions**:
 - ✅ Check CHAT PARTICIPANTS section is being injected

@@ -205,7 +205,7 @@ add_participant_to_chat(participant_identifier: "uuid-here" or "Participant Name
 list_available_participants()
 ```
 
-**Returns:** List of available participants with their IDs, names, types, and descriptions
+**Returns:** List of available participants with their IDs, names, handles, types, and descriptions
 
 ### remove_participant_from_chat
 
@@ -285,11 +285,11 @@ Protect user privacy by separating user information from agent communications:
 1. **First**: Acknowledge the user with `send_message`
    - `send_message("@john.doe I'll check the weather for you!")`
 2. **Then**: Add the agent if needed
-   - `add_participant_to_chat(weather_agent_id, "member")`
+   - `add_participant_to_chat("weather_agent_id")`
 3. **Then**: Ask the agent in a SEPARATE message
-   - `send_message("@john.doe/weather-assistant What's the weather in Houston?")`
+   - `send_message("@richard.roe/weather-assistant What's the weather in Houston?")`
 4. **Finally**: Deliver final response to user
-   - `send_message("@john.doe/executive-assistant It's sunny and 75°F in Houston today!")`
+   - `send_message("@john.doe It's sunny and 75°F in Houston today!")`
 
 This ensures user information isn't unnecessarily shared with other agents.
 
@@ -356,7 +356,7 @@ Here are common patterns for effective agent behavior:
 ```
 User: @WeatherBot What is the capital of France?
 
-send_message("@john.doe/executive-assistant The capital of France is Paris.")
+send_message("@john.doe The capital of France is Paris.")
 
 Thoughts: "John asked a straightforward factual question about geography.
 I provided the answer directly since this is common knowledge."
@@ -369,8 +369,8 @@ I provided the answer directly since this is common knowledge."
 ```
 User: @WeatherBot Can you check the weather in Tokyo?
 
-send_message("@john.doe/executive-assistant Let me check the current weather in Tokyo for you.")
-send_message("@john.doe/executive-assistant It's currently 22°C and partly cloudy in Tokyo.")
+send_message("@john.doe Let me check the current weather in Tokyo for you.")
+send_message("@john.doe It's currently 22°C and partly cloudy in Tokyo.")
 
 Thoughts: "John asked about Tokyo weather. I acknowledged his request first
 to let him know I was working on it, then provided the current conditions."
@@ -386,7 +386,7 @@ This pattern spans TWO separate workflow executions:
 ```
 User: @SupportBot What's the security status of our network?
 
-send_message("@sarah.doe/executive-assistant I'll check with our Security Monitor for you.")
+send_message("@sarah.smith I'll check with our Security Monitor for you.")
 add_participant_to_chat("Security Monitor")
 send_message("@john.doe/security-monitor Can you provide the current network security status?")
 
@@ -401,7 +401,7 @@ then asked Security Monitor for the status. Waiting for their response."
 ```
 Security Monitor: @SupportBot All systems secure. No threats detected.
 
-send_message("@sarah.doe/executive-assistant Good news! Security Monitor reports all systems are secure with no threats detected.")
+send_message("@sarah.smith Good news! Security Monitor reports all systems are secure with no threats detected.")
 
 Thoughts: "Got response from Security Monitor - all secure. Relayed to Sarah in friendly format."
 
@@ -417,9 +417,9 @@ Thoughts: "Got response from Security Monitor - all secure. Relayed to Sarah in 
 ```
 User: @MotivationBot Send 3 encouraging messages
 
-send_message("@john.doe/executive-assistant You're doing great! Keep up the excellent work!")
-send_message("@john.doe/executive-assistant Every challenge is an opportunity to grow stronger.")
-send_message("@john.doe/executive-assistant Believe in yourself - you've got this!")
+send_message("@john.doe You're doing great! Keep up the excellent work!")
+send_message("@john.doe Every challenge is an opportunity to grow stronger.")
+send_message("@john.doe Believe in yourself - you've got this!")
 
 Thoughts: "Sent 3 encouraging messages with varied themes as requested."
 ```
@@ -453,7 +453,7 @@ Thoughts (your output): "To help you choose a warm destination for next week, co
 ```
 User: @TravelBot Can you choose a good place for me that is warm next week?
 
-send_message("@john.doe/executive-assistant To help you choose a warm destination for next week, could you specify if you're looking for places within a particular region or country? Additionally, any interests or activities you'd like to enjoy could help narrow down the perfect location for you!")
+send_message("@john.smith To help you choose a warm destination for next week, could you specify if you're looking for places within a particular region or country? Additionally, any interests or activities you'd like to enjoy could help narrow down the perfect location for you!")
 
 Thoughts (your output): "User asked for warm destination but didn't specify preferences. Asked for clarification to provide better recommendations."
 ```
@@ -481,7 +481,7 @@ User: @WeatherBot What's the weather?
 
 [Agent uses weather tool]
 
-send_message("@john.doe/executive-assistant It's currently 22°C and sunny in Boston. Perfect weather for outdoor activities!")
+send_message("@john.smith It's currently 22°C and sunny in Boston. Perfect weather for outdoor activities!")
 
 Thoughts (your output): "Retrieved weather data for Boston and provided user with current conditions."
 ```

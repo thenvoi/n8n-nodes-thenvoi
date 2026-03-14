@@ -6,6 +6,7 @@ import {
 	extractToolName,
 } from '../../utils/messages/toolFormatters';
 import { getSafeErrorMessage } from '@lib/utils';
+import type { ToolErrorResult } from '../../types';
 
 /**
  * Sends tool call message to Thenvoi
@@ -22,7 +23,32 @@ function sendToolCallMessage(
 }
 
 /**
+ * Extracts error message from tool output if the tool returned error JSON
+ *
+ * Tools use structured format: { success: false, error: string }
+ */
+function extractToolOutputError(output: string): string | null {
+	try {
+		const parsed = JSON.parse(output) as ToolErrorResult;
+		if (
+			typeof parsed === 'object' &&
+			parsed !== null &&
+			parsed.success === false &&
+			typeof parsed.error === 'string'
+		) {
+			return parsed.error.trim() || null;
+		}
+	} catch {
+		// Not JSON or parse failed - no structured error
+	}
+	return null;
+}
+
+/**
  * Sends tool result message to Thenvoi
+ *
+ * When the tool returns error JSON (e.g. send_message validation failure),
+ * also sends an error event so the user sees it in the channel.
  */
 function sendToolResultMessage(ctx: CallbackContext, output: string, runId: string): void {
 	const toolResultEvent = formatToolResult(output, runId);
@@ -33,6 +59,11 @@ function sendToolResultMessage(ctx: CallbackContext, output: string, runId: stri
 		undefined,
 		toolResultEvent.metadata,
 	);
+
+	const errorMessage = extractToolOutputError(output);
+	if (errorMessage) {
+		ctx.messageQueue.enqueue('error', errorMessage);
+	}
 }
 
 /**

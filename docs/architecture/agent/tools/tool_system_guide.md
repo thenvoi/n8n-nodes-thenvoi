@@ -81,7 +81,7 @@ All tools implement LangChain's `StructuredTool` interface:
 
 - Fetches available participants from API
 - Filters to show only addable participants
-- Returns formatted list with IDs and names
+- Returns formatted list with IDs, handles, and names
 
 **Usage**: Agents use this to discover who they can add to the chat.
 
@@ -206,8 +206,8 @@ graph LR
 
 The send_message tool detects mentions:
 
-1. **Pattern Matching**: Finds @Name patterns in message text
-2. **Participant Lookup**: Matches names to participant list
+1. **Pattern Matching**: Finds @handle patterns in message text
+2. **Participant Lookup**: Matches handles to participant list
 3. **Validation**: Ensures at least one mention exists
 4. **Metadata Creation**: Creates mention metadata for API
 
@@ -221,7 +221,12 @@ Tools handle errors gracefully:
 - **API Errors**: Return formatted error responses
 - **Tool Errors**: Logged but don't crash execution
 
-**Error Format**: Tools return JSON strings with error details for the LLM.
+**Result Format**: Tools return JSON strings with a consistent structure:
+
+- **Success**: `{ success: true, message?: string, ...toolSpecificFields }`
+- **Error**: `{ success: false, error: string, ...optionalExtra }`
+
+All tools use this format for predictable parsing and LLM interpretation.
 
 ## Custom Tools
 

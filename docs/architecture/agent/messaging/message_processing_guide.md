@@ -154,14 +154,18 @@ graph TB
 Mention detection extracts @mentions from message text:
 
 **Process**:
-1. **Pattern Matching**: Find @Name patterns in text
-2. **Participant Lookup**: Match names to participant list
+1. **Pattern Matching**: Find @handle patterns in text
+2. **Participant Lookup**: Match handles to participant list
 3. **Metadata Creation**: Create mention metadata for API
 4. **Validation**: Ensure at least one mention exists
 
 **Mention Format**:
-- Pattern: `@Name` (case-sensitive)
-- Must match participant name exactly
+- Pattern: `@handle` (case-sensitive)
+- User handles: lowercase letters (a-z), numbers, hyphen, and dot in the middle only (e.g. `john.doe`)
+- Agent handles: owner/slug format (e.g. `john.doe/weather-assistant`)
+- A mention ends when followed by any character not valid for handles (e.g. `@john` in `@john-agent` does not match)
+- User handles are not matched when they are a prefix of an agent handle (e.g. `@john.doe` does not match in `@john.doe/weather-assistant`)
+- Must match participant handle exactly
 - Multiple mentions supported
 
 ### Processing Status
@@ -206,7 +210,9 @@ Status updates integrated into pipeline:
 
 1. **Start**: Mark processing at execution start
 2. **Success**: Mark processed on success
-3. **Error**: Mark failed on error
+3. **Error**: Send error event to channel, mark failed, update message status
+
+When execution fails, an error event is always sent to the channel so users see the failure in the chat.
 
 See [Execution Pipeline Guide](../execution/execution_pipeline_guide.md) for details.
 
@@ -218,6 +224,8 @@ Send message tool uses queue:
 2. **Validation**: Tool validates message and mentions
 3. **Enqueue**: Message enqueued to queue
 4. **Return**: Tool returns success status
+
+When a tool returns error JSON (e.g. send_message validation failure), an error event is also sent to the channel so users see the failure prominently.
 
 See [Tool System Guide](../tools/tool_system_guide.md) for details.
 
@@ -260,16 +268,19 @@ The `wait()` method ensures all messages sent:
 ```json
 {
   "message": {
-    "content": "@ParticipantName I've completed the analysis. Here are the results you requested.",
+    "content": "@john.smith I've completed the analysis. Here are the results you requested.",
     "mentions": [
       {
         "id": "550e8400-e29b-41d4-a716-446655440000",
-        "username": "ParticipantName"
+        "handle": "john.smith",
+        "name": "John Smith"
       }
     ]
   }
 }
 ```
+
+Mentions require `id`; `handle` and `name` are optional.
 
 ### Event Message Format
 
@@ -334,7 +345,7 @@ The `wait()` method ensures all messages sent:
 ### Mentions Not Working
 
 - Verify participant list is populated
-- Check mention format matches participant names
+- Check mention format matches participant handles
 - Ensure mention detection is case-sensitive
 - Verify mention metadata is created correctly
 

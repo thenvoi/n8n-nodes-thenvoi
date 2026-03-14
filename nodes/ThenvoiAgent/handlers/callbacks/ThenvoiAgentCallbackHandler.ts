@@ -225,6 +225,15 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 		this.ctx.messageQueue.enqueue('task', taskMessage);
 	}
 
+	/**
+	 * Sends an error event to the channel
+	 *
+	 * Called when agent execution fails so the user sees the error in the chat.
+	 */
+	async sendError(errorMessage: string): Promise<void> {
+		this.ctx.messageQueue.enqueue('error', errorMessage);
+	}
+
 	private formatTaskSummary(task: string, status: TaskStatus, summary?: string): string {
 		const lines = [`UUID: ${this.taskId}`, `Task: ${task}`, `Status: ${status}`];
 

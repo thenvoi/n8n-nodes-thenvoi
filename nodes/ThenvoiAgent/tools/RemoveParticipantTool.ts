@@ -17,6 +17,7 @@ import { ChatParticipant } from '@lib/types';
 import { HttpClient } from '@lib/http/client';
 import { removeParticipantFromChat } from '@lib/api';
 import { formatToolErrorResponse } from '../utils/errors';
+import { formatToolSuccess, formatToolError } from '../utils/toolResult';
 
 /**
  * Tool configuration dependencies
@@ -59,16 +60,14 @@ export class RemoveParticipantTool extends Tool {
 		const trimmedId = participantId.trim();
 
 		if (!trimmedId) {
-			return JSON.stringify({
-				error: 'Participant ID is required',
-			});
+			return formatToolError('Participant ID is required');
 		}
 
 		const participant = this.findParticipantById(trimmedId);
 		if (!participant) {
-			return JSON.stringify({
-				error: `Participant with ID "${trimmedId}" not found in chat. Check the CHAT PARTICIPANTS section for valid participant IDs.`,
-			});
+			return formatToolError(
+				`Participant with ID "${trimmedId}" not found in chat. Check the CHAT PARTICIPANTS section for valid participant IDs.`,
+			);
 		}
 
 		try {
@@ -82,8 +81,7 @@ export class RemoveParticipantTool extends Tool {
 				this.onParticipantRemoved(trimmedId);
 			}
 
-			return JSON.stringify({
-				success: true,
+			return formatToolSuccess({
 				message: `Successfully removed "${participant.name}" from the chat.`,
 				participantId: trimmedId,
 				participantName: participant.name,

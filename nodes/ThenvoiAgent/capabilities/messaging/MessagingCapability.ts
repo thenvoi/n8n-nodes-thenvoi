@@ -164,6 +164,8 @@ export class MessagingCapability implements Capability {
 
 		const errorMessage = error.message || 'Unknown error occurred';
 
+		await this.handler.sendError(errorMessage);
+
 		if (this.sendTaskUpdates) {
 			await this.handler.sendTaskUpdate(ctx.input, 'failed', `Error: ${errorMessage}`);
 		}

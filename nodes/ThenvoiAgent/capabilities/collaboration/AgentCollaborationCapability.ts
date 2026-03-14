@@ -77,7 +77,7 @@ export class AgentCollaborationCapability implements Capability {
 		ctx: CapabilityContext,
 	): Promise<void> {
 		[this.availableParticipants, this.currentParticipants, this.chatRoom] = await Promise.all([
-			fetchAllAvailableParticipants(httpClient, chatId),
+			fetchAllAvailableParticipants(httpClient, chatId, ctx.execution.logger),
 			fetchChatParticipants(httpClient, chatId),
 			fetchChatRoom(httpClient, chatId),
 		]);
@@ -120,6 +120,7 @@ export class AgentCollaborationCapability implements Capability {
 		const listAvailableConfig: ListAvailableParticipantsToolConfig = {
 			httpClient,
 			chatId,
+			logger: ctx.execution.logger,
 		};
 
 		const removeParticipantConfig: RemoveParticipantToolConfig = {

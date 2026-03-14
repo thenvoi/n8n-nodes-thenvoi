@@ -9,16 +9,19 @@ import { hasValidHandle, includeProperty } from '@lib/utils';
 import { escapeRegex } from '@lib/utils/strings';
 
 /**
- * Handles may only contain lowercase letters (a-z), numbers, and hyphen.
- * A mention ends when followed by any other character or end of string.
- * This prevents prefix matching (e.g. @john does not match inside @john-agent).
+ * Handles may contain lowercase letters (a-z), numbers, hyphen, dot (middle only), and slash.
+ * Agent handles use owner/slug format (e.g. john.doe/weather-assistant).
+ * A mention ends when followed by any character not valid for handles or end of string.
+ * Including / and . in the valid continuation set prevents @john.doe from matching inside
+ * @john.doe/weather-assistant or @john.doe.smith (longer handles).
  */
-const MENTION_END_LOOKAHEAD = '(?=[^a-z0-9-]|$)';
+const MENTION_END_LOOKAHEAD = '(?=[^a-z0-9-/.]|$)';
 
 /**
  * Detects participants mentioned in a message text using @handle format only.
  * Name is not valid for mentions. Only participants with a handle can be matched.
- * A mention ends at any character that's not valid for handles (lowercase letters, numbers, hyphen).
+ * Agent handles (owner/slug) are matched in full; user handles are not matched when
+ * they are a prefix of an agent handle (e.g. @john.doe does not match in @john.doe/weather-assistant).
  */
 export function detectMentions(
 	message: string,

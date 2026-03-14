@@ -161,8 +161,10 @@ Mention detection extracts @mentions from message text:
 
 **Mention Format**:
 - Pattern: `@handle` (case-sensitive)
-- Handles may only contain lowercase letters (a-z), numbers, and hyphen
-- A mention ends when followed by any other character (e.g. `@john` in `@john-agent` does not match)
+- User handles: lowercase letters (a-z), numbers, hyphen, and dot in the middle only (e.g. `john.doe`)
+- Agent handles: owner/slug format (e.g. `john.doe/weather-assistant`)
+- A mention ends when followed by any character not valid for handles (e.g. `@john` in `@john-agent` does not match)
+- User handles are not matched when they are a prefix of an agent handle (e.g. `@john.doe` does not match in `@john.doe/weather-assistant`)
 - Must match participant handle exactly
 - Multiple mentions supported
 

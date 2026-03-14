@@ -27,7 +27,7 @@ Metadata attached to messages identifying who sent them:
 This information is stored with HumanMessages in memory and used by formatters to display proper sender names in prompts.
 
 ### Handle
-The participant's unique identifier used for @mentions. May only contain lowercase letters (a-z), numbers, and hyphen. For users: username. For agents: owner/slug format. Required on chat participants, used for mention pattern matching in message content. Agents must use exact handles from the CHAT PARTICIPANTS section when composing mentions.
+The participant's unique identifier used for @mentions. For users: username (lowercase letters, numbers, hyphen, dot in the middle only). For agents: owner/slug format (e.g. `john.doe/weather-assistant`). Required on chat participants, used for mention pattern matching in message content. Agents must use exact handles from the CHAT PARTICIPANTS section when composing mentions. When both a user and agent share the same owner prefix (e.g. `john.doe` vs `john.doe/weather-assistant`), the full handle is matched to avoid incorrect prefix matching.
 
 ### Peer
 An entity (agent or user) that the authenticated agent can interact with. Fetched from the `/agent/peers` endpoint. Peers include handle, id, name, type, is_contact, and source. Used when adding participants to chats via the collaboration capability.

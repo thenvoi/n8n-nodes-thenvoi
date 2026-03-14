@@ -28,21 +28,23 @@ The template serves two functions:
    ↓
 3. Communication Model (thoughts vs send_message)
    ↓
-4. Dynamic Context (Chat room, participants, messages, tools)
+4. Internal Thoughts (planning, reasoning, context tracking)
    ↓
-5. Mentions (handle format, rules)
+5. Dynamic Context (Chat room, participants, messages, tools)
    ↓
-6. Privacy (separate user info from agent messages)
+6. Mentions (handle format, rules, example)
    ↓
-7. Working with Other Agents (add, ask, relay)
+7. Privacy (separate user info from agent messages)
    ↓
-8. {{USER_SPECIFIC_GUIDELINES}} ← User customization point (optional)
+8. Working with Other Agents (search, add, delegate, relay)
    ↓
-9. {{USER_EXAMPLES}} ← User customization point (optional)
+9. {{USER_SPECIFIC_GUIDELINES}} ← User customization point (optional)
    ↓
-10. Key Rules (concise rule list)
+10. {{USER_EXAMPLES}} ← User customization point (optional)
     ↓
-11. Remember (core principles summary)
+11. Key Rules (concise rule list)
+    ↓
+12. Remember (core principles summary)
 ```
 
 ### Design Principles

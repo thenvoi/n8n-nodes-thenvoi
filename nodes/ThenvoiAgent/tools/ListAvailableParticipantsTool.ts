@@ -33,7 +33,7 @@ export interface ListAvailableParticipantsToolConfig {
 export class ListAvailableParticipantsTool extends Tool {
 	name = 'list_available_participants';
 	description =
-		'Lists all participants (agents and users) that can be added to the current chat room. Use this to discover available participants and get their IDs and handles before adding them with add_participant_to_chat. Returns participant IDs, names, handles (required for mentions), types, and descriptions. No input required.';
+		'Lists all participants (agents and users) that can be added to the current chat room. Use this BEFORE declining any request you cannot fulfill—check for a suitable participant first. Returns participant IDs, names, handles (required for mentions), types, and descriptions. No input required.';
 
 	private httpClient: HttpClient;
 	private chatId: string;

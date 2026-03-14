@@ -26,33 +26,36 @@ The template serves two functions:
    ↓
 2. {{USER_AGENT_ROLE}} ← User customization point (required)
    ↓
-3. Communication Model (thoughts vs send_message)
+3. Dynamic Context (Chat room, participants, messages, tools)
    ↓
-4. Internal Thoughts (planning, reasoning, context tracking)
+4. Communication Model (send_message, tone, tool efficiency)
    ↓
-5. Dynamic Context (Chat room, participants, messages, tools)
+5. Internal Thoughts (planning, reasoning, context tracking)
    ↓
-6. Mentions (handle format, rules, example)
+6. Mentions (handle format, self-identification, rules)
    ↓
 7. Privacy (separate user info from agent messages)
    ↓
-8. Working with Other Agents (search, add, delegate, relay)
+8. Working with Other Agents (find, add, delegate, relay, fallback)
    ↓
 9. {{USER_SPECIFIC_GUIDELINES}} ← User customization point (optional)
    ↓
 10. {{USER_EXAMPLES}} ← User customization point (optional)
     ↓
-11. Key Rules (concise rule list)
+11. Key Rules (concise rule list — 7 rules)
     ↓
-12. Remember (core principles summary)
+12. Remember (platform context + search-before-decline reinforcement)
 ```
+
+Dynamic Context is placed early (before behavioral instructions) so the agent has full situational awareness before reading how to act. This avoids the attention valley caused by variable-length context in the middle of instructions.
 
 ### Design Principles
 
-- **State each rule once** — no repetition across sections
+- **State each rule once** — no repetition across sections (Key Rules are a deliberate summary exception)
 - **Trust the model** — don't over-explain basic capabilities
 - **Concise tool references** — tools describe themselves via their schemas
 - **Minimal examples** — the model understands chat and tool-calling semantics
+- **No bold overuse** — reserve emphasis for the 1-2 most critical rules only; semantic weight is more reliable than visual emphasis
 
 ---
 
@@ -141,6 +144,10 @@ Verify agent sends user-facing and agent-facing messages separately.
 
 Verify base behavior is preserved when custom role, guidelines, and examples are injected.
 
+### Test Scenario 6: Search Before Declining
+
+When the agent cannot fulfill a request (e.g., weather, real-time data), verify it uses `list_available_participants` to check for a suitable agent before saying it can't help. It should only decline after confirming no suitable participant exists.
+
 ### Regression Testing
 
 After ANY changes:
@@ -159,7 +166,7 @@ Gradually adding content until the prompt is unwieldy. Before adding anything, a
 
 ### Repetition
 
-Stating the same rule in multiple sections. The current template is intentionally concise — each rule appears exactly once. Don't duplicate.
+Stating the same rule in multiple sections. The current template is intentionally concise — each rule appears exactly once. The Key Rules section is a deliberate exception: it serves as end-of-prompt reinforcement (recency bias) and may briefly restate earlier rules in condensed form. Don't duplicate outside this pattern.
 
 ### Over-Specifying Tools
 

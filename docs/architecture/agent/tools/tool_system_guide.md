@@ -221,7 +221,12 @@ Tools handle errors gracefully:
 - **API Errors**: Return formatted error responses
 - **Tool Errors**: Logged but don't crash execution
 
-**Error Format**: Tools return JSON strings with error details for the LLM.
+**Result Format**: Tools return JSON strings with a consistent structure:
+
+- **Success**: `{ success: true, message?: string, ...toolSpecificFields }`
+- **Error**: `{ success: false, error: string, ...optionalExtra }`
+
+All tools use this format for predictable parsing and LLM interpretation.
 
 ## Custom Tools
 

@@ -15,6 +15,7 @@ import { fetchAllAvailableParticipants } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
 import { Peer } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
+import { formatToolSuccess } from '../utils/toolResult';
 
 /**
  * Tool configuration dependencies
@@ -53,7 +54,7 @@ export class ListAvailableParticipantsTool extends Tool {
 
 			const formattedParticipants = this.formatParticipants(participants);
 
-			return JSON.stringify({
+			return formatToolSuccess({
 				participants: formattedParticipants,
 				count: formattedParticipants.length,
 			});

@@ -16,6 +16,7 @@ import { addParticipantToChat } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
 import { ChatParticipant, Peer } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
+import { formatToolSuccess, formatToolError } from '../utils/toolResult';
 import { includeProperty } from '@lib/utils';
 
 /**
@@ -66,20 +67,18 @@ export class AddParticipantTool extends Tool {
 			this.findParticipantById(participant_identifier) ||
 			this.findParticipantByName(participant_identifier);
 		if (!participant) {
-			return JSON.stringify({
-				error: this.buildParticipantNotFoundError(participant_identifier),
-				availableParticipants: this.availableParticipants.map((p) => ({
-					id: p.id,
-					name: p.name,
-					handle: p.handle,
-					type: p.type,
-				})),
-			});
+			const error = this.buildParticipantNotFoundError(participant_identifier);
+			const availableParticipants = this.availableParticipants.map((p) => ({
+				id: p.id,
+				name: p.name,
+				handle: p.handle,
+				type: p.type,
+			}));
+			return formatToolError(error, { availableParticipants });
 		}
 
 		if (this.isParticipantAlreadyInChat(participant)) {
-			return JSON.stringify({
-				success: true,
+			return formatToolSuccess({
 				message: this.buildAlreadyInChatMessage(participant),
 				participant: this.createChatParticipant(participant),
 				alreadyInChat: true,
@@ -88,8 +87,7 @@ export class AddParticipantTool extends Tool {
 
 		try {
 			const chatParticipant = await this.addParticipant(participant);
-			return JSON.stringify({
-				success: true,
+			return formatToolSuccess({
 				message: this.buildSuccessMessage(participant),
 				participant: chatParticipant,
 			});

@@ -18,3 +18,6 @@ export * from './common';
 
 // Memory types
 export * from './memory';
+
+// Tool result types
+export * from './toolResult';

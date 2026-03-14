@@ -1,7 +1,9 @@
+import type { Logger } from 'n8n-workflow';
 import { hasValidHandle } from '@lib/utils';
 import { HttpClient } from '../http/client';
 import { AddParticipantRequest, ChatParticipant, ParticipantType, Peer } from '../types';
 import { fetchPeers } from './peers';
+import { fetchPaginated } from '../utils/pagination';
 
 /**
  * Fetches participants that are currently in a specific chat room
@@ -48,23 +50,31 @@ export async function fetchAvailableParticipants(
 /**
  * Fetches all available participants (both agents and users) that can be added to a chat room
  *
- * Uses the /agent/peers endpoint with not_in_chat filter to get all peers
- * (agents and users) that are not already in the chat.
+ * Uses the /agent/peers endpoint with not_in_chat filter. Fetches all pages to ensure complete results.
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
+ * @param logger - Logger for pagination progress
  * @returns Array of all peers that can be added to the chat
  */
 export async function fetchAllAvailableParticipants(
 	httpClient: HttpClient,
 	chatId: string,
+	logger: Logger,
 ): Promise<Peer[]> {
-	const peersResponse = await fetchPeers(httpClient, {
-		notInChat: chatId,
-		pageSize: 100,
+	return fetchPaginated({
+		fetchPage: async (page, perPage) => {
+			const response = await fetchPeers(httpClient, {
+				notInChat: chatId,
+				page,
+				pageSize: perPage,
+			});
+			return response.data || [];
+		},
+		perPage: 100,
+		logger,
+		resourceName: 'available participants',
 	});
-
-	return peersResponse.data;
 }
 
 /**

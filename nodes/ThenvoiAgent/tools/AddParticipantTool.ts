@@ -16,6 +16,7 @@ import { addParticipantToChat } from '@lib/api';
 import { HttpClient } from '@lib/http/client';
 import { ChatParticipant, Peer } from '@lib/types';
 import { formatToolErrorResponse } from '../utils/errors';
+import { includeProperty } from '@lib/utils';
 
 /**
  * Tool configuration dependencies
@@ -70,6 +71,7 @@ export class AddParticipantTool extends Tool {
 				availableParticipants: this.availableParticipants.map((p) => ({
 					id: p.id,
 					name: p.name,
+					handle: p.handle,
 					type: p.type,
 				})),
 			});
@@ -168,7 +170,9 @@ export class AddParticipantTool extends Tool {
 			id: participant.id,
 			name: participant.name,
 			type: participant.type,
-			description: participant.description || undefined,
+			role: 'member',
+			handle: participant.handle,
+			...includeProperty('description', participant.description),
 		};
 	}
 
@@ -192,7 +196,7 @@ export class AddParticipantTool extends Tool {
 	 * @returns Informative message string
 	 */
 	private buildAlreadyInChatMessage(participant: Peer): string {
-		return `Participant "${participant.name}" is already in this chat and ready to help. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
+		return `Participant "${participant.name}" is already in this chat and ready to help. You can now mention them with @${participant.handle} in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 
 	/**
@@ -204,6 +208,6 @@ export class AddParticipantTool extends Tool {
 	 * @returns Success message string
 	 */
 	private buildSuccessMessage(participant: Peer): string {
-		return `Successfully added "${participant.name}" to the chat. You can now communicate with them by mentioning them with "@${participant.name}" in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
+		return `Successfully added "${participant.name}" to the chat. You can now mention them with @${participant.handle} in your response. Do NOT call add_participant_to_chat again - proceed directly to your question or message.`;
 	}
 }

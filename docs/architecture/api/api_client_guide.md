@@ -205,7 +205,7 @@ Capabilities use API client for:
 
 **POST /agent/chats/{chatId}/messages**:
 - Creates a text message
-- Requires mentions array
+- Requires mentions array (id; handle and name optional)
 - Returns message data
 
 **POST /agent/chats/{chatId}/events**:
@@ -227,13 +227,14 @@ Capabilities use API client for:
 
 **GET /agent/chats/{chatId}/messages**:
 - Fetches recent messages
-- Supports pagination
+- Query parameters: page, page_size, status (pending, processing, processed, failed, all)
 - Returns message array
 
 ### Participants Endpoints
 
 **GET /agent/chats/{chatId}/participants**:
 - Fetches participants currently in a chat
+- Participants include id, name, type, role, status, and handle
 - Returns participant array
 
 **POST /agent/chats/{chatId}/participants**:
@@ -249,7 +250,7 @@ Capabilities use API client for:
 
 **GET /agent/peers**:
 - Fetches available peers (agents and users) for the authenticated agent
-- Peers are entities the agent can interact with
+- Peers include handle, id, name, type, is_contact, source (registry or contact)
 - Query parameters:
   - `not_in_chat`: Exclude peers already in a specific chat
   - `page`: Page number for pagination
@@ -287,6 +288,9 @@ Capabilities use API client for:
 - Verify API key header is added
 - Check API key has required permissions
 - Ensure credentials are properly configured
+- Trigger initialization fails fast with `Invalid Thenvoi auth token (API key). Please verify your Thenvoi credentials.`
+- Agent node authentication errors are surfaced during item execution with the same invalid-token message
+- Authentication failures are detected from HTTP status (`401`/`403`) and websocket auth errors for consistent behavior across node types
 
 ### Response Parsing Errors
 

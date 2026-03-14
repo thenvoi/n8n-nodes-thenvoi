@@ -30,7 +30,7 @@ export interface ListAvailableParticipantsToolConfig {
 export class ListAvailableParticipantsTool extends Tool {
 	name = 'list_available_participants';
 	description =
-		'Lists all participants (agents and users) that can be added to the current chat room. Use this to discover available participants and get their IDs before adding them with add_participant_to_chat. Returns participant IDs, names, types, and descriptions. No input required.';
+		'Lists all participants (agents and users) that can be added to the current chat room. Use this to discover available participants and get their IDs and handles before adding them with add_participant_to_chat. Returns participant IDs, names, handles (required for mentions), types, and descriptions. No input required.';
 
 	private httpClient: HttpClient;
 	private chatId: string;
@@ -66,14 +66,15 @@ export class ListAvailableParticipantsTool extends Tool {
 	 * Formats Peer data into tool response format
 	 *
 	 * @param participants - Array of peers
-	 * @returns Array of formatted participant objects with description
+	 * @returns Array of formatted participant objects
 	 */
 	private formatParticipants(
 		participants: Peer[],
-	): Array<{ id: string; name: string; type: string; description: string }> {
+	): Array<{ id: string; name: string; handle: string; type: string; description: string }> {
 		return participants.map((participant) => ({
 			id: participant.id,
 			name: participant.name,
+			handle: participant.handle,
 			type: participant.type,
 			description: participant.description || '',
 		}));

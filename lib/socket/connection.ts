@@ -1,7 +1,12 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
 import { SocketConfig, ThenvoiWebSocket } from '../types';
-import { getErrorMessage, logError } from '../utils/errors';
+import {
+	getErrorMessage,
+	INVALID_AUTH_TOKEN_ERROR_MESSAGE,
+	isThenvoiAuthError,
+	logError,
+} from '../utils/errors';
 import { raceWithTimeout } from '../utils/timeout';
 import { getSocketUrl } from '../utils/urls';
 
@@ -119,6 +124,11 @@ function createConnectionPromise(
 
 		socket.onError((error: string | number | Event) => {
 			if (!isResolved) {
+				if (isThenvoiAuthError(error)) {
+					reject(new Error(INVALID_AUTH_TOKEN_ERROR_MESSAGE));
+					return;
+				}
+
 				const errorMessage = getErrorMessage(error);
 				reject(new Error(`Socket connection failed: ${errorMessage}`));
 			}

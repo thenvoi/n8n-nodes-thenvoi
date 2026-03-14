@@ -75,7 +75,7 @@ async function fetchTextMessages(
 	logger: Logger,
 ): Promise<ChatMessage[]> {
 	try {
-		return await fetchChatMessagesWithLimit(httpClient, chatId, limit, logger, 'text');
+		return await fetchChatMessagesWithLimit(httpClient, chatId, limit, logger);
 	} catch (error) {
 		logger.warn('Failed to fetch text messages', { error });
 		return [];

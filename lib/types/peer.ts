@@ -6,18 +6,25 @@
  */
 
 /**
+ * How the peer was discovered
+ */
+export type PeerSource = 'registry' | 'contact';
+
+/**
  * Peer information from /agent/peers endpoint
  *
  * Represents either an Agent or User that the authenticated agent
  * can interact with (add to chats, etc.)
  */
 export interface Peer {
+	handle: string;
 	id: string;
 	name: string;
 	description: string | null;
 	type: 'User' | 'Agent';
-	is_external: boolean | null; // For agents only
-	is_global: boolean | null; // For agents only
+	is_contact: boolean;
+	is_external: boolean | null;
+	source: PeerSource;
 }
 
 /**
@@ -37,4 +44,3 @@ export interface PeersResponse {
 	data: Peer[];
 	metadata: PeersPaginationMetadata;
 }
-

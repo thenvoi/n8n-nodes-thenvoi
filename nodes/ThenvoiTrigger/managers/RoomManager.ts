@@ -78,11 +78,7 @@ export class RoomManager {
 	 */
 	private async subscribeToAllRooms(): Promise<void> {
 		// Get rooms to subscribe based on room mode
-		const roomIds = await getRoomIdsForMode(
-			this.config,
-			this.httpClient,
-			this.logger,
-		);
+		const roomIds = await getRoomIdsForMode(this.config, this.httpClient, this.logger);
 
 		// Subscribe to all rooms
 		await subscribeToRooms(
@@ -234,9 +230,14 @@ export class RoomManager {
 
 	private handleRoomEvent(roomId: string, rawData: unknown): void {
 		try {
+			const enrichedRawData = {
+				chat_room_id: roomId,
+				...(rawData as Record<string, unknown>),
+			};
+
 			eventHandlerRegistry.processEvent(
 				this.config.event,
-				rawData,
+				enrichedRawData,
 				this.config,
 				this.triggerContext,
 			);

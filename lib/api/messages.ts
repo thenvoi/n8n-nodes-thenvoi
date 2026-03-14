@@ -1,5 +1,4 @@
 import {
-	ChatMessageType,
 	ChatMessageMention,
 	ChatEventType,
 	ThenvoiTextRequest,
@@ -21,17 +20,17 @@ import { Logger } from 'n8n-workflow';
  * @param chatId - ID of the chat room
  * @param content - Message content
  * @param mentions - Array of mentions (required, must have at least one)
- * @returns API response data
+ * @returns Resolves when message is accepted by the API
  */
 export async function sendTextMessageToThenvoi(
 	httpClient: HttpClient,
 	chatId: string,
 	content: string,
 	mentions: ChatMessageMention[],
-): Promise<unknown> {
+): Promise<void> {
 	const body = buildTextPayload(content, mentions);
 
-	return await httpClient.post(`/agent/chats/${chatId}/messages`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages`, body);
 }
 
 /**
@@ -45,7 +44,7 @@ export async function sendTextMessageToThenvoi(
  * @param eventType - Type of event to send
  * @param content - Event content
  * @param metadata - Optional metadata for the event
- * @returns API response data
+ * @returns Resolves when event is accepted by the API
  */
 export async function sendEventToThenvoi(
 	httpClient: HttpClient,
@@ -53,10 +52,10 @@ export async function sendEventToThenvoi(
 	eventType: ChatEventType,
 	content: string,
 	metadata?: Record<string, unknown>,
-): Promise<unknown> {
+): Promise<void> {
 	const body = buildEventPayload(eventType, content, metadata);
 
-	return await httpClient.post(`/agent/chats/${chatId}/events`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/events`, body);
 }
 
 /**
@@ -124,8 +123,6 @@ interface MessageMetadata {
  * @param params - Optional query parameters:
  *   - page: Page number (default: 1)
  *   - page_size: Number of messages per page (default: 20, max: 100)
- *   - since: ISO timestamp to get messages after a certain date
- *   - message_type: Filter by message type (text, system, action, thought, etc.)
  *   - status: Filter by message status (pending, processing, processed, failed, all)
  * @returns Array of chat messages
  */
@@ -135,16 +132,12 @@ export async function fetchChatMessages(
 	params?: {
 		page?: number;
 		page_size?: number;
-		since?: string;
-		message_type?: ChatMessageType;
 		status?: 'pending' | 'processing' | 'processed' | 'failed' | 'all';
 	},
 ): Promise<ChatMessage[]> {
 	const queryParams: Record<string, string> = {
 		...includeProperty('page', params?.page?.toString()),
 		...includeProperty('page_size', params?.page_size?.toString()),
-		...includeProperty('since', params?.since),
-		...includeProperty('message_type', params?.message_type),
 		...includeProperty('status', params?.status),
 	};
 
@@ -153,25 +146,29 @@ export async function fetchChatMessages(
 		queryParams,
 	);
 
-	// Parse date strings to Date objects for EventData type
-	return (response.data || []).map((message) => ({
+	return (response.data || []).map(parseChatMessage);
+}
+
+/**
+ * Parses a raw chat message date fields from strings to Date objects.
+ */
+function parseChatMessage(message: RawChatMessage): ChatMessage {
+	return {
 		...message,
 		inserted_at: new Date(message.inserted_at),
 		updated_at: new Date(message.updated_at),
-	})) as ChatMessage[];
+	};
 }
 
 /**
  * Fetches chat messages with limit and pagination
  *
  * Uses generic pagination utility to handle page fetching.
- * Only fetches specified message type (default: 'text').
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - Chat room ID
  * @param limit - Maximum messages to fetch
  * @param logger - Logger for pagination progress
- * @param messageType - Message type filter (default: 'text')
  * @returns Array of chat messages (up to limit)
  */
 export async function fetchChatMessagesWithLimit(
@@ -179,14 +176,12 @@ export async function fetchChatMessagesWithLimit(
 	chatId: string,
 	limit: number,
 	logger: Logger,
-	messageType: ChatMessageType = 'text',
 ): Promise<ChatMessage[]> {
 	return fetchPaginated({
 		fetchPage: (page, perPage) =>
 			fetchChatMessages(httpClient, chatId, {
 				page,
 				page_size: perPage,
-				message_type: messageType,
 			}),
 		perPage: 50,
 		limit,
@@ -204,14 +199,14 @@ export async function fetchChatMessagesWithLimit(
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as processing
- * @returns API response data
+ * @returns Resolves when processing state is recorded
  */
 export async function markMessageAsProcessing(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
-): Promise<unknown> {
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processing`);
+): Promise<void> {
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/processing`);
 }
 
 /**
@@ -223,14 +218,14 @@ export async function markMessageAsProcessing(
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as processed
- * @returns API response data
+ * @returns Resolves when processed state is recorded
  */
 export async function markMessageAsProcessed(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
-): Promise<unknown> {
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/processed`);
+): Promise<void> {
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/processed`);
 }
 
 /**
@@ -243,14 +238,14 @@ export async function markMessageAsProcessed(
  * @param chatId - ID of the chat room
  * @param messageId - ID of the message to mark as failed
  * @param errorMessage - Error message describing why processing failed
- * @returns API response data
+ * @returns Resolves when failed state is recorded
  */
 export async function markMessageAsFailed(
 	httpClient: HttpClient,
 	chatId: string,
 	messageId: string,
 	errorMessage: string,
-): Promise<unknown> {
+): Promise<void> {
 	const body = { error: errorMessage };
-	return await httpClient.post(`/agent/chats/${chatId}/messages/${messageId}/failed`, body);
+	await httpClient.post<void>(`/agent/chats/${chatId}/messages/${messageId}/failed`, body);
 }

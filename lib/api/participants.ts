@@ -1,3 +1,4 @@
+import { hasValidHandle } from '@lib/utils';
 import { HttpClient } from '../http/client';
 import { AddParticipantRequest, ChatParticipant, ParticipantType, Peer } from '../types';
 import { fetchPeers } from './peers';
@@ -17,7 +18,7 @@ export async function fetchChatParticipants(
 		`/agent/chats/${chatId}/participants`,
 	);
 
-	return response.data || [];
+	return (response.data || []).filter(hasValidHandle);
 }
 
 /**

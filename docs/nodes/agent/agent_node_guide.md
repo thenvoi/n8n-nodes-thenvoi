@@ -353,10 +353,10 @@ Thenvoi Trigger → Thenvoi AI Agent
    - Connect a Memory node (e.g., Window Buffer Memory)
 
 2. **Required Fields:**
-   - **Chat ID**: `{{ $json.chat_id }}`
-   - **Message ID**: `{{ $json.message_id }}`
-   - **Sender ID**: `{{ $json.sender_id }}`
-   - **Sender Type**: `{{ $json.sender_type }}`
+   - **Chat ID**: `{{ $json.chat_room_id }}`
+   - **Message ID**: `{{ $json.id }}`
+   - **Sender ID**: `{{ $json.sender.id }}`
+   - **Sender Type**: `{{ $json.sender.type }}`
 
 3. **Agent Role:**
 ```markdown

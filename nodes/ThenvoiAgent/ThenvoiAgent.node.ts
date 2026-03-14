@@ -22,6 +22,7 @@ export class ThenvoiAgent implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const credentials = (await this.getCredentials('thenvoiApi')) as ThenvoiCredentials;
+
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 

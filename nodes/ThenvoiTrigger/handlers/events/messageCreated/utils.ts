@@ -1,4 +1,5 @@
-import { ChatMessage, ChatMessageMention, N8NMessageResponse } from '@lib/types';
+import { ChatMessage, N8NMessageResponse } from '@lib/types';
+import { escapeRegex } from '@lib/utils/strings';
 import { Logger } from 'n8n-workflow';
 
 /**
@@ -35,6 +36,9 @@ export function containsMention(data: ChatMessage, agentId: string, logger?: Log
 
 /**
  * Removes mentions from message content using metadata
+ *
+ * Socket content uses @[[UUID]] format. Removes the agent's mention to produce
+ * clean content for the workflow.
  */
 export function removeMentionsFromContent(
 	content: string,
@@ -45,20 +49,15 @@ export function removeMentionsFromContent(
 		return content;
 	}
 
-	// Find the mention in metadata to get the exact username format
 	const mention = data.metadata.mentions.find((m) => m.id === agentId);
 
 	if (!mention) {
 		return content;
 	}
 
-	// Remove the mention using the exact username from metadata
-	const mentionPattern = new RegExp(
-		`@${mention.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-		'g',
-	);
+	const escapedId = escapeRegex(mention.id);
+	const mentionPattern = new RegExp(`@\\[\\[${escapedId}\\]\\]`, 'g');
 
-	// Remove the mention and clean up extra spaces
 	return content.replace(mentionPattern, '').replace(/\s+/g, ' ').trim();
 }
 
@@ -79,25 +78,4 @@ export function createMessageResponse(data: ChatMessage, agentId: string): N8NMe
 		},
 		chat_room_id: data.chat_room_id,
 	};
-}
-
-/**
- * Transforms raw API mention data to internal ChatMessageMention format
- *
- * Maps the API's 'username' field to the internal 'name' field.
- *
- * @param mentions - Raw mention data from API response
- * @returns Array of transformed ChatMessageMention objects
- */
-export function parseMessageMentions(mentions: ChatMessageMention[]): ChatMessageMention[] {
-	if (!mentions || mentions.length === 0) {
-		return [];
-	}
-
-	return mentions.map(
-		(mention): ChatMessageMention => ({
-			id: mention.id,
-			name: (mention as ChatMessageMention & { username: string }).username,
-		}),
-	);
 }

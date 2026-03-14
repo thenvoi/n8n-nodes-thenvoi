@@ -206,7 +206,9 @@ Status updates integrated into pipeline:
 
 1. **Start**: Mark processing at execution start
 2. **Success**: Mark processed on success
-3. **Error**: Mark failed on error
+3. **Error**: Send error event to channel, mark failed, update message status
+
+When execution fails, an error event is always sent to the channel so users see the failure in the chat.
 
 See [Execution Pipeline Guide](../execution/execution_pipeline_guide.md) for details.
 
@@ -218,6 +220,8 @@ Send message tool uses queue:
 2. **Validation**: Tool validates message and mentions
 3. **Enqueue**: Message enqueued to queue
 4. **Return**: Tool returns success status
+
+When a tool returns error JSON (e.g. send_message validation failure), an error event is also sent to the channel so users see the failure prominently.
 
 See [Tool System Guide](../tools/tool_system_guide.md) for details.
 

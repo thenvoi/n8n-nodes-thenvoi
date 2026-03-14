@@ -161,6 +161,8 @@ Mention detection extracts @mentions from message text:
 
 **Mention Format**:
 - Pattern: `@handle` (case-sensitive)
+- Handles may only contain lowercase letters (a-z), numbers, and hyphen
+- A mention ends when followed by any other character (e.g. `@john` in `@john-agent` does not match)
 - Must match participant handle exactly
 - Multiple mentions supported
 

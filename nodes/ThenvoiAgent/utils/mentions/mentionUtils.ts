@@ -9,14 +9,16 @@ import { hasValidHandle, includeProperty } from '@lib/utils';
 import { escapeRegex } from '@lib/utils/strings';
 
 /**
- * Characters that mark the end of a mention (punctuation followed by whitespace or end)
+ * Handles may only contain lowercase letters (a-z), numbers, and hyphen.
+ * A mention ends when followed by any other character or end of string.
+ * This prevents prefix matching (e.g. @john does not match inside @john-agent).
  */
-const MENTION_ENDING_PUNCTUATION = '!.,;:?';
+const MENTION_END_LOOKAHEAD = '(?=[^a-z0-9-]|$)';
 
 /**
  * Detects participants mentioned in a message text using @handle format only.
  * Name is not valid for mentions. Only participants with a handle can be matched.
- * Handles can contain /, ., - (e.g., john.doe/weather-agent).
+ * A mention ends at any character that's not valid for handles (lowercase letters, numbers, hyphen).
  */
 export function detectMentions(
 	message: string,
@@ -33,10 +35,8 @@ export function detectMentions(
 		.filter((participant) => {
 			const handle = participant.handle.trim();
 			const escapedHandle = escapeRegex(handle);
-			// Match @handle followed by: punctuation, whitespace, word boundary, or end of string
-			const pattern = `@${escapedHandle}(?=[${MENTION_ENDING_PUNCTUATION}\\s]|\\b|$)`;
-			const atMentionPattern = new RegExp(pattern);
-			return atMentionPattern.test(message);
+			const pattern = new RegExp(`@${escapedHandle}${MENTION_END_LOOKAHEAD}`);
+			return pattern.test(message);
 		});
 }
 

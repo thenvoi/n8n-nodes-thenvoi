@@ -14,7 +14,11 @@ import type { IntermediateStep } from '../../types/memory';
 import { createMessageQueue } from '../../utils/messages/messageQueue';
 import { handleChainEnd, handleChainStart } from './chainCallbacks';
 import { captureIntermediateStep } from './intermediateStepUtils';
-import { handleLLMEnd, handleLLMError, handleLLMStart } from './llmCallbacks';
+import {
+	handleLLMEnd as handleLLMEndCallback,
+	handleLLMError,
+	handleLLMStart,
+} from './llmCallbacks';
 import { handleToolEnd, handleToolError, handleToolStart } from './toolCallbacks';
 
 /**
@@ -36,6 +40,7 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 	private memory?: ThenvoiMemory;
 	private intermediateSteps: IntermediateStep[] = [];
 	private currentToolInput: string = '';
+	private lastNonEmptyLLMText: string = '';
 
 	constructor(
 		chatId: string,
@@ -76,7 +81,18 @@ export class ThenvoiAgentCallbackHandler extends BaseCallbackHandler {
 	}
 
 	async handleLLMEnd(output: LLMResult, runId: string): Promise<void> {
-		await handleLLMEnd(this.ctx, output, runId);
+		const text = await handleLLMEndCallback(this.ctx, output, runId);
+		if (text) {
+			this.lastNonEmptyLLMText = text;
+		}
+	}
+
+	/**
+	 * Returns the last non-empty text produced by the LLM across all turns.
+	 * Used as a fallback thought when the agent's final output is empty.
+	 */
+	getLastNonEmptyLLMText(): string {
+		return this.lastNonEmptyLLMText;
 	}
 
 	async handleLLMError(error: Error, runId: string): Promise<void> {

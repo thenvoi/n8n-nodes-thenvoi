@@ -17,6 +17,7 @@ export interface AgentNodeConfig {
 	messageTypes: MessageTypeOptionValue[];
 	messageId: string;
 	returnIntermediateSteps: boolean;
+	intermediateThoughts: boolean;
 	senderId: string;
 	senderType: ParticipantType;
 }

@@ -5,8 +5,10 @@ import { ThenvoiCredentials } from '@lib/types';
  * Configuration options for the Thenvoi callback handler
  */
 export interface CallbackOptions {
-	/** Modify system prompt to collect model-generated thoughts */
+	/** Enable thought processing — required for both intermediate and final thoughts */
 	collectModelThoughts: boolean;
+	/** Send intermediate thoughts per LLM turn (mutually exclusive with final summary thought) */
+	sendIntermediateThoughts: boolean;
 	/** Send tool call messages */
 	sendToolCalls: boolean;
 	/** Send tool result messages */

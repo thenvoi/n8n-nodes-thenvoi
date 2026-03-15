@@ -78,6 +78,14 @@ export const MESSAGE_TYPES_NODE_PROPERTY: INodeProperties = {
  */
 const OPTIONAL_PARAMETERS: INodeProperties[] = [
 	{
+		displayName: 'Send Intermediate Thoughts',
+		name: 'intermediateThoughts',
+		type: 'boolean',
+		default: false,
+		description:
+			'Whether to send a thought message after each LLM turn during agent execution. When enabled, the final summary thought is skipped.',
+	},
+	{
 		displayName: 'Return Intermediate Steps',
 		name: 'returnIntermediateSteps',
 		type: 'boolean',
@@ -88,6 +96,7 @@ const OPTIONAL_PARAMETERS: INodeProperties[] = [
 
 export interface AgentNodeOptions {
 	returnIntermediateSteps?: boolean;
+	intermediateThoughts?: boolean;
 }
 
 /**

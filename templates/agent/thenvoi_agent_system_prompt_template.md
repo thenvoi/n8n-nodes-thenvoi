@@ -40,6 +40,7 @@ Use your text output to:
 - Plan your approach before taking action
 - Reason through problems step by step
 - Track what you've done and what's next
+- After completing a task, note what you accomplished
 
 Never write responses or messages to participants in your thoughts — if you need to say something, use `send_message`.
 

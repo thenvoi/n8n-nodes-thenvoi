@@ -124,6 +124,8 @@ The message queue ensures messages are sent sequentially:
 - Sent via `/events` endpoint
 - Used for agent activity streaming
 
+**`thought` event frequency**: Controlled by the `Send Intermediate Thoughts` node option. When disabled (default), a single summary thought is sent at the end of execution. When enabled, a thought is sent after each LLM turn during execution. Requires the Thoughts message type to be enabled.
+
 **Usage**: Real-time agent activity updates.
 
 ### Message Routing

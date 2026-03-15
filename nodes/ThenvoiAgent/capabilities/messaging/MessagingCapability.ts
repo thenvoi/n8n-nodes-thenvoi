@@ -124,8 +124,14 @@ export class MessagingCapability implements Capability {
 	}
 
 	/**
-	 * Handles successful agent execution
-	 * Sends final output as thought if thoughts are enabled in message types
+	 * Handles successful agent execution.
+	 *
+	 * Thought sending strategy:
+	 * - When intermediate thoughts are enabled, each LLM turn is already sent as a
+	 *   thought, so we skip the final summary to avoid duplication.
+	 * - When intermediate thoughts are disabled, we send the agent's final output as
+	 *   a thought. If the final output is empty (e.g. the agent only used send_message),
+	 *   we fall back to the last non-empty text produced by the LLM.
 	 *
 	 * @param ctx - Capability context with execution state
 	 * @param output - Agent's final output string
@@ -133,10 +139,20 @@ export class MessagingCapability implements Capability {
 	async onSuccess(ctx: CapabilityContext, output: string): Promise<void> {
 		if (!this.handler) return;
 
-		// Send final output as thought if thoughts are enabled
 		const sendThoughts = ctx.config.messageTypes.includes('thoughts');
-		if (sendThoughts && output && output.trim().length > 0) {
-			await this.handler.sendThought(output);
+
+		if (sendThoughts) {
+			if (ctx.config.intermediateThoughts) {
+				// Intermediate thoughts already sent per LLM turn — skip final summary
+				ctx.execution.logger.debug(
+					'Skipping final thought: intermediate thoughts mode is active',
+				);
+			} else {
+				const thought = output?.trim() || this.handler.getLastNonEmptyLLMText();
+				if (thought) {
+					await this.handler.sendThought(thought);
+				}
+			}
 		}
 
 		if (this.sendTaskUpdates) {

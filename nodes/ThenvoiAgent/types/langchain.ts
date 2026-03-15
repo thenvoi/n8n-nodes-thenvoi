@@ -51,10 +51,12 @@ export type AgentOutput = string | ContentBlock[];
  */
 export interface LLMGenerationMessage {
 	content: string | ContentBlock[];
+	tool_calls?: unknown[];
 	additional_kwargs?: {
 		thinking?: string;
 		reasoning?: string;
 		thought?: string;
+		tool_calls?: unknown[];
 	};
 }
 

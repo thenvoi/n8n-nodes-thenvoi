@@ -49,7 +49,8 @@ export function getAgentConfig(ctx: IExecuteFunctions, itemIndex: number): Agent
 			NODE_PARAMETER_NAMES.SENDER_TYPE,
 			itemIndex,
 		) as ParticipantType,
-		returnIntermediateSteps: options.returnIntermediateSteps || false,
+		returnIntermediateSteps: options.returnIntermediateSteps ?? false,
+		intermediateThoughts: options.intermediateThoughts ?? false,
 	};
 }
 
@@ -59,6 +60,7 @@ export function getAgentConfig(ctx: IExecuteFunctions, itemIndex: number): Agent
 export function createCallbackOptions(config: AgentNodeConfig): CallbackOptions {
 	return {
 		collectModelThoughts: config.messageTypes.includes('thoughts'),
+		sendIntermediateThoughts: config.intermediateThoughts,
 		sendToolCalls: config.messageTypes.includes('tool_calls'),
 		sendToolResults: config.messageTypes.includes('tool_results'),
 	};

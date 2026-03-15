@@ -114,12 +114,13 @@ Configure credentials for your chosen language model:
 Control what gets streamed to the Thenvoi chat:
 
 - **Task Updates** - Status updates (in progress, completed, failed)
-- **Thoughts** - Reasoning messages during execution
+- **Thoughts** - Reasoning messages during execution (see Send Intermediate Thoughts below)
 - **Tool Calls** - Messages when tools are invoked
 - **Tool Results** - Messages with tool execution results
 
 ### Options
 
+- **Send Intermediate Thoughts** - When enabled, a thought message is sent after each LLM turn during execution. When disabled (default), a single summary thought is sent at the end of execution. Only applies when Thoughts is included in Message Types to Send.
 - **Return Intermediate Steps** - Include tool calls and results in node output
 
 <img src="../../screenshots/agent-config-1.png" alt="Screenshot: Agent Node Configuration Part 1" width="400" />
@@ -444,12 +445,18 @@ accurate, timely weather information with a friendly and professional tone.
 
 ### Tool Calling Problems
 
-**Issue**: Agent doesn't use tools correctly
+**Issue**: Agent fails to start with an initialization error about function calling
 
 **Solutions**:
-- ✅ Verify LLM supports function calling (required)
+- ✅ Use a model that supports native function calling (GPT-4, Claude 3+, Gemini, etc.)
 - ✅ Check LLM credentials and model selection
-- ✅ Ensure you're using a tool-compatible model (GPT-4, Claude 3+, etc.)
+- ✅ Review tool descriptions in logs
+
+**Issue**: Agent starts but doesn't use tools correctly
+
+**Solutions**:
+- ✅ Verify the model you selected supports function calling
+- ✅ Check LLM credentials and model selection
 - ✅ Review tool descriptions in logs
 
 ### Performance Issues

@@ -3,7 +3,6 @@ import { LLMResult } from '@langchain/core/outputs';
 import { getSafeErrorMessage } from '@lib/utils';
 import { CallbackContext } from '../../types/agentCapabilities';
 import { ContentBlock, LLMGeneration, LLMGenerationMessage } from '../../types/langchain';
-import { extractModelThought } from '../../utils/thoughts/thoughtExtraction';
 
 /**
  * Extracts thinking/reasoning from message additional_kwargs
@@ -40,7 +39,6 @@ function extractContentFromMessage(message: LLMGenerationMessage): string {
 					return part;
 				}
 				if (part.type === 'thinking' && part.thinking) {
-					// Extract thinking from ThinkingContentBlock
 					return `Thinking: ${part.thinking}`;
 				}
 				return part.text || part.content || '';
@@ -54,10 +52,31 @@ function extractContentFromMessage(message: LLMGenerationMessage): string {
 }
 
 /**
- * Extracts generated text from LLM generation output
- * Handles various LLM output formats (tool-calling models, regular models)
+ * Returns true when the LLM turn is a tool-calling turn with no text output.
+ * In that case, generation.text contains serialized tool call input (e.g. {"input": "..."}),
+ * which should not be surfaced as a thought.
  */
-function extractGeneratedText(generation: LLMGeneration): string {
+function isToolCallingTurn(generation: LLMGeneration): boolean {
+	const message = generation.message;
+	if (!message) {
+		return false;
+	}
+
+	const hasTopLevelToolCalls = Array.isArray(message.tool_calls) && message.tool_calls.length > 0;
+	const hasKwargsToolCalls =
+		Array.isArray(message.additional_kwargs?.tool_calls) &&
+		(message.additional_kwargs?.tool_calls?.length ?? 0) > 0;
+
+	return hasTopLevelToolCalls || hasKwargsToolCalls;
+}
+
+/**
+ * Extracts generated text from LLM generation output.
+ * Handles various LLM output formats (tool-calling models, regular models).
+ *
+ * Exported for reuse in the callback handler to track the last non-empty LLM text.
+ */
+export function extractGeneratedText(generation: LLMGeneration): string {
 	let generatedText = '';
 
 	if (generation.message) {
@@ -66,7 +85,10 @@ function extractGeneratedText(generation: LLMGeneration): string {
 		generatedText = thinking + content;
 	}
 
-	if (!generatedText && generation.text) {
+	// Only fall back to generation.text when the message has no text content AND it is not	
+	// a tool-calling turn. For tool-calling turns, generation.text holds the serialized tool
+	// call input (e.g. {"input": "..."}), which must not be surfaced as a thought.
+	if (!generatedText && generation.text && !isToolCallingTurn(generation)) {
 		generatedText = generation.text;
 	}
 
@@ -74,39 +96,25 @@ function extractGeneratedText(generation: LLMGeneration): string {
 }
 
 /**
- * Attempts to extract and send model-generated thought
+ * Enqueues the generated text as an intermediate thought when enabled
  */
 async function processModelThought(
 	ctx: CallbackContext,
-	generation: LLMGeneration,
+	extractedText: string,
 	runId: string,
 ): Promise<void> {
-	const generatedText = extractGeneratedText(generation);
-
-	ctx.executionContext.logger.debug('Attempting to extract model thought', {
-		runId,
-		hasMessage: !!generation.message,
-		hasText: !!generation.text,
-		textLength: generatedText.length,
-		textPreview: generatedText.substring(0, 200),
-	});
-
-	if (!generatedText) {
+	if (!extractedText) {
 		ctx.executionContext.logger.debug('No text content in LLM output', { runId });
 		return;
 	}
 
-	const thought = extractModelThought(generatedText);
+	ctx.executionContext.logger.debug('LLM turn produced text', {
+		runId,
+		textLength: extractedText.length,
+	});
 
-	if (thought) {
-		ctx.executionContext.logger.info('Extracted model thought', {
-			runId,
-			thoughtLength: thought.length,
-		});
-		// TODO: Intermediate thoughts disabled - only final thoughts are sent
-		// ctx.messageQueue.enqueue('thought', thought);
-	} else {
-		ctx.executionContext.logger.debug('No thought pattern found in output', { runId });
+	if (ctx.options.sendIntermediateThoughts) {
+		ctx.messageQueue.enqueue('thought', extractedText);
 	}
 }
 
@@ -136,35 +144,40 @@ export async function handleLLMStart(
 }
 
 /**
- * Called when the LLM finishes generating a response
+ * Called when the LLM finishes generating a response.
+ * Returns the extracted text for the caller to use (e.g. for lastNonEmptyLLMText tracking).
  */
 export async function handleLLMEnd(
 	ctx: CallbackContext,
 	output: LLMResult,
 	runId: string,
-): Promise<void> {
+): Promise<string> {
 	ctx.executionContext.logger.info('LLM generation completed', {
 		runId,
 		hasOutput: !!(output.generations && output.generations.length > 0),
 	});
 
+	const generation = output.generations?.[0]?.[0];
+	const extractedText = generation ? extractGeneratedText(generation as LLMGeneration) : '';
+
 	if (!ctx.options.collectModelThoughts || !output.generations?.length) {
-		return;
+		return extractedText;
 	}
 
-	const generation = output.generations[0];
-	if (!generation || !generation.length) {
-		return;
+	const generationArray = output.generations[0];
+	if (!generationArray || !generationArray.length) {
+		return extractedText;
 	}
 
 	try {
-		await processModelThought(ctx, generation[0] as LLMGeneration, runId);
+		await processModelThought(ctx, extractedText, runId);
 	} catch (error) {
-		ctx.executionContext.logger.warn('Failed to extract model thought', {
+		ctx.executionContext.logger.warn('Failed to process model thought', {
 			runId,
 			error: (error as Error).message,
 		});
 	}
+	return extractedText;
 }
 
 /**

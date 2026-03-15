@@ -2,12 +2,10 @@
  * Agent Factory
  *
  * Orchestrates the creation of LangChain agents with Thenvoi integration.
- * Handles agent type detection, memory configuration, prompt preparation,
- * and agent executor assembly.
+ * Handles memory configuration, prompt preparation, and agent executor assembly.
  *
- * Supports two agent types:
- * - Tool-calling agents: For models with native function calling (OpenAI, Claude 3+, Gemini)
- * - ReAct agents: Prompt-based fallback for models without function calling
+ * Only tool-calling agents are supported. Models without native function calling
+ * will receive a clear error at creation time.
  */
 
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -16,7 +14,7 @@ import { StructuredTool } from '@langchain/core/tools';
 import { AgentExecutor } from 'langchain/agents';
 import { IExecuteFunctions, NodeOperationError } from 'n8n-workflow';
 import { ThenvoiMemory } from '../memory/ThenvoiMemory';
-import { AgentNodeConfig, AgentType, DynamicPromptContext } from '../types';
+import { AgentNodeConfig, DynamicPromptContext } from '../types';
 import { createAgent } from './agentCreation';
 import { getBaseTemplate, injectDynamicContext, injectUserContent } from './promptFactory';
 import { configureMemorySenderInfo } from './memoryConfig';
@@ -64,7 +62,6 @@ function assembleExecutor(
 	tools: StructuredTool[],
 	memory: ThenvoiMemory | undefined,
 	config: AgentNodeConfig,
-	agentType: AgentType,
 	ctx: IExecuteFunctions,
 ): AgentExecutor {
 	const agentExecutor = AgentExecutor.fromAgentAndTools({
@@ -82,7 +79,6 @@ function assembleExecutor(
 	ctx.logger.info('Agent executor created', {
 		toolCount: tools.length,
 		hasMemory: !!memory,
-		agentType,
 	});
 
 	return agentExecutor;
@@ -103,14 +99,13 @@ export async function createAgentExecutor(
 	try {
 		const systemMessage = prepareAgentPrompt(config, ctx, dynamicContext);
 
-		const hasMemory = !!memory;
-		const { agent, agentType } = await createAgent(model, tools, systemMessage, hasMemory, ctx);
+		const agent = await createAgent(model, tools, systemMessage, ctx);
 
 		if (memory) {
 			configureMemorySenderInfo(memory, config, dynamicContext.participants, ctx.logger);
 		}
 
-		return assembleExecutor(agent, tools, memory, config, agentType, ctx);
+		return assembleExecutor(agent, tools, memory, config, ctx);
 	} catch (error) {
 		ctx.logger.error('Failed to create agent executor', {
 			error: (error as Error).message,

@@ -1,42 +1,10 @@
-import { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } from '@langchain/core/prompts';
+import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import * as fs from 'fs';
 import * as path from 'path';
 import { MessageHistorySource } from '../constants/nodeProperties';
 import { DynamicPromptContext } from '../types';
 import { formatDynamicContext } from '../utils/prompting/formatters';
 import { PROMPT_SECTIONS, PROMPT_PLACEHOLDERS } from '../constants/promptSections';
-
-/**
- * Base ReAct template structure shared between memory and non-memory versions
- */
-const REACT_TEMPLATE_BASE = `You have access to the following tools:
-
-{tools}
-
-Use the following format:
-
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-Begin!
-
-Question: {input}
-Thought: {agent_scratchpad}`;
-
-/**
- * ReAct template
- *
- * Note: Chat history is injected via RECENT_MESSAGES section in system message.
- */
-const REACT_TEMPLATE = `{systemMessage}
-
-${REACT_TEMPLATE_BASE}`;
 
 /**
  * Creates a prompt template for tool-calling agents
@@ -75,23 +43,6 @@ function escapeTemplateBraces(text: string): string {
 	// Escape all single braces - simple and reliable
 	// This handles both single braces and already-escaped braces correctly
 	return text.replace(/\{/g, '{{').replace(/\}/g, '}}');
-}
-
-/**
- * Creates a prompt template for ReAct agents
- *
- * ReAct agents use prompt-based tool selection for models without
- * native function calling. The agent follows a "Thought-Action-Observation"
- * loop until it reaches a final answer.
- *
- * The system message is escaped to handle any literal curly braces that
- * might be present in user-provided prompts (e.g., code examples, JSON).
- */
-export function createReactPrompt(systemMessage: string): PromptTemplate {
-	const escapedSystemMessage = escapeTemplateBraces(systemMessage);
-	const template = REACT_TEMPLATE.replace('{systemMessage}', escapedSystemMessage);
-
-	return PromptTemplate.fromTemplate(template);
 }
 
 // Template caching

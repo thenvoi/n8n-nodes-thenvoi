@@ -4,11 +4,6 @@ import { BaseMemory } from 'langchain/memory';
 import { AgentNodeConfig } from './agentConfig';
 
 /**
- * Agent type based on model capabilities
- */
-export type AgentType = 'tool-calling' | 'react';
-
-/**
  * Agent execution context including model, tools, and memory
  */
 export interface AgentExecutionContext {

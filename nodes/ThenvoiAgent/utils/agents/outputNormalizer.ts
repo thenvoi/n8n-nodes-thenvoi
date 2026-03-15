@@ -61,7 +61,12 @@ export function normalizeAgentOutput(output: AgentOutput, ctx?: IExecuteFunction
 	}
 
 	if (output && typeof output === 'object' && 'text' in output) {
-		return String((output as any).text);
+		return String((output as Record<string, unknown>).text);
+	}
+
+	// Object without extractable text: use JSON.stringify to avoid [object Object]
+	if (output && typeof output === 'object') {
+		return JSON.stringify(output);
 	}
 
 	return String(output || '');

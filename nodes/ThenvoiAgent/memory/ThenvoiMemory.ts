@@ -40,6 +40,8 @@ import {
 } from '../types/memory';
 import { createStructuredMessageData } from '../utils/messages/memoryStorageFormatters';
 import { isHumanMessage, isAIMessage } from '../utils/messages/messageTypeUtils';
+import { AgentOutput } from '../types/langchain';
+import { normalizeAgentOutput } from '../utils/agents/outputNormalizer';
 
 export interface ThenvoiMemoryInput extends BaseChatMemoryInput {
 	/**
@@ -192,7 +194,7 @@ export class ThenvoiMemory extends BaseChatMemory {
 	 * @param outputValues - Output values from LangChain (contains agent thoughts)
 	 */
 	async saveContext(inputValues: InputValues, outputValues: OutputValues): Promise<void> {
-		const thoughts = String(outputValues.output || '');
+		const thoughts = normalizeAgentOutput((outputValues.output ?? '') as AgentOutput);
 		const structuredData = createStructuredMessageData(thoughts, this.currentIntermediateSteps);
 
 		// Save to base memory with raw thoughts (no formatting)

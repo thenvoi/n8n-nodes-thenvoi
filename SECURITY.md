@@ -43,7 +43,7 @@ If you prefer, you can create a private security advisory on GitHub:
 ## Scope
 
 This security policy applies to:
-- The n8n-nodes-thenvoi package codebase
+- The `@thenvoi/n8n-nodes-thenvoi` package codebase
 - Dependencies used in the package
 - Security issues in the Thenvoi API integration
 

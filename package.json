@@ -1,7 +1,7 @@
 {
   "name": "@thenvoi/n8n-nodes-thenvoi",
   "version": "0.1.0",
-  "description": "Custom n8n nodes for Thenvoi including Phoenix trigger",
+  "description": "n8n community nodes for integrating with the Thenvoi platform",
   "keywords": [
     "n8n-community-node-package"
   ],

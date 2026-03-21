@@ -61,7 +61,7 @@ The architecture documentation covers:
 Install the package in your n8n instance:
 
 ```bash
-npm install n8n-nodes-thenvoi
+npm install @thenvoi/n8n-nodes-thenvoi
 ```
 
 After installation, restart your n8n instance. The nodes will appear in the n8n node palette under "Thenvoi".
@@ -319,6 +319,37 @@ You need the following installed on your development machine:
 - `npm run lintfix` - Automatically fix linting errors
 - `npm run format` - Format code with Prettier
 
+## Branching (`dev` and `main`)
+
+- **`dev`** — day-to-day integration. Open PRs **into `dev`** (or merge feature branches here). CI runs on every push and PR via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`lint`, `build`).
+- **`main`** — release line. When you are ready for Release Please to pick up new work, merge **`dev` → `main`** (use a regular **merge commit** if you can, so individual `feat:` / `fix:` commits stay visible; a single squashed merge with a non-conventional message is harder for Release Please to interpret).
+
+In GitHub **Settings → General**, set the **default branch** to `dev` if you want new PRs to target it by default.
+
+## Releases and npm publishing
+
+Releases use [Release Please](https://github.com/googleapis/release-please) and the workflow file [`.github/workflows/release.yml`](.github/workflows/release.yml) (**only runs on pushes to `main`**).
+
+### Day-to-day
+
+1. Use [Conventional Commits](https://www.conventionalcommits.org/) on work that will reach `main` (for example `feat:`, `fix:`, `feat!:` for breaking changes)—typically in PRs merged into `dev`, then brought to `main` via `dev` → `main`.
+2. After `dev` is merged into `main`, Release Please opens or updates a **release PR** that bumps `package.json`, `package-lock.json`, `CHANGELOG.md`, and [`.release-please-manifest.json`](.release-please-manifest.json).
+3. When you **merge that release PR**, the same workflow creates a GitHub Release and runs **`npm publish`** (build and prepublish checks run via `prepublishOnly`).
+
+Repository setting: under **Settings → Actions → General**, enable **Allow GitHub Actions to create and approve pull requests** so Release Please can open the release PR.
+
+### npm authentication (pick one)
+
+The package is scoped as **`@thenvoi/n8n-nodes-thenvoi`**. Your npm account must have **publish access to the `@thenvoi` scope** (create the `thenvoi` org on [npmjs.com](https://www.npmjs.com/) and add the package, or accept the invite flow on first publish, depending on your npm setup).
+
+**Recommended — Trusted publishing (OIDC)**
+On [npmjs.com](https://www.npmjs.com/), open **package → Settings → Trusted publishing**, choose GitHub Actions, and set the workflow filename to **`release.yml`** (must match exactly, including `.yml`). The publish step uses **`npm publish --provenance`**, which aligns with [n8n’s verification expectations](https://docs.n8n.io/integrations/creating-nodes/build/reference/verification-guidelines/) (they require provenance when publishing from GitHub Actions). Provenance for public packages needs a **public** GitHub repository. Trusted publishing needs a recent **Node/npm** stack on the runner (the workflow uses Node 24).
+
+**Fallback — Automation token**  
+Add an npm **automation** access token as the GitHub secret **`NPM_TOKEN`**. The workflow passes it as `NODE_AUTH_TOKEN`; npm uses OIDC first when available, then falls back to this token.
+
+If the package does not exist on the registry yet, create it once (for example with a one-time `npm publish` using a token, or via npm’s UI), then attach Trusted Publishing or CI as above.
+
 ## Project Structure
 
 The project follows a clean, modular architecture with clear separation of concerns:
@@ -430,17 +461,26 @@ Common issues:
 
 ## Important: Package Naming Requirements
 
-**⚠️ Critical**: n8n custom node packages must follow a specific naming convention to work properly. The package name in `package.json` must follow the template `n8n-nodes-X` where `X` is your service or company name.
+**⚠️ Critical**: n8n community node packages must follow npm naming rules: either `n8n-nodes-<name>` or a scoped name like `@your-org/n8n-nodes-<name>`. Scoped packages must set `"publishConfig": { "access": "public" }` so they are installable without an npm org login.
 
 ### Common Issues
 
 If your custom node package doesn't work or isn't recognized by n8n, check:
 
-1. **Package Name**: Ensure your `package.json` has the correct name format:
+1. **Package Name**: Ensure your `package.json` uses an allowed pattern, for example:
 
    ```json
    {
      "name": "n8n-nodes-your-service-name"
+   }
+   ```
+
+   or:
+
+   ```json
+   {
+     "name": "@your-org/n8n-nodes-your-service-name",
+     "publishConfig": { "access": "public" }
    }
    ```
 

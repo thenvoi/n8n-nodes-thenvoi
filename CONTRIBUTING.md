@@ -35,7 +35,7 @@ Feature suggestions are welcome! Please open an issue with:
 
 ### Development Setup
 
-See the [Development section](README.md#development) in the README for setup instructions.
+See the [Development Guide](DEVELOPMENT.md) for setup instructions and local workflow details.
 
 ### Code Style
 
@@ -68,11 +68,11 @@ If you're adding a new node:
 
 ### Adding New Capabilities (ThenvoiAgent)
 
-See the [README section on adding capabilities](README.md#adding-new-capabilities-thenvoiagent) for detailed instructions.
+See [Adding new capabilities](DEVELOPMENT.md#adding-new-capabilities-thenvoiagent) for detailed instructions.
 
 ### Adding New Event Types (ThenvoiTrigger)
 
-See the [README section on adding event types](README.md#adding-new-event-types-thenvoitrigger) for detailed instructions.
+See [Adding new event types](DEVELOPMENT.md#adding-new-event-types-thenvoitrigger) for detailed instructions.
 
 ## Questions?
 
@@ -81,5 +81,3 @@ If you have questions about contributing, feel free to:
 - Check existing documentation in the `docs/` directory
 
 Thank you for contributing! 🎉
-
-

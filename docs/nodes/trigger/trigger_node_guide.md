@@ -13,6 +13,8 @@ Welcome! This guide will help you set up and configure the Thenvoi Trigger node 
 7. [Best Practices](#best-practices)
 8. [Example Workflows](#example-workflows)
 9. [Troubleshooting](#troubleshooting)
+10. [Getting Help](#getting-help)
+11. [Next Steps](#next-steps)
 
 ---
 
@@ -37,7 +39,7 @@ Before using the Thenvoi Trigger node, you need:
 1. **Thenvoi Platform Access**: An account on a Thenvoi server
 2. **API Credentials**: API key from your Thenvoi account
 3. **Agent Created**: An agent created in the Thenvoi platform
-4. **n8n Instance**: Access to an n8n instance (cloud or self-hosted)
+4. **n8n Instance**: Access to a self-hosted n8n instance
 
 ---
 
@@ -45,33 +47,9 @@ Before using the Thenvoi Trigger node, you need:
 
 ### Step 1: Create Thenvoi API Credentials in n8n
 
-1. In n8n, go to **Credentials** → **New Credential**
-2. Search for **"Thenvoi API"**
-3. Fill in the required fields:
+Follow the shared credential setup guide:
 
-#### API Key
-- **Where to get it**: Your Thenvoi platform settings → API Keys section
-- **Format**: Usually starts with `thnv_`
-- **Example**: `thnv_1234567890_abcdefghijklmnop`
-
-#### Server URL
-- **What it is**: The base URL of your Thenvoi server (without protocol)
-- **Default**: `app.thenvoi.com/api/v1`
-- **Note**: Don't include `http://` or `https://`
-
-#### Use HTTPS
-- **Default**: `true` (recommended)
-- **When to disable**: Only if your Thenvoi server doesn't support HTTPS (rare)
-
-#### Agent ID
-- **Where to get it**: Your Thenvoi platform → Agents section
-- **Format**: UUID (e.g., `550e8400-e29b-41d4-a716-446655440000`)
-- **Important**: This must match the agent you want this n8n workflow to use
-
-4. **Test the connection** using the built-in test button
-5. **Save** the credential
-
-<img src="../../screenshots/credentials-config.png" alt="Screenshot: Thenvoi API Credentials Configuration" width="800" />
+- [Thenvoi Credentials Setup Guide](../thenvoi_credentials_guide.md)
 
 ---
 
@@ -84,19 +62,7 @@ Before using the Thenvoi Trigger node, you need:
 | **Event** | The type of event to listen for | Currently supports "Message Created" |
 | **Room Mode** | How to select which rooms to listen to | See [Room Modes](#room-modes) section below |
 
-### Room Mode Specific Parameters
-
-The parameters available depend on the selected Room Mode:
-
-#### Single Room Mode
-- **Chat Room ID** (Required): The ID of the specific chat room to listen to
-
-#### All Rooms Mode
-- **Auto-Subscribe New Rooms** (Optional): Automatically subscribe to new chat rooms as they are created (default: enabled)
-
-#### Filtered Rooms Mode
-- **Room Title Filter (Regex)** (Required): Regex pattern to filter rooms by title
-- **Auto-Subscribe New Rooms** (Optional): Automatically subscribe to new matching rooms as they are created (default: enabled)
+Additional parameters depend on the selected room mode. See [Room Modes](#room-modes) for details and examples.
 
 <img src="../../screenshots/trigger-config.png" alt="Screenshot: Trigger Node Configuration" width="500" />
 

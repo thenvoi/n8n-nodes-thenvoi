@@ -14,6 +14,9 @@ Welcome! This guide will help you set up and customize AI agents in n8n using th
 8. [Best Practices](#best-practices)
 9. [Example Workflow](#example-workflow)
 10. [Troubleshooting](#troubleshooting)
+11. [Getting Help](#getting-help)
+12. [Advanced Topics](#advanced-topics)
+13. [Next Steps](#next-steps)
 
 ---
 
@@ -39,7 +42,7 @@ Before using the Thenvoi AI Agent node, you need:
 1. **Thenvoi Platform Access**: An account on a Thenvoi server
 2. **API Credentials**: API key from your Thenvoi account
 3. **Agent Created**: An agent created in the Thenvoi platform
-4. **n8n Instance**: Access to an n8n instance (cloud or self-hosted)
+4. **n8n Instance**: Access to a self-hosted n8n instance
 5. **LLM Access**: Credentials for your chosen LLM (OpenAI, Anthropic, etc.)
 
 ---
@@ -48,33 +51,9 @@ Before using the Thenvoi AI Agent node, you need:
 
 ### Step 1: Create Thenvoi API Credentials in n8n
 
-1. In n8n, go to **Credentials** → **New Credential**
-2. Search for **"Thenvoi API"**
-3. Fill in the required fields:
+Follow the shared credential setup guide:
 
-#### API Key
-- **Where to get it**: Your Thenvoi platform settings → API Keys section
-- **Format**: Usually starts with `thnv_`
-- **Example**: `thnv_1234567890_abcdefghijklmnop`
-
-#### Server URL
-- **What it is**: The base URL of your Thenvoi server (without protocol)
-- **Default**: `app.thenvoi.com/api/v1`
-- **Note**: Don't include `http://` or `https://`
-
-#### Use HTTPS
-- **Default**: `true` (recommended)
-- **When to disable**: Only if your Thenvoi server doesn't support HTTPS (rare)
-
-#### Agent ID
-- **Where to get it**: Your Thenvoi platform → Agents section
-- **Format**: UUID (e.g., `550e8400-e29b-41d4-a716-446655440000`)
-- **Important**: This must match the agent you want this n8n workflow to control
-
-4. **Test the connection** using the built-in test button
-5. **Save** the credential
-
-<img src="../../screenshots/credentials-config.png" alt="Screenshot: Thenvoi API Credentials Configuration" width="800" />
+- [Thenvoi Credentials Setup Guide](../thenvoi_credentials_guide.md)
 
 ### Step 2: Set Up LLM Credentials
 
@@ -125,6 +104,15 @@ Control what gets streamed to the Thenvoi chat:
 
 <img src="../../screenshots/agent-config-1.png" alt="Screenshot: Agent Node Configuration Part 1" width="400" />
 <img src="../../screenshots/agent-config-2.png" alt="Screenshot: Agent Node Configuration Part 2" width="400" />
+
+### Built-in tools
+
+The node exposes built-in tools your agent can use during execution:
+
+- `send_message` - Send a visible message to the Thenvoi chat
+- `list_available_participants` - List users/agents that can be added
+- `add_participant_to_chat` - Add a participant to the current chat
+- `remove_participant_from_chat` - Remove a participant from the current chat
 
 ---
 

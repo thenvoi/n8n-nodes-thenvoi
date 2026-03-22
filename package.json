@@ -1,6 +1,6 @@
 {
   "name": "@thenvoi/n8n-nodes-thenvoi",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "n8n community nodes for integrating with the Thenvoi platform",
   "keywords": [
     "n8n-community-node-package"

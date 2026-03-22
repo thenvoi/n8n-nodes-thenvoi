@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/thenvoi/n8n-nodes-thenvoi/compare/n8n-nodes-thenvoi-v0.2.0...n8n-nodes-thenvoi-v0.2.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* refresh docs changes for release ([0fc19cf](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/0fc19cf945c9b952454c78f2e25ab8ea172e01c4))
+* reorganize README and move developer workflow to dedicated guides ([6f54ab8](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/6f54ab84a9533388f7b872ca0acced41ba0af718))
+* unify node guides with shared credentials doc and improved navigation ([b9526a0](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/b9526a0218332a6be68533088265aa97c71b367c))
+
 ## [0.2.0](https://github.com/thenvoi/n8n-nodes-thenvoi/compare/n8n-nodes-thenvoi-v0.1.0...n8n-nodes-thenvoi-v0.2.0) (2026-03-21)
 
 

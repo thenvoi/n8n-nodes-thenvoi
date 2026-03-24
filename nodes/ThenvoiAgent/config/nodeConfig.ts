@@ -1,11 +1,11 @@
-import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
+import { INodeTypeDescription, NodeConnectionTypes } from 'n8n-workflow';
 import { NODE_PARAMETER_PROPERTIES } from '../constants/nodeProperties';
 
 export const nodeDescription: INodeTypeDescription = {
 	displayName: 'Thenvoi AI Agent',
 	name: 'thenvoiAgent',
 	icon: 'file:../../../dist/nodes/ThenvoiAgent/assets/thenvoi.svg',
-	group: ['ai'],
+	group: ['transform'],
 	version: 1,
 	description: 'AI Agent with Thenvoi callback streaming - works like n8n AI Agent',
 	subtitle: '={{$parameter["chatId"]}}',
@@ -26,28 +26,28 @@ export const nodeDescription: INodeTypeDescription = {
 		},
 	},
 	inputs: [
-		NodeConnectionType.Main,
+		NodeConnectionTypes.Main,
 		{
 			displayName: 'Model',
 			maxConnections: 1,
-			type: NodeConnectionType.AiLanguageModel,
+			type: NodeConnectionTypes.AiLanguageModel,
 			required: true,
 		},
 		{
 			displayName: 'Memory',
 			maxConnections: 1,
-			type: NodeConnectionType.AiMemory,
+			type: NodeConnectionTypes.AiMemory,
 			required: false,
 		},
 		{
 			displayName: 'Tools',
 			maxConnections: undefined,
-			type: NodeConnectionType.AiTool,
+			type: NodeConnectionTypes.AiTool,
 			required: false,
 		},
 	],
 	inputNames: ['Main', 'Model', 'Memory', 'Tools'],
-	outputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionTypes.Main],
 	credentials: [
 		{
 			name: 'thenvoiApi',

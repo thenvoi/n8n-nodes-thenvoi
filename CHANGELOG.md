@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2](https://github.com/thenvoi/n8n-nodes-thenvoi/compare/n8n-nodes-thenvoi-v0.2.1...n8n-nodes-thenvoi-v0.2.2) (2026-03-24)
+
+
+### Bug Fixes
+
+* align node connection constants with n8n-workflow 1.120 ([d81606f](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/d81606f93842a5ea221b2d692192ad1eb58cfcad))
+* upgrade n8n-workflow and pin safe axios resolution ([bc0b87d](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/bc0b87d8aecdd019e1ec12e213a0d0376e21c2a4))
+* upgrade n8n-workflow and pin safe axios version ([c595c21](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/c595c21ce9e477993cdd4a4e2b57653e811983c1))
+
 ## [0.2.1](https://github.com/thenvoi/n8n-nodes-thenvoi/compare/n8n-nodes-thenvoi-v0.2.0...n8n-nodes-thenvoi-v0.2.1) (2026-03-22)
 
 

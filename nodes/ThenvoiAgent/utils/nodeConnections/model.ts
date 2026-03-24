@@ -1,4 +1,4 @@
-import { IExecuteFunctions, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import { IExecuteFunctions, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 /**
@@ -6,7 +6,7 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
  */
 export async function getConnectedModel(ctx: IExecuteFunctions): Promise<BaseChatModel> {
 	const connectedModel = (await ctx.getInputConnectionData(
-		NodeConnectionType.AiLanguageModel,
+		NodeConnectionTypes.AiLanguageModel,
 		0,
 	)) as BaseChatModel | undefined;
 

@@ -1,4 +1,4 @@
-import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
+import { INodeTypeDescription, NodeConnectionTypes } from 'n8n-workflow';
 import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
 import { MessageCreatedHandler } from '../handlers/events/messageCreated/handler';
 import { roomModeParameters } from './baseParameters';
@@ -19,7 +19,7 @@ export const nodeDescription: INodeTypeDescription = {
 		name: 'Thenvoi Trigger',
 	},
 	inputs: [],
-	outputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionTypes.Main],
 	credentials: [
 		{
 			name: 'thenvoiApi',

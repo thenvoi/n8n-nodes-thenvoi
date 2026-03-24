@@ -1,4 +1,4 @@
-import { IExecuteFunctions, NodeConnectionType } from 'n8n-workflow';
+import { IExecuteFunctions, NodeConnectionTypes } from 'n8n-workflow';
 import { StructuredTool } from '@langchain/core/tools';
 
 /**
@@ -7,7 +7,7 @@ import { StructuredTool } from '@langchain/core/tools';
 export async function getConnectedTools(ctx: IExecuteFunctions): Promise<StructuredTool[]> {
 	const tools: StructuredTool[] = [];
 
-	const connectedTools = (await ctx.getInputConnectionData(NodeConnectionType.AiTool, 0)) as
+	const connectedTools = (await ctx.getInputConnectionData(NodeConnectionTypes.AiTool, 0)) as
 		| StructuredTool[]
 		| StructuredTool
 		| undefined;

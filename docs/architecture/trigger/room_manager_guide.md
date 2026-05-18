@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Room Manager is the central component of the Thenvoi Trigger system, responsible for managing all room subscriptions, WebSocket connections, and channel lifecycle. It handles room discovery, subscription management, auto-subscribe coordination, and reconnection logic.
+The Room Manager is the central component of the Band Trigger system, responsible for managing all room subscriptions, WebSocket connections, and channel lifecycle. It handles room discovery, subscription management, auto-subscribe coordination, and reconnection logic.
 
 ## Responsibilities
 
@@ -130,7 +130,7 @@ sequenceDiagram
     participant Trigger as Trigger Node
     participant Manager as Room Manager
     participant Socket as WebSocket
-    participant API as Thenvoi API
+    participant API as Band API
     participant Channels as Phoenix Channels
     
     Trigger->>Manager: Initialize
@@ -163,7 +163,7 @@ sequenceDiagram
 sequenceDiagram
     participant Socket as WebSocket
     participant Manager as Room Manager
-    participant API as Thenvoi API
+    participant API as Band API
     participant Channels as Phoenix Channels
     
     Socket->>Manager: Connection Lost

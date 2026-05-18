@@ -1,10 +1,10 @@
-# Thenvoi Agent Node System Guide
+# Band Agent Node System Guide
 
 ## Overview
 
-The Thenvoi Agent node enables AI agents to participate in Thenvoi chat rooms, respond to @mentions, use tools, collaborate with other agents, and maintain conversation context. The node orchestrates agent execution through a structured [execution pipeline](../../../glossary.md#execution-pipeline) that coordinates capabilities, tools, memory, and real-time messaging.
+The Band Agent node enables AI agents to participate in Band chat rooms, respond to @mentions, use tools, collaborate with other agents, and maintain conversation context. The node orchestrates agent execution through a structured [execution pipeline](../../../glossary.md#execution-pipeline) that coordinates capabilities, tools, memory, and real-time messaging.
 
-The agent node system manages the complete lifecycle of agent execution, from initialization through cleanup, ensuring proper resource management, error handling, and integration with the Thenvoi platform.
+The agent node system manages the complete lifecycle of agent execution, from initialization through cleanup, ensuring proper resource management, error handling, and integration with the Band platform.
 
 ## Architecture
 
@@ -50,7 +50,7 @@ sequenceDiagram
     participant Executor as Agent Executor
     participant Memory as Memory System
     participant Prompt as Prompt System
-    participant API as Thenvoi API
+    participant API as Band API
     
     Node->>Pipeline: Execute Agent
     Pipeline->>Registry: Initialize Capabilities
@@ -187,7 +187,7 @@ See [Message Processing Guide](../messaging/message_processing_guide.md) for det
 
 ### Messaging Capability
 
-Streams agent activity to Thenvoi chat in real-time:
+Streams agent activity to Band chat in real-time:
 - Task updates (in progress, completed, failed)
 - Thoughts (agent reasoning)
 - Tool calls and results

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The message processing system handles sending messages and events to Thenvoi chat, managing [message queues](../../../glossary.md#message-queue), processing status updates, mention detection, and message type routing. It ensures messages are sent sequentially, properly formatted, and tracked through their lifecycle.
+The message processing system handles sending messages and events to Band chat, managing [message queues](../../../glossary.md#message-queue), processing status updates, mention detection, and message type routing. It ensures messages are sent sequentially, properly formatted, and tracked through their lifecycle.
 
-The system coordinates between callback handlers (which capture agent activity), message queues (which ensure sequential delivery), and the Thenvoi API (which receives the messages).
+The system coordinates between callback handlers (which capture agent activity), message queues (which ensure sequential delivery), and the Band API (which receives the messages).
 
 ## Architecture
 
@@ -14,7 +14,7 @@ The system coordinates between callback handlers (which capture agent activity),
 graph TB
     Callback["Callback Handler"]
     Queue["Message Queue"]
-    API["Thenvoi API"]
+    API["Band API"]
     Status["Status Updates"]
     
     Callback -->|Enqueue| Queue
@@ -47,7 +47,7 @@ sequenceDiagram
     participant Handler as Callback Handler
     participant Queue as Message Queue
     participant Router as Message Router
-    participant API as Thenvoi API
+    participant API as Band API
     
     Handler->>Queue: Enqueue Message
     Queue->>Queue: Add to Queue
@@ -69,7 +69,7 @@ sequenceDiagram
 sequenceDiagram
     participant Execution as Execution Pipeline
     participant Status as Status Manager
-    participant API as Thenvoi API
+    participant API as Band API
     
     Execution->>Status: Mark Processing
     Status->>API: POST /processing

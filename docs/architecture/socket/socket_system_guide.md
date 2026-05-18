@@ -2,7 +2,7 @@
 
 ## Overview
 
-The socket system provides WebSocket connectivity to the Thenvoi platform using [Phoenix sockets](../../glossary.md#phoenix-socket). It manages connection lifecycle, channel subscriptions, reconnection handling, and event routing for real-time communication.
+The socket system provides WebSocket connectivity to the Band platform using [Phoenix sockets](../../glossary.md#phoenix-socket). It manages connection lifecycle, channel subscriptions, reconnection handling, and event routing for real-time communication.
 
 The system abstracts Phoenix socket complexity and provides a clean interface for creating connections, joining channels, and handling events with proper error handling and reconnection support.
 
@@ -48,7 +48,7 @@ sequenceDiagram
     participant Client as Client Code
     participant Manager as Connection Manager
     participant Socket as Phoenix Socket
-    participant Server as Thenvoi Server
+    participant Server as Band Server
     
     Client->>Manager: createSocket(config)
     Manager->>Socket: new Socket(url, options)
@@ -68,7 +68,7 @@ sequenceDiagram
     participant Client as Client Code
     participant Manager as Channel Manager
     participant Channel as Phoenix Channel
-    participant Server as Thenvoi Server
+    participant Server as Band Server
     
     Client->>Manager: createAndJoinChannel(socket, config)
     Manager->>Channel: socket.channel(name)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The [capability](../../../glossary.md#capability) system is an extensible architecture that allows the Thenvoi Agent node to add functionality through modular components. Capabilities hook into different phases of agent execution through lifecycle methods, enabling features like real-time messaging, agent collaboration, and custom extensions without modifying core agent logic.
+The [capability](../../../glossary.md#capability) system is an extensible architecture that allows the Band Agent node to add functionality through modular components. Capabilities hook into different phases of agent execution through lifecycle methods, enabling features like real-time messaging, agent collaboration, and custom extensions without modifying core agent logic.
 
 Capabilities execute sequentially based on priority, ensuring predictable behavior and allowing dependencies between capabilities.
 
@@ -109,7 +109,7 @@ Capabilities return a `SetupResult` containing:
 Shared execution context provides:
 - **execution** - n8n execution functions
 - **config** - Agent node configuration
-- **credentials** - Thenvoi API credentials
+- **credentials** - Band API credentials
 - **input** - User input for the agent
 - **messageId** - ID of the message being processed
 - **httpClient** - HTTP client for API requests
@@ -162,7 +162,7 @@ See [Execution Pipeline Guide](../execution/execution_pipeline_guide.md) for det
 
 **Priority**: HIGH (25)
 
-Handles real-time streaming of agent activity to Thenvoi chat:
+Handles real-time streaming of agent activity to Band chat:
 - Task updates (in progress, completed, failed)
 - Thoughts (agent reasoning)
 - Tool calls and results

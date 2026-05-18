@@ -5,7 +5,7 @@
 # creates a GitHub Release and publishes to npm. npm publish runs in this same workflow
 # (not via release events) so it still runs when using the default GITHUB_TOKEN.
 #
-# npm: configure Trusted Publishing for package @thenvoi/n8n-nodes-thenvoi with workflow file
+# npm: configure Trusted Publishing for package @band-ai/n8n-nodes-band with workflow file
 # release.yml (see README). Optional: set NPM_TOKEN secret for token-based publish fallback.
 #
 # --provenance: n8n verification expects published packages to include provenance when

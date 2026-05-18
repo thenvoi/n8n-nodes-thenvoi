@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to create effective, maintainable documentation for the Thenvoi n8n nodes project. It's based on best practices learned from creating system documentation and focuses on creating documentation that remains accurate even as code evolves.
+This guide explains how to create effective, maintainable documentation for the Band n8n nodes project. It's based on best practices learned from creating system documentation and focuses on creating documentation that remains accurate even as code evolves.
 
 ## Documentation Location
 

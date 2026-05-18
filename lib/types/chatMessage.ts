@@ -61,7 +61,7 @@ export function isEventType(type: ChatMessageType): type is ChatEventType {
 /**
  * Base message payload with shared properties
  */
-export interface ThenvoiMessagePayload {
+export interface BandMessagePayload {
 	content: string;
 }
 
@@ -69,7 +69,7 @@ export interface ThenvoiMessagePayload {
  * Text message payload sent to /messages endpoint
  * Requires mentions array with id; handle and name are optional
  */
-export interface ThenvoiTextPayload extends ThenvoiMessagePayload {
+export interface BandTextPayload extends BandMessagePayload {
 	mentions: ChatMessageMention[];
 }
 
@@ -77,25 +77,25 @@ export interface ThenvoiTextPayload extends ThenvoiMessagePayload {
  * Event payload sent to /events endpoint
  * No mention validation required
  */
-export interface ThenvoiEventPayload extends ThenvoiMessagePayload {
+export interface BandEventPayload extends BandMessagePayload {
 	message_type: ChatEventType;
 	metadata?: Record<string, unknown>;
 }
 
 /**
- * Request body wrapper for Thenvoi API /messages endpoint
+ * Request body wrapper for Band API /messages endpoint
  * The API requires the message payload to be wrapped in a "message" object
  */
-export interface ThenvoiTextRequest {
-	message: ThenvoiTextPayload;
+export interface BandTextRequest {
+	message: BandTextPayload;
 }
 
 /**
- * Request body wrapper for Thenvoi API /events endpoint
+ * Request body wrapper for Band API /events endpoint
  * The API requires the event payload to be wrapped in an "event" object
  */
-export interface ThenvoiEventRequest {
-	event: ThenvoiEventPayload;
+export interface BandEventRequest {
+	event: BandEventPayload;
 }
 
 // Raw data structure as it comes from the socket

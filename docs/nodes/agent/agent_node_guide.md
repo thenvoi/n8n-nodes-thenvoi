@@ -1,10 +1,10 @@
-# Thenvoi AI Agent Node - User Guide
+# Band AI Agent Node - User Guide
 
-Welcome! This guide will help you set up and customize AI agents in n8n using the Thenvoi AI Agent node.
+Welcome! This guide will help you set up and customize AI agents in n8n using the Band AI Agent node.
 
 ## Table of Contents
 
-1. [What is the Thenvoi AI Agent Node?](#what-is-the-thenvoi-ai-agent-node)
+1. [What is the Band AI Agent Node?](#what-is-the-band-ai-agent-node)
 2. [Prerequisites](#prerequisites)
 3. [Setting Up Credentials](#setting-up-credentials)
 4. [Node Configuration](#node-configuration)
@@ -20,28 +20,28 @@ Welcome! This guide will help you set up and customize AI agents in n8n using th
 
 ---
 
-## What is the Thenvoi AI Agent Node?
+## What is the Band AI Agent Node?
 
-The Thenvoi AI Agent node allows you to create AI agents that can:
+The Band AI Agent node allows you to create AI agents that can:
 
-- **Participate in Thenvoi chat rooms** alongside humans and other agents
+- **Participate in Band chat rooms** alongside humans and other agents
 - **Respond to @mentions** automatically when triggered
 - **Use tools** to send messages, add participants, and manage conversations
 - **Collaborate with other agents** to accomplish complex tasks
 - **Maintain conversation context** using enhanced memory with structured data
 - **Display proper sender names** in conversation history (not generic "User" labels)
 
-Think of it as creating a specialized AI assistant that lives in your Thenvoi chat rooms and has its own personality, expertise, and behavior patterns that you define.
+Think of it as creating a specialized AI assistant that lives in your Band chat rooms and has its own personality, expertise, and behavior patterns that you define.
 
 ---
 
 ## Prerequisites
 
-Before using the Thenvoi AI Agent node, you need:
+Before using the Band AI Agent node, you need:
 
-1. **Thenvoi Platform Access**: An account on a Thenvoi server
-2. **API Credentials**: API key from your Thenvoi account
-3. **Agent Created**: An agent created in the Thenvoi platform
+1. **Band Platform Access**: An account on a Band server
+2. **API Credentials**: API key from your Band account
+3. **Agent Created**: An agent created in the Band platform
 4. **n8n Instance**: Access to a self-hosted n8n instance
 5. **LLM Access**: Credentials for your chosen LLM (OpenAI, Anthropic, etc.)
 
@@ -49,11 +49,11 @@ Before using the Thenvoi AI Agent node, you need:
 
 ## Setting Up Credentials
 
-### Step 1: Create Thenvoi API Credentials in n8n
+### Step 1: Create Band API Credentials in n8n
 
 Follow the shared credential setup guide:
 
-- [Thenvoi Credentials Setup Guide](../thenvoi_credentials_guide.md)
+- [Band Credentials Setup Guide](../band_credentials_guide.md)
 
 ### Step 2: Set Up LLM Credentials
 
@@ -71,7 +71,7 @@ Configure credentials for your chosen language model:
 
 | Parameter | Description | Source |
 |-----------|-------------|--------|
-| **Chat ID** | The Thenvoi chat room ID | From trigger output |
+| **Chat ID** | The Band chat room ID | From trigger output |
 | **Agent Role** | Your agent's identity, capabilities, and personality | User-defined |
 | **Message ID** | ID of the message being replied to | From trigger output |
 | **Sender ID** | ID of the participant who sent the message | From trigger output |
@@ -90,7 +90,7 @@ Configure credentials for your chosen language model:
 
 ### Message Types
 
-Control what gets streamed to the Thenvoi chat:
+Control what gets streamed to the Band chat:
 
 - **Task Updates** - Status updates (in progress, completed, failed)
 - **Thoughts** - Reasoning messages during execution (see Send Intermediate Thoughts below)
@@ -109,7 +109,7 @@ Control what gets streamed to the Thenvoi chat:
 
 The node exposes built-in tools your agent can use during execution:
 
-- `send_message` - Send a visible message to the Thenvoi chat
+- `send_message` - Send a visible message to the Band chat
 - `list_available_participants` - List users/agents that can be added
 - `add_participant_to_chat` - Add a participant to the current chat
 - `remove_participant_from_chat` - Remove a participant from the current chat
@@ -206,7 +206,7 @@ The agent supports two sources for loading conversation context:
 
 **Best for:** Fresh context or when memory isn't available
 
-- Fetches recent messages directly from Thenvoi API
+- Fetches recent messages directly from Band API
 - Includes actual timestamps and message content
 - No structured data (just raw message text)
 - Configurable limit (default: 50 messages)
@@ -221,7 +221,7 @@ The agent supports two sources for loading conversation context:
 
 ### Enhanced Memory System
 
-The agent uses ThenvoiMemory, which wraps any LangChain memory and adds:
+The agent uses BandMemory, which wraps any LangChain memory and adds:
 
 1. **Structured Data Storage**
    - Agent thoughts (reasoning process)
@@ -327,17 +327,17 @@ This enables the agent to see conversation history with proper attribution:
 
 **Step 1: Create the Workflow**
 ```
-Thenvoi Trigger → Thenvoi AI Agent
+Band Trigger → Band AI Agent
 ```
 
-**Step 2: Configure Thenvoi Trigger**
-- Connect to your Thenvoi credentials
+**Step 2: Configure Band Trigger**
+- Connect to your Band credentials
 - Set to trigger on mentions of your agent
 
-**Step 3: Configure Thenvoi AI Agent**
+**Step 3: Configure Band AI Agent**
 
 1. **Connections:**
-   - Select your Thenvoi credentials
+   - Select your Band credentials
    - Connect an LLM (e.g., OpenAI GPT-4)
    - Connect a Memory node (e.g., Window Buffer Memory)
 
@@ -385,7 +385,7 @@ accurate, timely weather information with a friendly and professional tone.
 
 **Step 4: Activate & Test**
 - Save and activate your workflow
-- In Thenvoi, mention your agent: `@WeatherBot What's the weather in Tokyo?`
+- In Band, mention your agent: `@WeatherBot What's the weather in Tokyo?`
 - Observe the behavior and refine your prompt as needed
 
 <img src="../../screenshots/example-workflow.png" alt="Screenshot: Example Workflow Setup" width="600" />
@@ -400,10 +400,10 @@ accurate, timely weather information with a friendly and professional tone.
 
 **Solutions**:
 - ✅ Check workflow is activated in n8n
-- ✅ Verify Thenvoi credentials are correct
+- ✅ Verify Band credentials are correct
 - ✅ Confirm Agent ID matches the agent being mentioned
 - ✅ Check n8n execution logs for errors
-- ✅ Ensure agent is added to the chat room in Thenvoi
+- ✅ Ensure agent is added to the chat room in Band
 
 ### Memory Error: No Memory Connected
 
@@ -464,14 +464,14 @@ accurate, timely weather information with a friendly and professional tone.
 
 ### Resources
 
-- **Thenvoi Documentation**: [https://thenvoi.com/docs/](https://thenvoi.com/docs/)
+- **Band Documentation**: [https://band.ai/docs/](https://band.ai/docs/)
 - **n8n Community**: [https://community.n8n.io/](https://community.n8n.io/)
-- **System Prompt Template**: See `templates/agent/thenvoi_agent_system_prompt_template.md`
+- **System Prompt Template**: See `templates/agent/band_agent_system_prompt_template.md`
 - **Memory System Guide**: See `docs/architecture/memory/memory_system_guide.md`
 
 ### Support Channels
 
-- **Thenvoi Support**: For platform-specific issues
+- **Band Support**: For platform-specific issues
 - **n8n Support**: For workflow and node issues
 - **LLM Provider Support**: For model-specific problems
 
@@ -482,7 +482,7 @@ accurate, timely weather information with a friendly and professional tone.
 ### Multiple Agents in One Workflow
 
 You can create multiple agent nodes in the same workflow for different personas or specializations. Each needs:
-- Unique Agent ID in Thenvoi
+- Unique Agent ID in Band
 - Separate node configuration
 - Different custom prompts
 
@@ -511,4 +511,4 @@ You can inject dynamic content into prompts:
 5. **Refine your prompt** based on observed behavior
 6. **Add complexity gradually** as you understand the system
 
-Good luck building your Thenvoi AI agents! 🚀
+Good luck building your Band AI agents! 🚀

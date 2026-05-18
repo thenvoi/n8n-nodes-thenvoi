@@ -1,4 +1,4 @@
-import { ThenvoiCredentials } from '../types';
+import { BandCredentials } from '../types';
 
 /**
  * URL protocols for different connection types
@@ -27,7 +27,7 @@ export function getSocketUrl(serverUrl: string): string {
 /**
  * Gets the HTTP API URL from credentials
  */
-export function getHttpUrl(credentials: ThenvoiCredentials, useHttps: boolean = true): string {
+export function getHttpUrl(credentials: BandCredentials, useHttps: boolean = true): string {
 	const protocol = useHttps ? URL_PROTOCOLS.HTTP : URL_PROTOCOLS.HTTP_INSECURE;
 	return buildUrl(credentials.serverUrl, protocol, URL_PATHS.HTTP);
 }

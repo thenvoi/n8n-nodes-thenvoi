@@ -45,7 +45,7 @@ function handleJoinError(channelName: string, logger: Logger, resp?: unknown): n
 		error: resp,
 	});
 
-	throw new Error(`Unable to join Thenvoi channel: ${JSON.stringify(resp)}`);
+	throw new Error(`Unable to join Band channel: ${JSON.stringify(resp)}`);
 }
 
 /**

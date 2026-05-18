@@ -1,7 +1,7 @@
 /**
  * Agent Type Definitions
  *
- * Types for Thenvoi agents
+ * Types for Band agents
  */
 
 /**
@@ -26,7 +26,7 @@ export interface AgentMe {
 }
 
 /**
- * Full agent model from Thenvoi API
+ * Full agent model from Band API
  */
 export interface Agent {
 	id: string;

@@ -1,10 +1,10 @@
-# Thenvoi Trigger Node - User Guide
+# Band Trigger Node - User Guide
 
-Welcome! This guide will help you set up and configure the Thenvoi Trigger node to listen to real-time events from Thenvoi chat rooms.
+Welcome! This guide will help you set up and configure the Band Trigger node to listen to real-time events from Band chat rooms.
 
 ## Table of Contents
 
-1. [What is the Thenvoi Trigger Node?](#what-is-the-thenvoi-trigger-node)
+1. [What is the Band Trigger Node?](#what-is-the-band-trigger-node)
 2. [Prerequisites](#prerequisites)
 3. [Setting Up Credentials](#setting-up-credentials)
 4. [Node Configuration](#node-configuration)
@@ -18,38 +18,38 @@ Welcome! This guide will help you set up and configure the Thenvoi Trigger node 
 
 ---
 
-## What is the Thenvoi Trigger Node?
+## What is the Band Trigger Node?
 
-The Thenvoi Trigger node allows you to:
+The Band Trigger node allows you to:
 
-- **Listen to real-time events** from Thenvoi chat rooms via WebSocket connections
+- **Listen to real-time events** from Band chat rooms via WebSocket connections
 - **Monitor multiple rooms** using different subscription modes
 - **Filter events** based on your specific needs
 - **Automatically subscribe** to new rooms as they are created
 - **Trigger n8n workflows** when events occur in your chat rooms
 
-Think of it as a real-time event listener that connects your Thenvoi chat rooms to your n8n automation workflows.
+Think of it as a real-time event listener that connects your Band chat rooms to your n8n automation workflows.
 
 ---
 
 ## Prerequisites
 
-Before using the Thenvoi Trigger node, you need:
+Before using the Band Trigger node, you need:
 
-1. **Thenvoi Platform Access**: An account on a Thenvoi server
-2. **API Credentials**: API key from your Thenvoi account
-3. **Agent Created**: An agent created in the Thenvoi platform
+1. **Band Platform Access**: An account on a Band server
+2. **API Credentials**: API key from your Band account
+3. **Agent Created**: An agent created in the Band platform
 4. **n8n Instance**: Access to a self-hosted n8n instance
 
 ---
 
 ## Setting Up Credentials
 
-### Step 1: Create Thenvoi API Credentials in n8n
+### Step 1: Create Band API Credentials in n8n
 
 Follow the shared credential setup guide:
 
-- [Thenvoi Credentials Setup Guide](../thenvoi_credentials_guide.md)
+- [Band Credentials Setup Guide](../band_credentials_guide.md)
 
 ---
 
@@ -242,16 +242,16 @@ The trigger provides the following data to your workflow:
 **Goal**: Automatically respond to mentions in a support channel
 
 **Setup**:
-1. Add **Thenvoi Trigger** node
+1. Add **Band Trigger** node
 2. Configure:
    - **Event**: Message Created
    - **Room Mode**: Single Room
    - **Chat Room ID**: Your support room ID
-3. Connect to **Thenvoi AI Agent** node to respond
+3. Connect to **Band AI Agent** node to respond
 
 **Workflow**:
 ```
-Thenvoi Trigger (Single Room) → Thenvoi AI Agent → Response
+Band Trigger (Single Room) → Band AI Agent → Response
 ```
 
 ### Example 2: Multi-Room Monitoring
@@ -259,7 +259,7 @@ Thenvoi Trigger (Single Room) → Thenvoi AI Agent → Response
 **Goal**: Monitor all support-related rooms and log messages
 
 **Setup**:
-1. Add **Thenvoi Trigger** node
+1. Add **Band Trigger** node
 2. Configure:
    - **Event**: Message Created
    - **Room Mode**: Filtered Rooms
@@ -269,7 +269,7 @@ Thenvoi Trigger (Single Room) → Thenvoi AI Agent → Response
 
 **Workflow**:
 ```
-Thenvoi Trigger (Filtered) → HTTP Request (Log) → Database
+Band Trigger (Filtered) → HTTP Request (Log) → Database
 ```
 
 ### Example 3: All Rooms Notification System
@@ -277,7 +277,7 @@ Thenvoi Trigger (Filtered) → HTTP Request (Log) → Database
 **Goal**: Send notifications for any mention across all rooms
 
 **Setup**:
-1. Add **Thenvoi Trigger** node
+1. Add **Band Trigger** node
 2. Configure:
    - **Event**: Message Created
    - **Room Mode**: All Rooms
@@ -286,7 +286,7 @@ Thenvoi Trigger (Filtered) → HTTP Request (Log) → Database
 
 **Workflow**:
 ```
-Thenvoi Trigger (All Rooms) → Filter → Notification Node
+Band Trigger (All Rooms) → Filter → Notification Node
 ```
 
 ---
@@ -299,11 +299,11 @@ Thenvoi Trigger (All Rooms) → Filter → Notification Node
 
 **Solutions**:
 - ✅ Verify workflow is activated in n8n
-- ✅ Check Thenvoi credentials are correct
+- ✅ Check Band credentials are correct
 - ✅ Confirm Agent ID matches your agent
 - ✅ Verify room ID is correct (for Single Room mode)
 - ✅ Check regex pattern is valid (for Filtered Rooms mode)
-- ✅ Ensure your agent is added to the chat room in Thenvoi
+- ✅ Ensure your agent is added to the chat room in Band
 - ✅ Check n8n execution logs for connection errors
 
 ### Auto-Subscribe Not Working
@@ -326,7 +326,7 @@ Thenvoi Trigger (All Rooms) → Filter → Notification Node
 - ✅ Verify room titles match your pattern (case-insensitive matching)
 - ✅ Check for special characters that need escaping
 - ✅ Use simple patterns first, then add complexity
-- ✅ Review room titles in Thenvoi to ensure they match your pattern
+- ✅ Review room titles in Band to ensure they match your pattern
 
 ### Connection Issues
 
@@ -334,7 +334,7 @@ Thenvoi Trigger (All Rooms) → Filter → Notification Node
 
 **Solutions**:
 - ✅ Verify WebSocket connection is established (check logs)
-- ✅ Check network connectivity to Thenvoi server
+- ✅ Check network connectivity to Band server
 - ✅ Ensure server URL is correct
 - ✅ Verify HTTPS is enabled if required
 - ✅ Check for firewall or proxy issues
@@ -357,7 +357,7 @@ Thenvoi Trigger (All Rooms) → Filter → Notification Node
 
 ### Resources
 
-- **Thenvoi Documentation**: [https://docs.thenvoi.com/](https://docs.thenvoi.com/)
+- **Band Documentation**: [https://docs.band.ai/](https://docs.band.ai/)
 - **n8n Community**: [https://community.n8n.io/](https://community.n8n.io/)
 - **Trigger System Guide**: See `docs/architecture/trigger/trigger_system_guide.md`
 - **Socket System Guide**: See `docs/architecture/socket/socket_system_guide.md`
@@ -373,5 +373,5 @@ Thenvoi Trigger (All Rooms) → Filter → Notification Node
 5. **Build your workflow** to process triggered events
 6. **Monitor and refine** based on your needs
 
-Good luck building your Thenvoi automations! 🚀
+Good luck building your Band automations! 🚀
 

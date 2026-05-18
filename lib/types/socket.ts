@@ -8,12 +8,12 @@ export interface SocketConfig {
 	onReconnect?: () => void | Promise<void>;
 }
 
-export class ThenvoiWebSocket extends WebSocket {
+export class BandWebSocket extends WebSocket {
 	constructor(address: string, protocols?: string | string[], options: ClientOptions = {}) {
 		super(address, protocols, {
 			...options,
 			headers: {
-				'User-Agent': 'n8n-ThenvoiClient/1.0 (Node.js)',
+				'User-Agent': 'n8n-BandClient/1.0 (Node.js)',
 				...options.headers,
 			},
 		});

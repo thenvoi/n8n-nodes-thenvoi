@@ -76,9 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Update langchain to 0.3.37 and @langchain/core to 0.3.80 ([e5b8969](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/e5b8969725783debacec6f74c53b8cb957152c97))
 * Update langchain to 0.3.37 and @langchain/core to 0.3.80 ([4a0f209](https://github.com/thenvoi/n8n-nodes-thenvoi/commit/4a0f209aa9ac72f70a5440fa8d6c5308942e9ff9))
 
-## [Unreleased]
-
-## [0.1.0] - 2025-12-13
+## [0.1.0](https://github.com/thenvoi/n8n-nodes-thenvoi/releases/tag/v0.1.0) (2025-12-13)
 
 ### Added
 
@@ -104,6 +102,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Memory system guide
   - System prompt templates
   - Glossary of domain-specific terms
-
-[Unreleased]: https://github.com/thenvoi/n8n-nodes-thenvoi/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/thenvoi/n8n-nodes-thenvoi/releases/tag/v0.1.0

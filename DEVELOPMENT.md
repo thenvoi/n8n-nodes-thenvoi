@@ -22,7 +22,7 @@ Install the following on your development machine:
 
    ```bash
    git clone https://github.com/thenvoi/n8n-nodes-thenvoi.git
-   cd n8n-nodes-band
+   cd n8n-nodes-thenvoi
    ```
 
 2. Install dependencies:

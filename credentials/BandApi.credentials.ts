@@ -8,7 +8,7 @@ import {
 export class BandApi implements ICredentialType {
 	name = 'bandApi';
 	displayName = 'Band API';
-	documentationUrl = 'https://band.ai/docs/';
+	documentationUrl = 'https://docs.band.ai/';
 	properties: INodeProperties[] = [
 		{
 			displayName: 'API Key',

@@ -1,22 +1,22 @@
 # Glossary
 
-This glossary defines key domain-specific terms used across the Thenvoi n8n nodes project documentation. Use these terms consistently to ensure clarity and prevent terminology drift.
+This glossary defines key domain-specific terms used across the Band n8n nodes project documentation. Use these terms consistently to ensure clarity and prevent terminology drift.
 
 ## Memory & Context Terms
 
 ### Base Memory
-The underlying LangChain memory implementation (e.g., BufferMemory, WindowMemory) that stores conversation history. Base memory is wrapped by `ThenvoiMemory` to add structured data capabilities while preserving all original functionality.
+The underlying LangChain memory implementation (e.g., BufferMemory, WindowMemory) that stores conversation history. Base memory is wrapped by `BandMemory` to add structured data capabilities while preserving all original functionality.
 
 ### Enhanced Context
 The complete execution data saved to memory after agent execution completes, including agent thoughts, tool calls, and messages. Enhanced context is created during `saveContext()` and includes structured data that enriches the base memory storage.
 
 ### Enriched Metadata
-Additional structured data stored alongside messages in memory. For Thenvoi agents, this includes tool calls, messages sent, and sender information stored in `additional_kwargs` on message objects.
+Additional structured data stored alongside messages in memory. For Band agents, this includes tool calls, messages sent, and sender information stored in `additional_kwargs` on message objects.
 
 ### Message History Source
 Configuration option determining where conversation history is loaded from:
 - **From Memory**: Load from connected LangChain memory node (includes structured data)
-- **From API**: Fetch recent messages from Thenvoi API (raw message content)
+- **From API**: Fetch recent messages from Band API (raw message content)
 
 ### Sender Information
 Metadata attached to messages identifying who sent them:
@@ -88,7 +88,7 @@ The phases a capability can hook into:
 - **Finalize**: Cleanup resources (runs after success or error)
 
 ### Messaging Capability
-Built-in capability that streams agent activity to Thenvoi chat in real-time. Provides the `send_message` tool and handles message queueing.
+Built-in capability that streams agent activity to Band chat in real-time. Provides the `send_message` tool and handles message queueing.
 
 ### Agent Collaboration Capability
 Built-in capability that enables agents to discover and add other participants to chats. Provides tools for managing chat participants.
@@ -117,7 +117,7 @@ The structured phase-based flow that orchestrates agent execution: Initialize Ca
 A queue system that ensures messages are sent sequentially to prevent race conditions and maintain message order. Messages are enqueued and sent one at a time.
 
 ### Phoenix Socket
-A WebSocket implementation used for real-time communication with the Thenvoi platform. Provides connection management, automatic reconnection, and channel-based messaging.
+A WebSocket implementation used for real-time communication with the Band platform. Provides connection management, automatic reconnection, and channel-based messaging.
 
 ### Room Subscription
 A subscription to a specific chat room's events via a Phoenix channel. The trigger node manages multiple room subscriptions based on configuration.

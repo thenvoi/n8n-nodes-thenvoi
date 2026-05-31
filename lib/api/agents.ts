@@ -2,7 +2,7 @@ import { HttpClient } from '../http/client';
 import { Agent, AgentBasicInfo, AgentMe } from '../types';
 
 /**
- * Fetches all available agents from Thenvoi
+ * Fetches all available agents from Band
  *
  * @param httpClient - HTTP client for API requests
  * @returns Array of available agent basic information

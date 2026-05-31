@@ -1,15 +1,15 @@
 {
-  "name": "@thenvoi/n8n-nodes-thenvoi",
-  "version": "0.2.2",
-  "description": "n8n community nodes for integrating with the Thenvoi platform",
+  "name": "@band-ai/n8n-nodes-band",
+  "version": "1.0.0",
+  "description": "n8n community nodes for integrating with the Band platform",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
   "homepage": "https://github.com/thenvoi/n8n-nodes-thenvoi",
   "author": {
-    "name": "Thenvoi",
-    "email": "contact@thenvoi.com"
+    "name": "Band",
+    "email": "contact@band.ai"
   },
   "repository": {
     "type": "git",
@@ -33,11 +33,11 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/ThenvoiApi.credentials.js"
+      "dist/credentials/BandApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ThenvoiTrigger/ThenvoiTrigger.node.js",
-      "dist/nodes/ThenvoiAgent/ThenvoiAgent.node.js"
+      "dist/nodes/BandTrigger/BandTrigger.node.js",
+      "dist/nodes/BandAgent/BandAgent.node.js"
     ]
   },
   "devDependencies": {

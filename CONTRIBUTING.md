@@ -1,6 +1,6 @@
-# Contributing to Thenvoi n8n Nodes
+# Contributing to Band n8n Nodes
 
-Thank you for your interest in contributing to the Thenvoi n8n nodes project! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to the Band n8n nodes project! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -66,13 +66,13 @@ If you're adding a new node:
 3. Add documentation in `docs/n8n/`
 4. Update the README with the new node's features
 
-### Adding New Capabilities (ThenvoiAgent)
+### Adding New Capabilities (BandAgent)
 
-See [Adding new capabilities](DEVELOPMENT.md#adding-new-capabilities-thenvoiagent) for detailed instructions.
+See [Adding new capabilities](DEVELOPMENT.md#adding-new-capabilities-bandagent) for detailed instructions.
 
-### Adding New Event Types (ThenvoiTrigger)
+### Adding New Event Types (BandTrigger)
 
-See [Adding new event types](DEVELOPMENT.md#adding-new-event-types-thenvoitrigger) for detailed instructions.
+See [Adding new event types](DEVELOPMENT.md#adding-new-event-types-bandtrigger) for detailed instructions.
 
 ## Questions?
 

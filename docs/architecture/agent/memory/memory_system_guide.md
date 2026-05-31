@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Thenvoi memory system is a wrapper around LangChain's memory implementations that enhances storage to preserve complete agent execution context. Instead of just storing plain text messages, it stores [structured data](../../../glossary.md#structured-data) including:
+The Band memory system is a wrapper around LangChain's memory implementations that enhances storage to preserve complete agent execution context. Instead of just storing plain text messages, it stores [structured data](../../../glossary.md#structured-data) including:
 
 - **[Thoughts](../../../glossary.md#thoughts)** (the LLM's reasoning/output)
 - **[Tool calls](../../../glossary.md#tool-calls)** (which tools were called, with inputs and results)
@@ -19,18 +19,18 @@ The memory system uses a **wrapper pattern**:
 ```mermaid
 graph TB
     BaseMemory["LangChain Base Memory<br/>(BufferMemory, WindowMemory, etc.)"]
-    ThenvoiMemory["ThenvoiMemory<br/>(Wrapper)"]
+    BandMemory["BandMemory<br/>(Wrapper)"]
     AgentExecutor["Agent Executor"]
     
-    BaseMemory -->|wrapped by| ThenvoiMemory
-    ThenvoiMemory -->|used by| AgentExecutor
+    BaseMemory -->|wrapped by| BandMemory
+    BandMemory -->|used by| AgentExecutor
 ```
 
-**Key Point**: `ThenvoiMemory` wraps any LangChain memory implementation. It doesn't replace it—it enhances it.
+**Key Point**: `BandMemory` wraps any LangChain memory implementation. It doesn't replace it—it enhances it.
 
 ### Components
 
-1. **ThenvoiMemory** (main wrapper class)
+1. **BandMemory** (main wrapper class)
    - Extends LangChain's `BaseChatMemory`
    - Wraps a [base memory](../../../glossary.md#base-memory) implementation (e.g., BufferMemory, WindowMemory)
    - Handles [structured data](../../../glossary.md#structured-data) storage and retrieval
@@ -41,7 +41,7 @@ graph TB
 
 3. **Memory Config Factory** (configuration module)
    - Sets up and configures memory based on node settings
-   - Wraps [base memory](../../../glossary.md#base-memory) with `ThenvoiMemory`
+   - Wraps [base memory](../../../glossary.md#base-memory) with `BandMemory`
 
 ## Data Flow
 
@@ -56,13 +56,13 @@ sequenceDiagram
     participant Node as Agent Node
     participant Config as Memory Config
     participant BM as Base Memory
-    participant TM as ThenvoiMemory
+    participant TM as BandMemory
 
     Node->>Config: setupMemory()
     Config->>BM: Get connected memory
     Config->>BM: Configure inputKey/outputKey
-    Config->>TM: new ThenvoiMemory(baseMemory)
-    Config-->>Node: ThenvoiMemory instance
+    Config->>TM: new BandMemory(baseMemory)
+    Config-->>Node: BandMemory instance
     Node->>Node: Attach to Agent Executor
 ```
 
@@ -70,7 +70,7 @@ The setup process involves:
 
 1. **Fetching** the connected memory node (e.g., BufferMemory, WindowMemory)
 2. **Configuring** the [base memory](../../../glossary.md#base-memory) with required keys for LangChain compatibility
-3. **Wrapping** the base memory with `ThenvoiMemory` to add [structured data](../../../glossary.md#structured-data) capabilities
+3. **Wrapping** the base memory with `BandMemory` to add [structured data](../../../glossary.md#structured-data) capabilities
 4. **Attaching** the wrapped memory to the agent executor
 
 The wrapper preserves all functionality of the [base memory](../../../glossary.md#base-memory) while adding enhanced storage capabilities.
@@ -83,7 +83,7 @@ During agent execution, the callback handler captures all [intermediate steps](.
 sequenceDiagram
     participant Executor as Agent Executor
     participant Callback as Callback Handler
-    participant TM as ThenvoiMemory
+    participant TM as BandMemory
 
     loop During Execution
         Executor->>Callback: Tool call/result
@@ -113,7 +113,7 @@ After execution completes, LangChain calls `saveContext()` with the user input a
 ```mermaid
 sequenceDiagram
     participant Executor as Agent Executor
-    participant TM as ThenvoiMemory
+    participant TM as BandMemory
     participant Formatter as Memory Formatter
     participant BM as Base Memory
 
@@ -132,7 +132,7 @@ When loading memory for the next execution:
 ```mermaid
 sequenceDiagram
     participant LC as LangChain
-    participant TM as ThenvoiMemory
+    participant TM as BandMemory
     participant BM as Base Memory
     participant Formatter as Memory Formatter
 
@@ -185,7 +185,7 @@ classDiagram
     class AIMessage {
         +string content
         +object additional_kwargs
-        +thenvoi_structured_data
+        +band_structured_data
     }
     
     StructuredMessageData --> StructuredToolCall : contains
@@ -210,7 +210,7 @@ graph TB
     AM["AIMessage"]
     Content["content<br/>(just thoughts)"]
     Kwargs["additional_kwargs"]
-    SD["thenvoi_structured_data"]
+    SD["band_structured_data"]
     Thoughts["thoughts"]
     Tools["toolCalls[]"]
     Messages["messagesSent[]"]
@@ -228,7 +228,7 @@ graph TB
    - `HumanMessage`: User input (standard format)
    - `AIMessage`: 
      - `content`: Just the agent's [thoughts](../../../glossary.md#thoughts) (clean, unformatted)
-     - `additional_kwargs.thenvoi_structured_data`: Complete [structured data](../../../glossary.md#structured-data)
+     - `additional_kwargs.band_structured_data`: Complete [structured data](../../../glossary.md#structured-data)
 
 2. **Why This Format?**
    - **Structured data** preserves [tool calls](../../../glossary.md#tool-calls) and messages as objects, not strings
@@ -242,7 +242,7 @@ graph TB
 
 The system stores a HumanMessage with the user input, and an AIMessage containing:
 - The [thoughts](../../../glossary.md#thoughts) as the main content
-- [Structured data](../../../glossary.md#structured-data) in `additional_kwargs.thenvoi_structured_data` containing:
+- [Structured data](../../../glossary.md#structured-data) in `additional_kwargs.band_structured_data` containing:
   - The same [thoughts](../../../glossary.md#thoughts) text
   - An array of [tool calls](../../../glossary.md#tool-calls) with tool name, input, and result
   - An array of messages sent (empty if none)
@@ -281,7 +281,7 @@ This formatted string is injected into prompts to provide full context to the ag
 sequenceDiagram
     participant Executor as Agent Executor
     participant Callback as Callback Handler
-    participant TM as ThenvoiMemory
+    participant TM as BandMemory
     participant BM as Base Memory
 
     Note over Executor,BM: During Agent Execution
@@ -337,7 +337,7 @@ This configuration is handled automatically during memory setup.
 
 Memory setup happens during agent initialization:
 - [Base memory](../../../glossary.md#base-memory) is fetched from the connected memory node
-- Configured and wrapped with `ThenvoiMemory`
+- Configured and wrapped with `BandMemory`
 - Attached to the agent executor
 
 ### Saving After Execution
@@ -368,14 +368,14 @@ When saving messages to memory, the system enriches HumanMessages with sender in
 
 **The Pattern:**
 
-1. **Before saving**: `setSenderInfo()` is called on `ThenvoiMemory` with the sender's ID, name, and type
+1. **Before saving**: `setSenderInfo()` is called on `BandMemory` with the sender's ID, name, and type
 2. **During save**: The HumanMessage is enriched with sender metadata in `additional_kwargs`
 3. **During load**: Formatters read sender info from `additional_kwargs` to display actual user/agent names
 
 ```mermaid
 sequenceDiagram
     participant Factory as Agent Factory
-    participant Memory as ThenvoiMemory
+    participant Memory as BandMemory
     participant BM as Base Memory
 
     Factory->>Memory: setSenderInfo({ id, name, type })
@@ -439,7 +439,7 @@ function isAIMessage(msg: unknown): boolean {
 
 ### Memory Not Saving
 
-- Check that `ThenvoiMemory` is being used (not raw [base memory](../../../glossary.md#base-memory))
+- Check that `BandMemory` is being used (not raw [base memory](../../../glossary.md#base-memory))
 - Verify `setIntermediateSteps()` is being called before `saveContext()`
 - Check that [intermediate steps](../../../glossary.md#intermediate-steps) are being captured by the callback handler
 

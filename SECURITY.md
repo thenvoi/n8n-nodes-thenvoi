@@ -6,7 +6,8 @@ We release patches for security vulnerabilities. Which versions are eligible for
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.2.x   | ✅                 |
+| 1.0.x   | ✅                 |
+| 0.2.x   | ❌                 |
 | 0.1.x   | ❌                 |
 
 ## Reporting a Vulnerability
@@ -15,7 +16,7 @@ If you discover a security vulnerability, please **do not** open a public issue.
 
 ### Preferred Method: Email
 
-Send an email to **security@thenvoi.com** with:
+Send an email to **security@band.ai** with:
 - A clear description of the vulnerability
 - Steps to reproduce the issue
 - Potential impact
@@ -44,9 +45,9 @@ If you prefer, you can create a private security advisory on GitHub:
 ## Scope
 
 This security policy applies to:
-- The `@thenvoi/n8n-nodes-thenvoi` package codebase
+- The `@band-ai/n8n-nodes-band` package codebase
 - Dependencies used in the package
-- Security issues in the Thenvoi API integration
+- Security issues in the Band API integration
 
 ## Out of Scope
 
@@ -56,6 +57,6 @@ The following are considered out of scope:
 - Social engineering attacks
 - Physical security issues
 
-Thank you for helping keep Thenvoi n8n nodes secure!
+Thank you for helping keep Band n8n nodes secure!
 
 

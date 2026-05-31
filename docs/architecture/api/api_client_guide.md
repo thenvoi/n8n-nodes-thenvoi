@@ -2,7 +2,7 @@
 
 ## Overview
 
-The API client system provides a unified interface for making HTTP requests to the Thenvoi API. It handles authentication, URL construction, error handling, and response parsing, abstracting HTTP complexity from the rest of the codebase.
+The API client system provides a unified interface for making HTTP requests to the Band API. It handles authentication, URL construction, error handling, and response parsing, abstracting HTTP complexity from the rest of the codebase.
 
 The system is organized into domain-specific API modules (agents, messages, participants, peers, rooms) that use a shared HTTP client for consistent request handling.
 
@@ -32,7 +32,7 @@ graph TB
 sequenceDiagram
     participant API as API Module
     participant Client as HTTP Client
-    participant Server as Thenvoi Server
+    participant Server as Band Server
     
     API->>Client: Request(endpoint, method, body)
     Client->>Client: Build URL
@@ -52,7 +52,7 @@ sequenceDiagram
     participant Module as API Module
     participant Client as HTTP Client
     participant Fetch as Fetch API
-    participant Server as Thenvoi Server
+    participant Server as Band Server
     
     Module->>Client: get/post/delete(endpoint, ...)
     Client->>Client: Build Complete URL
@@ -288,7 +288,7 @@ Capabilities use API client for:
 - Verify API key header is added
 - Check API key has required permissions
 - Ensure credentials are properly configured
-- Trigger initialization fails fast with `Invalid Thenvoi auth token (API key). Please verify your Thenvoi credentials.`
+- Trigger initialization fails fast with `Invalid Band auth token (API key). Please verify your Band credentials.`
 - Agent node authentication errors are surfaced during item execution with the same invalid-token message
 - Authentication failures are detected from HTTP status (`401`/`403`) and websocket auth errors for consistent behavior across node types
 

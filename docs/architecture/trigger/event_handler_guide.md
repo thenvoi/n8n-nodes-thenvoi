@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Event Handler system provides an extensible architecture for processing different event types from Thenvoi chat rooms. It routes events to appropriate handlers, validates event data, and triggers n8n workflows when conditions are met.
+The Event Handler system provides an extensible architecture for processing different event types from Band chat rooms. It routes events to appropriate handlers, validates event data, and triggers n8n workflows when conditions are met.
 
 ## Architecture
 

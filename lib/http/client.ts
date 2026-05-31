@@ -1,23 +1,23 @@
 import { Logger } from 'n8n-workflow';
-import { ThenvoiCredentials, ThenvoiApiError } from '../types';
+import { BandCredentials, BandApiError } from '../types';
 import { logError, createApiError } from '../utils/errors';
 import { getHttpUrl } from '../utils/urls';
 
 /**
- * HTTP client for making API requests to Thenvoi
+ * HTTP client for making API requests to Band
  */
 export class HttpClient {
 	private baseUrl: string;
 
 	constructor(
-		private credentials: ThenvoiCredentials,
+		private credentials: BandCredentials,
 		private logger: Logger,
 	) {
 		this.baseUrl = getHttpUrl(credentials, credentials.useHttps);
 	}
 
 	/**
-	 * Makes a GET request to the Thenvoi API
+	 * Makes a GET request to the Band API
 	 *
 	 * @param endpoint - API endpoint path (e.g., '/agent/chats')
 	 * @param params - Optional query parameters
@@ -29,7 +29,7 @@ export class HttpClient {
 	}
 
 	/**
-	 * Makes a POST request to the Thenvoi API
+	 * Makes a POST request to the Band API
 	 *
 	 * @param endpoint - API endpoint path (e.g., '/agent/chats/{id}/messages')
 	 * @param body - Optional request body (will be JSON stringified)
@@ -41,7 +41,7 @@ export class HttpClient {
 	}
 
 	/**
-	 * Makes a DELETE request to the Thenvoi API
+	 * Makes a DELETE request to the Band API
 	 *
 	 * @param endpoint - API endpoint path (e.g., '/agent/chats/{id}/participants/{id}')
 	 * @returns Promise resolving to the response data of type T, or undefined for 204 No Content responses
@@ -118,8 +118,8 @@ export class HttpClient {
 
 			return result as T;
 		} catch (error) {
-			// Log and re-throw if not already a ThenvoiApiError
-			if (!(error instanceof ThenvoiApiError)) {
+			// Log and re-throw if not already a BandApiError
+			if (!(error instanceof BandApiError)) {
 				logError(this.logger, 'HTTP request failed', error, { endpoint, method });
 			}
 

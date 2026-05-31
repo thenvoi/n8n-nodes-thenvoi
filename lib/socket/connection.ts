@@ -1,10 +1,10 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { SocketConfig, ThenvoiWebSocket } from '../types';
+import { SocketConfig, BandWebSocket } from '../types';
 import {
 	getErrorMessage,
 	INVALID_AUTH_TOKEN_ERROR_MESSAGE,
-	isThenvoiAuthError,
+	isBandAuthError,
 	logError,
 } from '../utils/errors';
 import { raceWithTimeout } from '../utils/timeout';
@@ -49,7 +49,7 @@ function createSocketOptions(config: SocketConfig, logger: Logger) {
 		},
 		logger: createSocketLogger(logger),
 		reconnectAfterMs: config.reconnectAfterMs || DEFAULT_RECONNECT_STRATEGY,
-		transport: ThenvoiWebSocket,
+		transport: BandWebSocket,
 	};
 }
 
@@ -124,7 +124,7 @@ function createConnectionPromise(
 
 		socket.onError((error: string | number | Event) => {
 			if (!isResolved) {
-				if (isThenvoiAuthError(error)) {
+				if (isBandAuthError(error)) {
 					reject(new Error(INVALID_AUTH_TOKEN_ERROR_MESSAGE));
 					return;
 				}

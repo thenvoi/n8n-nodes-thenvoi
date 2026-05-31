@@ -1,12 +1,12 @@
-# Thenvoi AI Agent System Prompt - Maintenance Guide
+# Band AI Agent System Prompt - Maintenance Guide
 
-This guide is for developers and AI assistants who need to maintain and update the `templates/agent/thenvoi_agent_system_prompt_template.md` file.
+This guide is for developers and AI assistants who need to maintain and update the `templates/agent/band_agent_system_prompt_template.md` file.
 
 ---
 
 ## Overview
 
-The system prompt template is the foundation for ALL Thenvoi AI agents created in n8n. Changes affect every agent instance.
+The system prompt template is the foundation for ALL Band AI agents created in n8n. Changes affect every agent instance.
 
 The template serves two functions:
 
@@ -67,7 +67,7 @@ Dynamic Context is placed early (before behavioral instructions) so the agent ha
 - `{{USER_SPECIFIC_GUIDELINES}}`
 - `{{USER_EXAMPLES}}`
 
-These are referenced in code (`nodes/ThenvoiAgent/constants/promptSections.ts`) and replaced via string matching.
+These are referenced in code (`nodes/BandAgent/constants/promptSections.ts`) and replaced via string matching.
 
 ### Dynamic Section Headers
 
@@ -111,7 +111,7 @@ This is core to how the system works. Changing this breaks the dual-channel mode
 
 1. **Identify change type**: Content (safe), structural (moderate risk), or breaking (high risk)
 2. **Assess impact**: Does this affect the regex injection? The placeholder replacement? The tool names?
-3. **Check code dependencies**: See `nodes/ThenvoiAgent/factories/promptFactory.ts` for injection logic
+3. **Check code dependencies**: See `nodes/BandAgent/factories/promptFactory.ts` for injection logic
 
 ### After Making Changes
 
@@ -180,9 +180,9 @@ User guidelines should complement the base, not conflict. Base handles mechanics
 
 ## File Locations
 
-- **Template**: `templates/agent/thenvoi_agent_system_prompt_template.md`
-- **Injection code**: `nodes/ThenvoiAgent/factories/promptFactory.ts`
-- **Section constants**: `nodes/ThenvoiAgent/constants/promptSections.ts`
-- **Formatters**: `nodes/ThenvoiAgent/utils/prompting/formatters.ts`
+- **Template**: `templates/agent/band_agent_system_prompt_template.md`
+- **Injection code**: `nodes/BandAgent/factories/promptFactory.ts`
+- **Section constants**: `nodes/BandAgent/constants/promptSections.ts`
+- **Formatters**: `nodes/BandAgent/utils/prompting/formatters.ts`
 - **User Guide**: `docs/nodes/agent/agent_node_guide.md`
 - **This Guide**: `docs/nodes/agent/prompt/system_prompt_maintenance_guide.md`

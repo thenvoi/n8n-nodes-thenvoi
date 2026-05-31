@@ -8,7 +8,7 @@ export interface ErrorInfo {
 }
 
 /**
- * Structured error response from Thenvoi API
+ * Structured error response from Band API
  */
 export interface ApiErrorResponse {
 	error: {
@@ -20,9 +20,9 @@ export interface ApiErrorResponse {
 }
 
 /**
- * Properties for ThenvoiApiError class
+ * Properties for BandApiError class
  */
-export interface ThenvoiApiErrorProperties {
+export interface BandApiErrorProperties {
 	status: number;
 	code?: string;
 	details?: Record<string, string[]>;
@@ -30,12 +30,12 @@ export interface ThenvoiApiErrorProperties {
 }
 
 /**
- * Custom error class for Thenvoi API errors
+ * Custom error class for Band API errors
  *
  * Extends Error with structured error information from API responses.
  * Includes HTTP status code, error code, validation details, and request ID.
  */
-export class ThenvoiApiError extends Error implements ThenvoiApiErrorProperties {
+export class BandApiError extends Error implements BandApiErrorProperties {
 	status: number;
 	code?: string;
 	details?: Record<string, string[]>;
@@ -49,7 +49,7 @@ export class ThenvoiApiError extends Error implements ThenvoiApiErrorProperties 
 		requestId?: string,
 	) {
 		super(message);
-		this.name = 'ThenvoiApiError';
+		this.name = 'BandApiError';
 		this.status = status;
 		this.code = code;
 		this.details = details;

@@ -1,8 +1,8 @@
 import {
 	ChatMessageMention,
 	ChatEventType,
-	ThenvoiTextRequest,
-	ThenvoiEventRequest,
+	BandTextRequest,
+	BandEventRequest,
 	ChatMessage,
 	RawChatMessage,
 } from '../types';
@@ -12,7 +12,7 @@ import { fetchPaginated } from '../utils/pagination';
 import { Logger } from 'n8n-workflow';
 
 /**
- * Sends a text message to the Thenvoi API /messages endpoint
+ * Sends a text message to the Band API /messages endpoint
  *
  * Text messages require mentions array with at least one mention.
  *
@@ -22,7 +22,7 @@ import { Logger } from 'n8n-workflow';
  * @param mentions - Array of mentions (required, must have at least one)
  * @returns Resolves when message is accepted by the API
  */
-export async function sendTextMessageToThenvoi(
+export async function sendTextMessageToBand(
 	httpClient: HttpClient,
 	chatId: string,
 	content: string,
@@ -34,7 +34,7 @@ export async function sendTextMessageToThenvoi(
 }
 
 /**
- * Sends an event to the Thenvoi API /events endpoint
+ * Sends an event to the Band API /events endpoint
  *
  * Events are non-text message types (tool_call, tool_result, thought, etc.)
  * that do not require mention validation.
@@ -46,7 +46,7 @@ export async function sendTextMessageToThenvoi(
  * @param metadata - Optional metadata for the event
  * @returns Resolves when event is accepted by the API
  */
-export async function sendEventToThenvoi(
+export async function sendEventToBand(
 	httpClient: HttpClient,
 	chatId: string,
 	eventType: ChatEventType,
@@ -61,7 +61,7 @@ export async function sendEventToThenvoi(
 /**
  * Builds the text message payload for the /messages endpoint
  *
- * Constructs the request body structure required by the Thenvoi API
+ * Constructs the request body structure required by the Band API
  * for sending text messages. Text messages require a mentions array
  * with at least one mention.
  *
@@ -69,7 +69,7 @@ export async function sendEventToThenvoi(
  * @param mentions - Array of mentions (required, must have at least one)
  * @returns Formatted request payload for /messages endpoint
  */
-function buildTextPayload(content: string, mentions: ChatMessageMention[]): ThenvoiTextRequest {
+function buildTextPayload(content: string, mentions: ChatMessageMention[]): BandTextRequest {
 	return {
 		message: {
 			content,
@@ -81,7 +81,7 @@ function buildTextPayload(content: string, mentions: ChatMessageMention[]): Then
 /**
  * Builds the event payload for the /events endpoint
  *
- * Constructs the request body structure required by the Thenvoi API
+ * Constructs the request body structure required by the Band API
  * for sending non-text events (tool_call, tool_result, thought, etc.).
  * Events do not require mentions and support optional metadata.
  *
@@ -94,7 +94,7 @@ function buildEventPayload(
 	eventType: ChatEventType,
 	content: string,
 	metadata?: Record<string, unknown>,
-): ThenvoiEventRequest {
+): BandEventRequest {
 	return {
 		event: {
 			content,
@@ -116,7 +116,7 @@ interface MessageMetadata {
 }
 
 /**
- * Fetches chat messages from the Thenvoi API
+ * Fetches chat messages from the Band API
  *
  * @param httpClient - HTTP client for API requests
  * @param chatId - ID of the chat room

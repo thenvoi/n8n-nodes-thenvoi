@@ -1,11 +1,11 @@
 import { INode, Logger, NodeOperationError } from 'n8n-workflow';
-import { ErrorInfo, ApiErrorResponse, ThenvoiApiError } from '../types';
+import { ErrorInfo, ApiErrorResponse, BandApiError } from '../types';
 
 /**
- * User-facing message for invalid Thenvoi authentication tokens
+ * User-facing message for invalid Band authentication tokens
  */
 export const INVALID_AUTH_TOKEN_ERROR_MESSAGE =
-	'Invalid Thenvoi auth token (API key). Please verify your Thenvoi credentials.';
+	'Invalid Band auth token (API key). Please verify your Band credentials.';
 
 const AUTH_ERROR_PATTERN =
 	/(unauthorized|forbidden|invalid (api key|api_key|token|credentials)|authentication failed|auth failed)/i;
@@ -115,8 +115,8 @@ export function getSafeErrorMessage(error: unknown): string {
 /**
  * Checks whether an error represents an authentication failure
  */
-export function isThenvoiAuthError(error: unknown): boolean {
-	if (error instanceof ThenvoiApiError) {
+export function isBandAuthError(error: unknown): boolean {
+	if (error instanceof BandApiError) {
 		return error.status === 401 || error.status === 403;
 	}
 
@@ -125,7 +125,7 @@ export function isThenvoiAuthError(error: unknown): boolean {
 }
 
 /**
- * Creates the standard node error for invalid Thenvoi authentication.
+ * Creates the standard node error for invalid Band authentication.
  */
 export function createInvalidAuthTokenNodeError(node: INode): NodeOperationError {
 	return new NodeOperationError(node, INVALID_AUTH_TOKEN_ERROR_MESSAGE);
@@ -167,19 +167,19 @@ export async function parseApiErrorResponse(response: Response): Promise<{
 }
 
 /**
- * Creates a ThenvoiApiError from HTTP response
+ * Creates a BandApiError from HTTP response
  *
  * Parses structured error response if available, otherwise creates
  * generic error with status code.
  *
  * @param response - HTTP response object
- * @returns ThenvoiApiError instance
+ * @returns BandApiError instance
  */
-export async function createApiError(response: Response): Promise<ThenvoiApiError> {
+export async function createApiError(response: Response): Promise<BandApiError> {
 	const parsedError = await parseApiErrorResponse(response);
 
 	if (parsedError) {
-		return new ThenvoiApiError(
+		return new BandApiError(
 			parsedError.message,
 			response.status,
 			parsedError.code,
@@ -189,7 +189,7 @@ export async function createApiError(response: Response): Promise<ThenvoiApiErro
 	}
 
 	// Fallback to generic error
-	return new ThenvoiApiError(
+	return new BandApiError(
 		`API request failed: ${response.status} ${response.statusText}`,
 		response.status,
 	);

@@ -1,8 +1,8 @@
-# Thenvoi Trigger System Guide
+# Band Trigger System Guide
 
 ## Overview
 
-The Thenvoi Trigger node listens to real-time events from Thenvoi chat rooms via WebSocket connections. It supports multiple [room subscription](../../glossary.md#room-subscription) modes (single room, all rooms, filtered rooms) and provides an extensible event handler system for processing different event types.
+The Band Trigger node listens to real-time events from Band chat rooms via WebSocket connections. It supports multiple [room subscription](../../glossary.md#room-subscription) modes (single room, all rooms, filtered rooms) and provides an extensible event handler system for processing different event types.
 
 The trigger system manages WebSocket connections, room subscriptions, channel lifecycle, and event routing to provide reliable real-time event listening for n8n workflows.
 
@@ -41,7 +41,7 @@ sequenceDiagram
     participant Trigger as Trigger Node
     participant Manager as Room Manager
     participant Socket as WebSocket
-    participant API as Thenvoi API
+    participant API as Band API
     participant Channels as Phoenix Channels
     
     Trigger->>Manager: Initialize
@@ -89,7 +89,7 @@ sequenceDiagram
 sequenceDiagram
     participant Socket as WebSocket
     participant Manager as Room Manager
-    participant API as Thenvoi API
+    participant API as Band API
     participant Channels as Phoenix Channels
     
     Socket->>Manager: Connection Lost

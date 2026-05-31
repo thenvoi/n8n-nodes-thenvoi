@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide is for developers working on `@thenvoi/n8n-nodes-thenvoi`.
+This guide is for developers working on `@band-ai/n8n-nodes-band`.
 
 ## Prerequisites
 
@@ -60,7 +60,7 @@ Install the following on your development machine:
 2. Link this package into your n8n extensions directory:
 
    ```bash
-   npm link @thenvoi/n8n-nodes-thenvoi
+   npm link @band-ai/n8n-nodes-band
    ```
 
    This package name must match the `name` field in `package.json`.
@@ -123,14 +123,14 @@ Fallback: add an npm automation token as repository secret `NPM_TOKEN`.
 
 ```plaintext
 ├── lib/                        # Shared library code
-│   ├── api/                    # API clients for Thenvoi operations
+│   ├── api/                    # API clients for Band operations
 │   ├── http/                   # HTTP client implementation
 │   ├── socket/                 # WebSocket connection and channel management
 │   ├── types/                  # Shared type definitions
 │   └── utils/                  # Shared utility functions
 ├── nodes/
-│   ├── ThenvoiAgent/           # AI Agent node
-│   └── ThenvoiTrigger/         # Trigger node
+│   ├── BandAgent/           # AI Agent node
+│   └── BandTrigger/         # Trigger node
 ├── credentials/                # API credential configuration
 ├── docs/                       # Documentation
 ├── templates/                  # Agent system prompt templates
@@ -139,16 +139,16 @@ Fallback: add an npm automation token as repository secret `NPM_TOKEN`.
 
 ## Extending nodes
 
-### Adding new event types (`ThenvoiTrigger`)
+### Adding new event types (`BandTrigger`)
 
-1. Add a handler in `nodes/ThenvoiTrigger/handlers/events/`.
+1. Add a handler in `nodes/BandTrigger/handlers/events/`.
 2. Implement `IEventHandler` from `handlers/events/base/`.
 3. Register in `EventHandlerRegistry`.
 4. Add configuration in `config/nodeConfig.ts`.
 
-### Adding new capabilities (`ThenvoiAgent`)
+### Adding new capabilities (`BandAgent`)
 
-1. Add a capability in `nodes/ThenvoiAgent/capabilities/yourCapability/`.
+1. Add a capability in `nodes/BandAgent/capabilities/yourCapability/`.
 2. Implement `Capability` from `capabilities/base/Capability.ts`.
 3. Set a `CapabilityPriority`.
 4. Implement lifecycle hooks as needed (`onSetup`, `onPrepare`, `onSuccess`, `onError`, `onFinalize`).
@@ -157,7 +157,7 @@ Fallback: add an npm automation token as repository secret `NPM_TOKEN`.
 
 Built-in capabilities:
 
-- **Messaging capability** - Streams task updates, thoughts, tool calls/results, and final responses to Thenvoi, and manages message processing status.
+- **Messaging capability** - Streams task updates, thoughts, tool calls/results, and final responses to Band, and manages message processing status.
 - **Agent collaboration capability** - Provides tools to list/add/remove participants and keeps participant context updated for agent workflows.
 
 Capability priorities:

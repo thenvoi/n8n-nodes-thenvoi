@@ -2,7 +2,7 @@
 
 ## Overview
 
-The tool system provides LangChain-compatible tools that enable AI agents to interact with the Thenvoi platform. Tools are provided by [capabilities](../../../glossary.md#capability) and connected nodes, collected during agent setup, and made available to the agent during execution.
+The tool system provides LangChain-compatible tools that enable AI agents to interact with the Band platform. Tools are provided by [capabilities](../../../glossary.md#capability) and connected nodes, collected during agent setup, and made available to the agent during execution.
 
 The system supports built-in tools for messaging and collaboration, as well as custom tools from connected n8n nodes, enabling agents to perform actions beyond simple text generation.
 
@@ -128,7 +128,7 @@ sequenceDiagram
     participant Agent as AI Agent
     participant Executor as Agent Executor
     participant Tool as Tool
-    participant API as Thenvoi API
+    participant API as Band API
     participant Callback as Callback Handler
     
     Agent->>Executor: Call Tool
@@ -196,7 +196,7 @@ The send_message tool uses a message queue:
 graph LR
     Tool["Send Message Tool"]
     Queue["Message Queue"]
-    API["Thenvoi API"]
+    API["Band API"]
     
     Tool -->|Enqueue| Queue
     Queue -->|Sequential Send| API

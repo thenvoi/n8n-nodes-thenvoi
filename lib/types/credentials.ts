@@ -1,7 +1,7 @@
 /**
- * Credentials interface for Thenvoi API
+ * Credentials interface for Band API
  */
-export interface ThenvoiCredentials {
+export interface BandCredentials {
 	serverUrl: string;
 	apiKey: string;
 	useHttps: boolean;

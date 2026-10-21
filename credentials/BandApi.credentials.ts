@@ -1,9 +1,4 @@
-import {
-	IAuthenticateGeneric,
-	ICredentialTestRequest,
-	ICredentialType,
-	INodeProperties,
-} from 'n8n-workflow';
+import { IAuthenticateGeneric, ICredentialType, INodeProperties } from 'n8n-workflow';
 
 export class BandApi implements ICredentialType {
 	name = 'bandApi';
@@ -53,15 +48,6 @@ export class BandApi implements ICredentialType {
 			headers: {
 				'X-API-Key': '={{$credentials.apiKey}}',
 			},
-		},
-	};
-
-	// Test the connection to the Band server
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: '={{$credentials?.useHttps ? "https://" : "http://"}}{{$credentials?.serverUrl}}',
-			url: '/test',
-			method: 'GET',
 		},
 	};
 }

@@ -1,6 +1,7 @@
 import { Logger } from 'n8n-workflow';
 import { BandCredentials, BandApiError } from '../types';
-import { logError, createApiError } from '../utils/errors';
+import { createApiError } from '../utils/errors';
+import { ConnectionDiagnostics } from '../utils/diagnostics';
 import { getHttpUrl } from '../utils/urls';
 
 /**
@@ -12,6 +13,7 @@ export class HttpClient {
 	constructor(
 		private credentials: BandCredentials,
 		private logger: Logger,
+		private diagnostics?: ConnectionDiagnostics,
 	) {
 		this.baseUrl = getHttpUrl(credentials, credentials.useHttps);
 	}
@@ -25,7 +27,7 @@ export class HttpClient {
 	 */
 	async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
 		const url = this.buildUrl(endpoint, params);
-		return this.request<T>(url, 'GET', endpoint);
+		return this.request<T>(url, 'GET');
 	}
 
 	/**
@@ -37,7 +39,7 @@ export class HttpClient {
 	 */
 	async post<T>(endpoint: string, body?: unknown): Promise<T> {
 		const url = this.buildUrl(endpoint);
-		return this.request<T>(url, 'POST', endpoint, body);
+		return this.request<T>(url, 'POST', body);
 	}
 
 	/**
@@ -48,7 +50,7 @@ export class HttpClient {
 	 */
 	async delete<T>(endpoint: string): Promise<T> {
 		const url = this.buildUrl(endpoint);
-		return this.request<T>(url, 'DELETE', endpoint);
+		return this.request<T>(url, 'DELETE');
 	}
 
 	/**
@@ -60,7 +62,6 @@ export class HttpClient {
 	 *
 	 * @param url - Complete URL including base URL and query parameters
 	 * @param method - HTTP method (GET, POST, DELETE, etc.)
-	 * @param endpoint - API endpoint path (used for error logging context)
 	 * @param body - Optional request body (will be JSON stringified)
 	 * @param headers - Optional additional headers to merge with default headers
 	 * @returns Promise resolving to the response data of type T, or undefined for 204 responses
@@ -68,13 +69,13 @@ export class HttpClient {
 	private async request<T>(
 		url: string,
 		method: string,
-		endpoint: string,
 		body?: unknown,
 		headers?: Record<string, string>,
 	): Promise<T> {
 		try {
 			const fetchOptions: RequestInit = {
 				method,
+				...(this.diagnostics ? { redirect: 'error' as const } : {}),
 				headers: {
 					accept: 'application/json',
 					'X-API-Key': this.credentials.apiKey,
@@ -90,13 +91,9 @@ export class HttpClient {
 			const response = await fetch(url, fetchOptions);
 
 			if (!response.ok) {
-				const error = await createApiError(response);
-				logError(this.logger, 'HTTP request failed', error, {
-					endpoint,
-					method,
-					status: error.status,
-					body,
-				});
+				const responseError = await createApiError(response);
+				const error = this.diagnostics ? this.diagnostics.error(responseError) : responseError;
+				this.logger.error('HTTP request failed', { method, status: error.status });
 				throw error;
 			}
 
@@ -110,17 +107,16 @@ export class HttpClient {
 			const result = await response.json();
 
 			this.logger.debug('HTTP request successful', {
-				endpoint,
 				method,
 				status: response.status,
-				result,
 			});
 
 			return result as T;
-		} catch (error) {
+		} catch (caught) {
+			const error = this.diagnostics ? this.diagnostics.error(caught) : caught;
 			// Log and re-throw if not already a BandApiError
 			if (!(error instanceof BandApiError)) {
-				logError(this.logger, 'HTTP request failed', error, { endpoint, method });
+				this.logger.error('HTTP request failed', { method });
 			}
 
 			throw error;

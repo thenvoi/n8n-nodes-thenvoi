@@ -21,6 +21,7 @@ module.exports = {
 	ignorePatterns: ['.eslintrc.js', '**/*.js', '**/node_modules/**', '**/dist/**'],
 
 	overrides: [
+		{ files: ['./lib/**/*.ts'], rules: {} },
 		{
 			files: ['package.json'],
 			plugins: ['eslint-plugin-n8n-nodes-base'],
@@ -51,7 +52,11 @@ module.exports = {
 		},
 		{
 			files: ['./nodes/**/*.ts'],
-			excludedFiles: ['./nodes/**/config/**/*.ts', './nodes/**/utils/**/*.ts', './nodes/**/types/**/*.ts'],
+			excludedFiles: [
+				'./nodes/**/config/**/*.ts',
+				'./nodes/**/utils/**/*.ts',
+				'./nodes/**/types/**/*.ts',
+			],
 			plugins: ['eslint-plugin-n8n-nodes-base'],
 			extends: ['plugin:n8n-nodes-base/nodes'],
 			rules: {

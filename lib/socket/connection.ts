@@ -1,13 +1,13 @@
 import { Logger } from 'n8n-workflow';
 import { Socket } from 'phoenix';
-import { SocketConfig, BandWebSocket } from '../types';
+import { SocketConfig, createBandWebSocket } from '../types';
 import {
 	getErrorMessage,
 	INVALID_AUTH_TOKEN_ERROR_MESSAGE,
 	isBandAuthError,
-	logError,
 } from '../utils/errors';
 import { raceWithTimeout } from '../utils/timeout';
+import { ConnectionDiagnostics } from '../utils/diagnostics';
 import { getSocketUrl } from '../utils/urls';
 
 // ============================================================================
@@ -29,27 +29,15 @@ const CONNECTION_TIMEOUT = 10000;
 // ============================================================================
 
 /**
- * Creates a socket logger function that formats Phoenix socket messages
- */
-function createSocketLogger(logger: Logger) {
-	return (kind: string, msg: string, data?: unknown) => {
-		const formattedMessage = typeof msg === 'object' ? JSON.stringify(msg) : msg;
-		logger.info(`Socket ${kind}: ${formattedMessage}`, { data });
-	};
-}
-
-/**
  * Creates socket options for Phoenix socket configuration
  */
-function createSocketOptions(config: SocketConfig, logger: Logger) {
+function createSocketOptions(config: SocketConfig) {
 	return {
 		params: {
-			api_key: config.apiKey,
 			agent_id: config.agentId,
 		},
-		logger: createSocketLogger(logger),
 		reconnectAfterMs: config.reconnectAfterMs || DEFAULT_RECONNECT_STRATEGY,
-		transport: BandWebSocket,
+		transport: createBandWebSocket(config.apiKey),
 	};
 }
 
@@ -70,9 +58,11 @@ function handleSocketOpen(
 		logger.info('SocketManager: Socket reconnected');
 		if (onReconnect) {
 			// Call reconnection callback asynchronously to avoid blocking socket
-			Promise.resolve(onReconnect()).catch((error) => {
-				logError(logger, 'SocketManager: Reconnection callback failed', error);
-			});
+			Promise.resolve()
+				.then(onReconnect)
+				.catch(() => {
+					logger.error('SocketManager: Reconnection callback failed');
+				});
 		}
 	}
 }
@@ -99,8 +89,8 @@ function setupSocketLifecycleListeners(
 		logger.info('SocketManager: Socket connection closed');
 	});
 
-	socket.onError((error: string | number | Event) => {
-		logError(logger, 'SocketManager: WebSocket connection error', error);
+	socket.onError(() => {
+		logger.error('SocketManager: WebSocket connection error');
 	});
 }
 
@@ -110,6 +100,7 @@ function setupSocketLifecycleListeners(
 function createConnectionPromise(
 	socket: Socket,
 	logger: Logger,
+	diagnostics: ConnectionDiagnostics,
 	onReconnect?: () => void | Promise<void>,
 ): Promise<Socket> {
 	return new Promise<Socket>((resolve, reject) => {
@@ -129,7 +120,7 @@ function createConnectionPromise(
 					return;
 				}
 
-				const errorMessage = getErrorMessage(error);
+				const errorMessage = diagnostics.text(getErrorMessage(error));
 				reject(new Error(`Socket connection failed: ${errorMessage}`));
 			}
 		});
@@ -146,12 +137,18 @@ function createConnectionPromise(
  * Creates a Phoenix socket with the given configuration and waits for connection
  */
 export async function createSocket(config: SocketConfig, logger: Logger): Promise<Socket> {
+	const diagnostics = new ConnectionDiagnostics(config.apiKey);
 	const socketUrl = getSocketUrl(config.serverUrl);
-	const socketOptions = createSocketOptions(config, logger);
+	const socketOptions = createSocketOptions(config);
 	const socket = new Socket(socketUrl, socketOptions);
 
 	// Wait for initial connection to be established (lifecycle listeners set up inside)
-	return waitForConnection(socket, logger, config.onReconnect);
+	try {
+		return await waitForConnection(socket, logger, diagnostics, config.onReconnect);
+	} catch (error) {
+		socket.disconnect();
+		throw diagnostics.error(error);
+	}
 }
 
 /**
@@ -160,9 +157,10 @@ export async function createSocket(config: SocketConfig, logger: Logger): Promis
 export async function waitForConnection(
 	socket: Socket,
 	logger: Logger,
+	diagnostics: ConnectionDiagnostics,
 	onReconnect?: () => void | Promise<void>,
 ): Promise<Socket> {
-	const connectionPromise = createConnectionPromise(socket, logger, onReconnect);
+	const connectionPromise = createConnectionPromise(socket, logger, diagnostics, onReconnect);
 
 	return raceWithTimeout(
 		connectionPromise,

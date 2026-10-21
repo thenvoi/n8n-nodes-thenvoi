@@ -4,7 +4,6 @@ import { eventHandlerRegistry } from '../handlers/events/EventHandlerRegistry';
 import { HttpClient } from '@lib/http';
 import { RoomInfo, RoomSubscription, BandCredentials } from '@lib/types';
 import { FilteredRoomsConfig, RoomMode, TriggerConfig } from '../types';
-import { logError } from '@lib/utils';
 import { roomMatchesFilters } from '../utils/rooms/roomFilterUtils';
 import { getRoomIdsForMode, supportsAutoSubscribe } from '../utils/rooms/roomModeUtils';
 import {
@@ -143,8 +142,8 @@ export class RoomManager {
 
 		try {
 			await this.reconnectChannels();
-		} catch (error) {
-			logError(this.logger, 'Failed to rejoin some channels after reconnection', error);
+		} catch {
+			this.logger.error('Failed to rejoin some channels after reconnection');
 		} finally {
 			this.isReconnecting = false;
 		}
@@ -179,9 +178,7 @@ export class RoomManager {
 			const filteredConfig = this.config as FilteredRoomsConfig;
 
 			if (!this.shouldSubscribeToRoom(room, filteredConfig)) {
-				this.logger.debug(
-					`Room ${room.id} does not match filter criteria, skipping auto-subscribe`,
-				);
+				this.logger.debug('Room does not match filter criteria, skipping auto-subscribe');
 				return;
 			}
 		}
@@ -221,9 +218,9 @@ export class RoomManager {
 			try {
 				leaveSubscriptionChannels(subscription);
 				this.subscriptions.delete(roomId);
-				this.logger.info(`Unsubscribed from room: ${roomId}`);
-			} catch (error) {
-				logError(this.logger, `Failed to unsubscribe from room: ${roomId}`, error);
+				this.logger.info('Unsubscribed from room');
+			} catch {
+				this.logger.error('Failed to unsubscribe from room');
 			}
 		}
 	}
@@ -241,11 +238,8 @@ export class RoomManager {
 				this.config,
 				this.triggerContext,
 			);
-		} catch (error) {
-			logError(this.logger, 'Room event handling failed', error, {
-				roomId,
-				rawData,
-			});
+		} catch {
+			this.logger.error('Room event handling failed');
 		}
 	}
 

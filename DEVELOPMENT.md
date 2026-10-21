@@ -174,3 +174,11 @@ If you add or rename package metadata, keep n8n package requirements valid:
 - Name must follow `n8n-nodes-<name>` or `@scope/n8n-nodes-<name>`
 - Include keyword `n8n-community-node-package`
 - Keep `n8n` section in `package.json` aligned with built credential/node paths
+
+## Authentication regression tests
+
+Run `npm run build` and `npm test` on Node 22+. Tests use real local HTTPS and WSS peers with a public test-only certificate and private key under `tests/fixtures` (never deploy these fixtures). The launcher adds that test CA through `NODE_EXTRA_CA_CERTS`; TLS verification remains enabled. The existing Ubuntu CI job runs these tests.
+
+Band server URLs accept a host and optional API base path, including existing HTTP/HTTPS forms. Legacy `api_key` and `token` query parameters are removed before any request. Other query parameters, fragments and URL user information are rejected locally. HTTP follows Use HTTPS; WebSockets always use WSS. Authentication is sent only through `x-api-key`, including reconnects; deployments must accept this header. There is no query authentication fallback. Credential testing uses the same URL and HTTP authentication validation path as trigger startup.
+
+For credential-dialog dispatch compatibility, install the supported `n8n@1.120.4` into a separate disposable npm prefix, set `N8N_RUNTIME_ROOT` to that prefix and `N8N_USER_FOLDER` to a disposable directory, then run `npm run test:credential-runtime`. This invokes the released CredentialsTester service and real CredentialTestContext against the TLS peer. User/project metadata and credential defaults are synthetic; no database or browser UI is exercised. The probe exits after assertions because importing the full runtime starts background services. This compatibility probe adds no package dependency.

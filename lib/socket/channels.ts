@@ -32,51 +32,43 @@ export interface ChatRoomChannelConfig extends Omit<ChannelConfig, 'channelName'
 /**
  * Handles successful channel join - called when Phoenix channel.join() receives 'ok'
  */
-function handleJoinSuccess(channel: Channel, logger: Logger, resp?: unknown): void {
-	logger.info('ChannelManager: Joined channel', { resp });
+function handleJoinSuccess(logger: Logger): void {
+	logger.info('ChannelManager: Joined channel');
 }
 
 /**
  * Handles channel join error - called when Phoenix channel.join() receives 'error'
  */
-function handleJoinError(channelName: string, logger: Logger, resp?: unknown): never {
-	logger.error('ChannelManager: Failed to join channel', {
-		channelName,
-		error: resp,
-	});
-
-	throw new Error(`Unable to join Band channel: ${JSON.stringify(resp)}`);
+function handleJoinError(logger: Logger): Error {
+	logger.error('ChannelManager: Failed to join channel');
+	return new Error('Unable to join Band channel');
 }
 
 /**
  * Handles channel join timeout
  */
-function handleJoinTimeout(channelName: string, logger: Logger): never {
-	logger.warn('ChannelManager: Channel join timeout', { channelName });
+function handleJoinTimeout(logger: Logger): Error {
+	logger.warn('ChannelManager: Channel join timeout');
 
-	throw new Error('Channel join timeout');
+	return new Error('Channel join timeout');
 }
 
 /**
  * Creates a join promise for a Phoenix channel
  */
-function createJoinPromise(
-	channel: Channel,
-	channelName: string,
-	logger: Logger,
-): Promise<Channel> {
+function createJoinPromise(channel: Channel, logger: Logger): Promise<Channel> {
 	return new Promise((resolve, reject) => {
 		channel
 			.join()
-			.receive('ok', (resp?: unknown) => {
-				handleJoinSuccess(channel, logger, resp);
+			.receive('ok', () => {
+				handleJoinSuccess(logger);
 				resolve(channel);
 			})
-			.receive('error', (resp?: unknown) => {
-				reject(handleJoinError(channelName, logger, resp));
+			.receive('error', () => {
+				reject(handleJoinError(logger));
 			})
 			.receive('timeout', () => {
-				reject(handleJoinTimeout(channelName, logger));
+				reject(handleJoinTimeout(logger));
 			});
 	});
 }
@@ -86,12 +78,11 @@ function createJoinPromise(
  */
 async function joinChannelWithTimeout(
 	channel: Channel,
-	channelName: string,
 	logger: Logger,
 	timeoutMs?: number,
 ): Promise<Channel> {
 	const timeoutTime = timeoutMs ?? CHANNEL_JOIN_TIMEOUT;
-	const joinPromise = createJoinPromise(channel, channelName, logger);
+	const joinPromise = createJoinPromise(channel, logger);
 
 	return raceWithTimeout(joinPromise, timeoutTime, new Error('Channel join timeout'));
 }
@@ -113,7 +104,7 @@ export async function createAndJoinChannel(
 		channel.on(event, handler);
 	}
 
-	return joinChannelWithTimeout(channel, config.channelName, config.logger, config.timeout);
+	return joinChannelWithTimeout(channel, config.logger, config.timeout);
 }
 
 /**

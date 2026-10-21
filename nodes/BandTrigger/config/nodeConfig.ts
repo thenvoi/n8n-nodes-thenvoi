@@ -23,6 +23,7 @@ export const nodeDescription: INodeTypeDescription = {
 	credentials: [
 		{
 			name: 'bandApi',
+			testedBy: 'bandApiTest',
 			required: true,
 		},
 	],

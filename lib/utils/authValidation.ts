@@ -2,7 +2,15 @@ import { fetchAgentProfile } from '../api';
 import { HttpClient } from '../http';
 import { BandCredentials } from '../types';
 import { createInvalidAuthTokenNodeError, isBandAuthError } from './errors';
-import { INode, Logger } from 'n8n-workflow';
+import {
+	ICredentialTestFunctions,
+	ICredentialsDecrypted,
+	INodeCredentialTestResult,
+	INode,
+	Logger,
+} from 'n8n-workflow';
+
+import { ConnectionDiagnostics } from './diagnostics';
 
 interface NodeAuthValidationContext {
 	logger: Logger;
@@ -18,12 +26,37 @@ export async function validateBandAuth(
 	credentials: BandCredentials,
 ): Promise<void> {
 	try {
-		await fetchAgentProfile(new HttpClient(credentials, context.logger));
+		await validateCredentialsProfile(credentials, context.logger);
 	} catch (error) {
 		if (isBandAuthError(error)) {
 			throw createInvalidAuthTokenNodeError(context.getNode());
 		}
 
 		throw error;
+	}
+}
+
+async function validateCredentialsProfile(
+	credentials: BandCredentials,
+	logger: Logger,
+): Promise<void> {
+	await fetchAgentProfile(
+		new HttpClient(credentials, logger, new ConnectionDiagnostics(credentials.apiKey)),
+	);
+}
+
+export async function testBandCredentials(
+	this: ICredentialTestFunctions,
+	credentials: ICredentialsDecrypted,
+): Promise<INodeCredentialTestResult> {
+	const data = credentials.data as unknown as BandCredentials;
+	try {
+		await validateCredentialsProfile(data, this.logger);
+		return { status: 'OK', message: 'Band authentication succeeded' };
+	} catch (error) {
+		return {
+			status: 'Error',
+			message: new ConnectionDiagnostics(data.apiKey).error(error).message,
+		};
 	}
 }
